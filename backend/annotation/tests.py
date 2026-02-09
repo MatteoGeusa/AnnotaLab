@@ -78,8 +78,6 @@ class TaskAssignmentTests(TestCase):
         # Update counter (Manual Simulation)
         logger.info("STEP 3: [SIMULATION] Manually updating current_annotations_count to 3")
         logger.info("(Note: In production this step should be automatic via Signals)")
-        self.doc.current_annotations_count = 3
-        self.doc.save()
 
         # Looking for documents still to do (count < 3)
         logger.info("STEP 4: Query documents with current_annotations_count < 3...")
