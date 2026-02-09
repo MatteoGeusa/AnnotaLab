@@ -12,27 +12,49 @@
         <div v-else-if="!currentDoc" class="finished">
             <h2>🎉 All tasks completed!</h2>
             <p>Thank you for your contribution.</p>
+            <p>Redirecting to provider in 5 seconds...</p>
         </div>
 
         <div v-else class="task-area">
+
             <div class="instructions">
                 <h3>Task Instruction</h3>
-                <p>1. Leggi il testo. 2. Classificalo. 3. Evidenzia le parti chiave se presenti.</p>
+                <p>{{ config.instruction || "Read the text below and complete the tasks." }}</p>
             </div>
 
-            <div class="section classification-box">
-                <h4>Does this text contain a conspiracy theory?</h4>
-                <div class="radio-group">
-                    <label v-for="opt in classOptions" :key="opt.value" class="radio-label"
-                        :class="{ selected: classification === opt.value }">
-                        <input type="radio" :value="opt.value" v-model="classification">
+            <div class="doc-text-preview" v-if="!hasHighlighter">
+                {{ currentDoc.text }}
+            </div>
+
+            <div class="section classification-box" v-if="classOptions.length > 0">
+                <h4>{{ config.question || "Classify this text:" }}</h4>
+
+                <div class="input-group">
+                    <label v-for="opt in classOptions" :key="opt.value" class="input-label"
+                        :class="{ selected: isSelected(opt.value) }">
+                        <input v-if="config.multi_select" type="checkbox" :value="opt.value" v-model="classification">
+                        <input v-else type="radio" :value="opt.value" v-model="classification">
                         {{ opt.label }}
                     </label>
                 </div>
             </div>
 
-            <div class="section">
-                <h4>Highlight Evidence (Actor, Victim, etc.)</h4>
+            <div class="section scale-box" v-if="config.scale">
+                <h4>{{ config.scale.instruction || "Rate this text:" }}</h4>
+                <div class="scale-container">
+                    <span class="scale-legend">{{ config.scale.min_label || 'Low' }}</span>
+                    <div class="scale-buttons">
+                        <button v-for="n in (config.scale.max || 5)" :key="n" class="scale-btn"
+                            :class="{ active: classification === n }" @click="classification = n">
+                            {{ n }}
+                        </button>
+                    </div>
+                    <span class="scale-legend">{{ config.scale.max_label || 'High' }}</span>
+                </div>
+            </div>
+
+            <div class="section" v-if="hasHighlighter">
+                <h4>Highlight Evidence</h4>
                 <TextHighlighter :text="currentDoc.text" :labels="spanLabels" v-model:spans="spans" />
             </div>
 
@@ -55,19 +77,24 @@ import TextHighlighter from '../components/TextHighlighter.vue';
 
 const router = useRouter();
 const pid = localStorage.getItem('prolific_pid');
+
+// STATO
 const loading = ref(true);
 const currentDoc = ref(null);
 const errorMsg = ref('');
+const config = ref({}); // Contiene l'intero JSON di configurazione
 
-// STATO DELLE ANNOTAZIONI
-const classification = ref(null);
+// RISPOSTE DELL'UTENTE
+const classification = ref(null); // Stringa (Radio), Numero (Scala) o Array (Checkbox)
 const spans = ref([]);
 
-// CONFIGURAZIONE (Arriva dal backend)
-const spanLabels = ref([]);   // es. Actor, Victim
-const classOptions = ref([]); // es. Yes, No
+// OPZIONI ESTRATTE DAL CONFIG
+const spanLabels = ref([]);
+const classOptions = ref([]);
 
-// LOGICA
+// Computed Helper: True se c'è almeno una label di evidenziazione
+const hasHighlighter = computed(() => spanLabels.value.length > 0);
+
 onMounted(() => {
     if (!pid) router.push('/');
     fetchNextTask();
@@ -77,34 +104,36 @@ const fetchNextTask = async () => {
     loading.value = true;
     currentDoc.value = null;
     errorMsg.value = '';
-
-    // Reset risposte
-    classification.value = null;
     spans.value = [];
 
     try {
         const res = await api.get(`next-task/?pid=${pid}`);
+
+        // GESTIONE COMPLETAMENTO
         if (res.data.status === 'completed') {
-            currentDoc.value = null;
-            // Mostriamo il link di completamento
-            // window.location.href = res.data.completion_url; // Reindirizza AUTOMATICAMENTE su Prolific
+            window.location.href = res.data.completion_url;
             return;
         }
+
         currentDoc.value = res.data;
+        config.value = res.data.project_config || {};
 
-        // Configuriamo l'interfaccia basandoci sui dati del backend
-        const config = res.data.project_config || {};
+        // SETUP OPZIONI
+        spanLabels.value = config.value.span_labels || [];
+        classOptions.value = config.value.class_labels || [];
 
-        // Fallback se il config è vuoto (per sicurezza)
-        spanLabels.value = config.span_labels || [];
-        classOptions.value = config.class_labels || [
-            { value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }
-        ];
+        // SETUP VARIABILE CLASSIFICAZIONE
+        // Se è multiselect (checkbox), deve essere un Array vuoto []
+        // Altrimenti (radio/scala), deve essere null
+        if (config.value.multi_select) {
+            classification.value = [];
+        } else {
+            classification.value = null;
+        }
 
     } catch (err) {
         if (err.response && err.response.status === 404) {
-            // Niente più task
-            currentDoc.value = null;
+            // Task finiti ma senza redirect URL
         } else {
             errorMsg.value = "Error fetching task. Please refresh.";
         }
@@ -113,9 +142,32 @@ const fetchNextTask = async () => {
     }
 };
 
+// Helper per lo stile CSS "selected" (gestisce sia array che valori singoli)
+const isSelected = (val) => {
+    if (Array.isArray(classification.value)) {
+        return classification.value.includes(val);
+    }
+    return classification.value === val;
+};
+
+// Validazione: Il bottone Submit si attiva solo se...
 const canSubmit = computed(() => {
-    // Obblighiamo almeno a rispondere alla domanda Sì/No
-    return classification.value !== null;
+    // 1. Se ci sono domande (Radio/Checkbox), bisogna rispondere
+    if (classOptions.value.length > 0) {
+        if (Array.isArray(classification.value)) {
+            return classification.value.length > 0; // Checkbox: almeno una
+        }
+        return classification.value !== null; // Radio: selezionato
+    }
+
+    // 2. Se c'è una Scala (Likert), bisogna selezionare un numero
+    if (config.value.scale) {
+        return classification.value !== null;
+    }
+
+    // 3. Se c'è SOLO l'evidenziatore (NER puro), l'invio è sempre possibile
+    // (perché potrebbe non esserci nulla da evidenziare nel testo)
+    return true;
 });
 
 const submitTask = async () => {
@@ -129,12 +181,11 @@ const submitTask = async () => {
             classification: classification.value,
             spans: spans.value
         },
-        seconds_to_complete: 0 // TODO: Aggiungi un timer vero qui!
+        seconds_to_complete: 0 // TODO: Implementare timer
     };
 
     try {
         await api.post('submit/', payload);
-        // Se va bene, carica il prossimo
         fetchNextTask();
     } catch (err) {
         errorMsg.value = "Error saving. Try again.";
@@ -159,33 +210,41 @@ const logout = () => {
 header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
 }
 
-.section {
-    margin-bottom: 30px;
+.task-area {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
 }
 
-h4 {
-    margin-bottom: 10px;
-    color: #333;
+/* STILE PREVIEW TESTO (Quando non c'è evidenziatore) */
+.doc-text-preview {
+    padding: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    line-height: 1.6;
 }
 
-/* Classificazione Box */
+/* STILI CLASSIFICAZIONE */
 .classification-box {
     background: #eef2f5;
     padding: 20px;
     border-radius: 8px;
 }
 
-.radio-group {
+.input-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
 }
 
-.radio-label {
+.input-label {
     background: white;
     padding: 10px 20px;
     border-radius: 6px;
@@ -195,19 +254,74 @@ h4 {
     display: flex;
     align-items: center;
     gap: 8px;
+    user-select: none;
+    /* Evita selezione testo involontaria */
 }
 
-.radio-label:hover {
+.input-label:hover {
     border-color: #666;
 }
 
-.radio-label.selected {
+.input-label.selected {
     background: #007bff;
     color: white;
     border-color: #0056b3;
 }
 
-/* Submit Button */
+/* STILI SCALA LIKERT */
+.scale-box {
+    background: #fffdeb;
+    /* Colore diverso per distinguerla */
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.scale-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.scale-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.scale-btn {
+    width: 45px;
+    height: 45px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.scale-btn:hover {
+    border-color: #999;
+}
+
+.scale-btn.active {
+    background: #ff9800;
+    color: white;
+    border-color: #f57c00;
+    transform: scale(1.1);
+}
+
+.scale-legend {
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #666;
+}
+
+/* SUBMIT BUTTON */
 .submit-btn {
     width: 100%;
     padding: 15px;
@@ -217,6 +331,7 @@ h4 {
     border: none;
     border-radius: 8px;
     cursor: pointer;
+    margin-top: 10px;
 }
 
 .submit-btn:disabled {

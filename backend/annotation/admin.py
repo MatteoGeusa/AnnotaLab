@@ -9,37 +9,36 @@ from django.http import HttpResponse
 
 def process_uploaded_dataset(project, file_obj):
     """
-    Legge il file caricato e crea i Documenti.
+    DATASET IMPORT LOGIC / LOGICA IMPORTAZIONE DATASET
+    ---------------------------------------------------------
+    EN: Reads a standard JSONL file line by line and converts it into Document objects.
+        - Supports fallback for text encoding issues.
+        - Creates a default 'redacted' text if actual text is missing.
+        - Idempotent: uses get_or_create to avoid duplicates based on External ID.
+    
+    IT: Legge un file JSONL riga per riga e lo converte in oggetti Documento.
+        - Gestisce fallback per problemi di encoding.
+        - Crea un testo 'redacted' di default se manca il testo reale.
+        - Idempotente: usa get_or_create per evitare duplicati basandosi sull'External ID.
     """
-    print(f"--- INIZIO IMPORTAZIONE PER: {project.name} ---")
     count = 0
     
-    # 1. APERTURA SICURA
-    # Apriamo il file
     file_obj.open() 
-    
-    # 2. RIAVVOLGIMENTO (IL FIX FONDAMENTALE)
-    # Assicuriamoci di essere all'inizio del file
     file_obj.seek(0)
 
     try:
         for line in file_obj:
-            # 3. DECODIFICA
-            # I file caricati sono bytes, dobbiamo farli diventare stringhe
             try:
                 line_str = line.decode('utf-8').strip()
             except AttributeError:
-                # Fallback nel caso il file sia già aperto come testo
+                # Fallback in case the file is already open as text
                 line_str = line.strip()
             
             if not line_str: 
                 continue 
-
-            # Parsing JSON
             try:
                 data = json.loads(line_str)
             except json.JSONDecodeError:
-                print(f"Riga ignorata (JSON non valido): {line_str[:50]}...")
                 continue
             
             external_id = data.get('_id')
@@ -50,7 +49,7 @@ def process_uploaded_dataset(project, file_obj):
             if not text:
                 text = f"[CONTENT REDACTED]\nID: {external_id}"
 
-            # Creazione Documento
+            # Document Creation
             obj, created = Document.objects.get_or_create(
                 project=project,
                 external_id=external_id,
@@ -64,35 +63,42 @@ def process_uploaded_dataset(project, file_obj):
                 count += 1
                 
     except Exception as e:
-        print(f"ERRORE GRAVE DURANTE LETTURA: {e}")
         raise e
     
-    print(f"--- FINE IMPORTAZIONE: Creati {count} documenti ---")
     return count
 
-@admin.action(description='Esporta Annotazioni (Format PsyCoMark JSONL)')
+@admin.action(description='Export Annotations (PsyCoMark JSONL Format)')
 def export_annotations_jsonl(modeladmin, request, queryset):
     """
-    Genera un file .jsonl scaricabile con tutte le annotazioni dei progetti selezionati.
-    Formatta i dati esattamente come richiesto (startIndex, type, ecc.)
+    DATA EXPORT LOGIC / LOGICA ESPORTAZIONE DATI
+    ---------------------------------------------------------
+    EN: Generates the final dataset for machine learning training.
+        - Iterates efficiently using 'select_related' to minimize DB hits.
+        - Normalizes span offsets to be explicitly character-based (startIndex, endIndex).
+        - Maps internal labels (e.g., 'Actor') to the output schema types.
+    
+    IT: Genera il dataset finale per il training del machine learning.
+        - Itera efficientemente usando 'select_related' per minimizzare query al DB.
+        - Normalizza gli offset degli span per essere esplicitamente basati sui caratteri.
+        - Mappa le etichette interne (es. 'Actor') sui tipi dello schema di output.
     """
-    # Impostiamo la risposta come file scaricabile
+    # Set response as downloadable file
     response = HttpResponse(content_type='application/x-jsonlines')
     response['Content-Disposition'] = 'attachment; filename="psycomark_annotations.jsonl"'
 
-    # Iteriamo sui progetti selezionati (solitamente uno)
+    # Iterate over selected projects (usually one)
     for project in queryset:
-        # Recuperiamo tutte le annotazioni collegate a questo progetto
-        # Usiamo select_related per evitare migliaia di query al DB (ottimizzazione)
+        # Retrieve all annotations linked to this project
+        # Use select_related to avoid thousands of DB queries (optimization)
         annotations = Annotation.objects.filter(document__project=project).select_related('document', 'annotator')
 
         for ann in annotations:
-            # 1. Recuperiamo i dati grezzi salvati dal Frontend
+            # 1. Retrieve raw data saved by Frontend
             raw_result = ann.result # { "classification": "Yes", "spans": [...] }
             
-            # 2. Trasformiamo gli SPAN nel formato richiesto
-            # Frontend usa: start, end, label
-            # Output richiede: startIndex, endIndex, type
+            # 2. Transform SPANS into the required format
+            # Frontend uses: start, end, label
+            # Output requires: startIndex, endIndex, type
             formatted_markers = []
             raw_spans = raw_result.get('spans', [])
             
@@ -101,11 +107,11 @@ def export_annotations_jsonl(modeladmin, request, queryset):
                     formatted_markers.append({
                         "startIndex": span.get('start'),
                         "endIndex": span.get('end'),
-                        "type": span.get('label'),       # Mappiamo 'label' su 'type'
+                        "type": span.get('label'),       # Map 'label' to 'type'
                         "text": span.get('text')
                     })
 
-            # 3. Costruiamo l'oggetto finale
+            # 3. Build the final object
             output_obj = {
                 "_id": ann.document.external_id,
                 "conspiracy": raw_result.get('classification'),
@@ -114,7 +120,7 @@ def export_annotations_jsonl(modeladmin, request, queryset):
                 "annotator": ann.annotator.prolific_pid
             }
 
-            # 4. Scriviamo la riga nel file
+            # 4. Write the line to the file
             response.write(json.dumps(output_obj) + '\n')
 
     return response
@@ -125,22 +131,21 @@ class ProjectAdmin(admin.ModelAdmin):
     actions = [export_annotations_jsonl]
 
     def save_model(self, request, obj, form, change):
-        # 1. Salviamo prima il file su disco
+        # 1. Save file to disk first
         super().save_model(request, obj, form, change)
         
-        # 2. Controlliamo se c'è un file nuovo
+        # 2. Check if there is a new file
         if 'dataset_file' in form.changed_data and obj.dataset_file:
             try:
-                print("Rilevato nuovo file dataset. Avvio processamento...")
+                print("New dataset file detected. Starting processing...")
                 count = process_uploaded_dataset(obj, obj.dataset_file)
-                messages.success(request, f"Importazione riuscita! Creati {count} documenti.")
+                messages.success(request, f"Import successful! Created {count} documents.")
             except Exception as e:
-                messages.error(request, f"Errore importazione: {str(e)}")
+                messages.error(request, f"Import error: {str(e)}")
 
-    @admin.display(description="N. Documenti")
+    @admin.display(description="Num Documents")
     def doc_count(self, obj):
         return obj.documents.count()
-
 
 class DocumentResource(resources.ModelResource):
     class Meta:
@@ -165,8 +170,6 @@ class DocumentAdmin(ImportExportModelAdmin):
     @admin.display(boolean=True, description="Completed?")
     def is_completed(self, obj):
         return obj.current_annotations_count >= obj.min_annotations_required
-
-
 
 # 3. ANNOTATOR Configuration
 @admin.register(Annotator)

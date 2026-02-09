@@ -50,8 +50,8 @@ const router = useRouter();
 const pid = localStorage.getItem('prolific_pid');
 
 const finishInstructions = async () => {
-    // Qui potresti mandarlo a una pagina "Training" separata se vuoi il quiz
-    // Per ora lo mandiamo diretti all'annotazione segnando l'onboarding come finito
+    // Here you could send them to a separate "Training" page if you want a quiz
+    // For now, we send them directly to annotation, marking onboarding as complete
     await api.post('onboarding/', { pid });
     router.push('/annotate');
 };

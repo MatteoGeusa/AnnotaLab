@@ -1,19 +1,9 @@
 <template>
     <div class="login-container">
         <div class="card">
-            <h1>PsyCoMark Study</h1>
-            <p class="subtitle">Please enter your Prolific ID to start the annotation task.</p>
-
-            <div class="form-group">
-                <label for="pid">Prolific ID</label>
-                <input id="pid" v-model="prolificPid" type="text" placeholder="e.g. 5e9b9c9b..."
-                    @keyup.enter="startSession" />
-            </div>
-
-            <button @click="startSession" :disabled="isLoading || !prolificPid">
-                <span v-if="isLoading">Loading...</span>
-                <span v-else>Start Task</span>
-            </button>
+            <h1>Annotation Task</h1>
+            <p class="subtitle">Please join from your Prolific account with ID in the URL to start the annotation task.
+            </p>
 
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         </div>
@@ -32,9 +22,6 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 
 const startSession = async () => {
-    // (Il codice qui dentro resta uguale a prima)
-    if (!prolificPid.value.trim()) return;
-
     isLoading.value = true;
     errorMessage.value = '';
 
@@ -42,12 +29,12 @@ const startSession = async () => {
         const response = await api.post('session/', { prolific_pid: prolificPid.value });
         localStorage.setItem('prolific_pid', response.data.pid);
 
-        // REINDIRIZZAMENTO DINAMICO
+        // DYNAMIC REDIRECT
         const step = response.data.step;
         if (step === 'CONSENT') router.push('/consent');
         else if (step === 'INSTRUCTIONS') router.push('/instructions');
         else if (step === 'ANNOTATION') router.push('/annotate');
-        else if (step === 'COMPLETED') router.push('/annotate'); // L'annotator view gestirà il messaggio finale
+        else if (step === 'COMPLETED') router.push('/annotate'); // Annotator view will handle the final message
 
     } catch (error) {
         console.error(error);
@@ -58,17 +45,17 @@ const startSession = async () => {
 };
 
 onMounted(() => {
-    // 1. Prolific usa il parametro 'PROLIFIC_PID' (tutto maiuscolo di solito)
+    // 1. Prolific uses 'PROLIFIC_PID' parameter (usually all caps)
     if (route.query.PROLIFIC_PID) {
         console.log("Auto-login detecting for:", route.query.PROLIFIC_PID);
         prolificPid.value = route.query.PROLIFIC_PID;
 
-        // Facciamo partire subito la sessione!
+        // Start session immediately!
         startSession();
         return;
     }
 
-    // 2. Controllo Sessione Recente in LocalStorage
+    // 2. Check Recent Session in LocalStorage
     const storedPID = localStorage.getItem('prolific_pid');
     if (storedPID) {
         console.log("Resuming session for:", storedPID);
@@ -115,7 +102,7 @@ input {
     border-radius: 4px;
     font-size: 16px;
     box-sizing: border-box;
-    /* Importante per il padding */
+    /* Important for padding */
 }
 
 button {

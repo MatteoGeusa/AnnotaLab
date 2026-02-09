@@ -12,7 +12,21 @@ PROLIFIC_COMPLETION_URL = "https://app.prolific.co/submissions/complete?cc=TUO_C
 
 class InitializeSession(APIView):
     """
-    Restituisce lo STATO dell'utente per dire al Frontend che pagina mostrare.
+    RETURNS USER STATE / RESTITUISCE STATO UTENTE
+    ---------------------------------------------------------
+    EN: Determines which page the frontend should display based on the user's progress.
+        Logic:
+        1. If consent not accepted -> Show Consent Page.
+        2. If consent accepted but onboarding incomplete -> Show Instructions.
+        3. If onboarding complete -> Show Annotation Interface.
+        4. If targets met -> Show Completion/Payment Code.
+
+    IT: Determina quale pagina mostrare nel frontend in base al progresso dell'utente.
+        Logica:
+        1. Se consenso non accettato -> Mostra Pagina Consenso.
+        2. Se consenso accettato ma onboarding incompleto -> Mostra Istruzioni.
+        3. Se onboarding completo -> Mostra Interfaccia Annotazione.
+        4. Se target raggiunti -> Mostra Completamento/Codice Pagamento.
     """
     def post(self, request):
         pid = request.data.get('prolific_pid')
@@ -21,14 +35,14 @@ class InitializeSession(APIView):
         
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
-        # Calcoliamo lo stato attuale
+        # Calculate current state
         current_step = 'CONSENT'
         if annotator.consent_accepted:
             current_step = 'INSTRUCTIONS'
         if annotator.onboarding_completed:
             current_step = 'ANNOTATION'
             
-        # Controlliamo se ha già finito
+        # Check if already completed
         done_count = annotator.annotations.count()
         if done_count >= annotator.target_tasks:
             current_step = 'COMPLETED'
@@ -42,7 +56,7 @@ class InitializeSession(APIView):
         })
 
 class AcceptConsent(APIView):
-    """ Salva che l'utente ha accettato il consenso """
+    """ Saves that the user accepted the consent """
     def post(self, request):
         pid = request.data.get('pid')
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
@@ -51,7 +65,7 @@ class AcceptConsent(APIView):
         return Response({"status": "ok", "next_step": "INSTRUCTIONS"})
 
 class CompleteOnboarding(APIView):
-    """ Salva che l'utente ha finito istruzioni/training """
+    """ Saves that the user completed instructions/training """
     def post(self, request):
         pid = request.data.get('pid')
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
@@ -62,7 +76,7 @@ class CompleteOnboarding(APIView):
 class SubmitAnnotation(APIView):
     """
     Endpoint: POST /api/v1/submit/
-    Salva il lavoro dell'utente.
+    Saves the user's work.
     """
     def post(self, request):
         pid = request.data.get('pid')
@@ -71,11 +85,11 @@ class SubmitAnnotation(APIView):
             
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         
-        # Copiamo i dati e aggiungiamo l'annotatore manualmente
+        # Copy data and manually add the annotator
         data = request.data.copy()
         
-        # Il frontend ci manda solo 'document', 'result', ecc.
-        # L'annotatore lo prendiamo dal PID per sicurezza.
+        # The frontend sends only 'document', 'result', etc.
+        # We retrieve the annotator from the PID for security.
         serializer = AnnotationSerializer(data=data)
         
         if serializer.is_valid():
@@ -83,7 +97,7 @@ class SubmitAnnotation(APIView):
                 serializer.save(annotator=annotator)
                 return Response({"status": "saved"}, status=status.HTTP_201_CREATED)
             except Exception as e:
-                # Gestisce il caso in cui prova a salvare due volte lo stesso documento (UniqueConstraint)
+                # Handles the case where the user tries to save the same document twice (UniqueConstraint)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -93,7 +107,7 @@ class GetNextTask(APIView):
         pid = request.query_params.get('pid')
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
 
-        # 1. CONTROLLO LIMITE TASK (es. 10)
+        # 1. TASK LIMIT CHECK (e.g. 10)
         done_count = annotator.annotations.count()
         if done_count >= annotator.target_tasks:
             return Response({
@@ -101,20 +115,34 @@ class GetNextTask(APIView):
                 "completion_url": PROLIFIC_COMPLETION_URL
             })
 
-        # 2. LOGICA GOLD UNITS (Test in itinere)
-        # Ogni tanto (es. il 3° e il 7° task) diamo una Gold Unit.
-        # Qui facciamo una logica semplice: se esiste una Gold Unit non fatta, dallo.
-        # Altrimenti dai un documento normale.
+        # TASK ASSIGNMENT / ASSEGNAZIONE TASK
+        # EN: This is the core logic for distributing work to crowd workers.
+        #     Priority 1: Gold Units (Quality Checks).
+        #         - If there are Gold Units the user hasn't seen yet, assign one.
+        #         - This ensures we can measure annotator quality.
+        #     Priority 2: Normal Documents (Redundancy Management).
+        #         - Assign documents that have NOT reached the redundancy target (e.g. < 3 annotations).
+        #         - 'select_for_update' locks the row to prevent race conditions during high concurrency.
+        #         - 'skip_locked=True' prevents workers from waiting; they just skip to the next available doc.
+        #
+        # IT: Questa è la logica centrale per distribuire il lavoro ai worker.
+        #     Priorità 1: Gold Units (Controllo Qualità).
+        #         - Se ci sono Gold Unit che l'utente non ha ancora visto, assegnane una.
+        #         - Questo assicura di poter misurare la qualità dell'annotatore.
+        #     Priorità 2: Documenti Normali (Gestione Ridondanza).
+        #         - Assegna documenti che NON hanno raggiunto il target di ridondanza (es. < 3 annotazioni).
+        #         - 'select_for_update' blocca la riga per prevenire race condition con alta concorrenza.
+        #         - 'skip_locked=True' evita che i worker aspettino; passano semplicemente al prossimo doc libero.
         
         with transaction.atomic():
-            # A. Cerca prima una Gold Unit non ancora fatta dall'utente
+            # A. First search for a Gold Unit not yet completed by the user
             next_doc = Document.objects.filter(
                 is_gold_unit=True
             ).exclude(
                 annotations__annotator=annotator
             ).first()
 
-            # B. Se non ci sono Gold Unit disponibili, prendi un doc normale
+            # B. If no Gold Units are available, take a normal doc
             if not next_doc:
                 next_doc = Document.objects.select_for_update(skip_locked=True).filter(
                     is_gold_unit=False,
@@ -127,7 +155,8 @@ class GetNextTask(APIView):
                 serializer = DocumentSerializer(next_doc)
                 return Response(serializer.data)
             else:
-                # Finiti i documenti nel DB
+                # No more documents to annotate
+                # Nessun documento disponibile
                 return Response({
                     "status": "completed", 
                     "completion_url": PROLIFIC_COMPLETION_URL

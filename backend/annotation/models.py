@@ -4,6 +4,9 @@ from django.core.exceptions import ValidationError
 from django.db.models import JSONField 
 from django.utils import timezone
 import uuid
+import os
+from django.conf import settings
+import json
 
 class Project(models.Model):
     """
@@ -12,26 +15,30 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
+    DEFAULT_CONFIGURATION = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
+    
+    with open(DEFAULT_CONFIGURATION, 'r') as f:
+        DEFAULT_CONFIGURATION = json.load(f)
 
-    # CONFIGURATION FOR PSYCOMARK:
-    # The JSON should contain definitions for both span highlighting and classification.
-    # Example structure:
+    # CONFIGURATION
+    # ---------------------------------------------------------
+    # The JSON configuration defines the annotation schema for the frontend.
+    # It MUST contain 'span_labels' for highlighting and 'class_labels' for classification.
+    # This allows changing the task (e.g., from Sentiment to NER) without changing the code.
+    #
+    # Example:
     # {
     #   "task_type": "hybrid",
     #   "span_labels": [
     #       {"name": "Actor", "color": "#FF5733"}, 
-    #       {"name": "Action", "color": "#33FF57"},
-    #       {"name": "Victim", "color": "#3357FF"},
-    #       {"name": "Effect", "color": "#F333FF"},
-    #       {"name": "Evidence", "color": "#FF33F6"}
+    #       {"name": "Action", "color": "#33FF57"}
     #   ],
     #   "class_labels": [
     #       {"value": "Yes", "label": "Conspiracy"},
-    #       {"value": "No", "label": "Not Conspiracy"},
-    #       {"value": "Can't tell", "label": "Ambiguous"}
+    #       {"value": "No", "label": "Not Conspiracy"}
     #   ]
     # }
-    configuration = JSONField(default=dict, help_text="Frontend configuration (labels, colors, UI settings)")
+    configuration = JSONField(default=DEFAULT_CONFIGURATION, help_text="Frontend configuration (labels, colors, UI settings)")
 
     # Textual instructions for the annotator (supports Markdown/HTML)
     guidelines = models.TextField(blank=True, help_text="Textual instructions for the annotator (supports Markdown/HTML)")
@@ -40,7 +47,7 @@ class Project(models.Model):
         upload_to='datasets/', 
         blank=True, 
         null=True, 
-        help_text="Carica un file .jsonl per popolare automaticamente i documenti."
+        help_text="Upload a .jsonl file to automatically populate documents."
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -55,18 +62,19 @@ class Annotator(models.Model):
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     metadata = JSONField(default=dict, blank=True)
-    
-    # --- NUOVI CAMPI PER IL FLUSSO ---
     consent_accepted = models.BooleanField(default=False)
-    onboarding_completed = models.BooleanField(default=False) # Istruzioni + Training
+    onboarding_completed = models.BooleanField(default=False) # Instructions + Training
     
-    # Quanti task deve fare in totale? (Default 10)
+    # BUSINESS LOGIC: WORKLOAD
+    # ---------------------------------------------------------
+    # Defines how many tasks an annotator must complete before finishing the session.
+    # Default is 10. Increase this for longer sessions, decrease for shorter pilots.
     target_tasks = models.IntegerField(default=10)
 
     objects = models.Manager()
 
     def __str__(self):
-        return f"{self.prolific_pid} (Consenso: {self.consent_accepted})"
+        return f"{self.prolific_pid} (Consent: {self.consent_accepted})"
 
 
 class Document(models.Model):
@@ -97,7 +105,12 @@ class Document(models.Model):
     gold_solution = JSONField(default=dict, blank=True, null=True)
 
     # REDUNDANCY MANAGEMENT (CRITICAL)
-    # How many annotations do we want for this document? (e.g. 3)
+    # BUSINESS LOGIC: REDUNDANCY
+    # ---------------------------------------------------------
+    # Controls the number of distinct annotators required for each document.
+    # - 1 = Single annotation (High risk of noise).
+    # - 3 = Standard for majority voting.
+    # - 5+ = High precision required.
     min_annotations_required = models.IntegerField(default=3)
     
     # Denormalized counter. 
