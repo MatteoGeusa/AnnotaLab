@@ -2,27 +2,27 @@
 import { ref, onMounted } from 'vue'
 import api from './services/api';
 
-const messaggioDalBackend = ref('In attesa di risposta...')
+const backendMessage = ref('Waiting for response...')
 
-const healtcheck = async () => {
+const healthCheck = async () => {
   try {
-    const response = await api.get('/test'); 
-    messaggioDalBackend.value = response.data.messaggio;
+    const response = await api.get('/healthcheck'); 
+    backendMessage.value = response.data.message;
   } catch (error) {
-    messaggioDalBackend.value = "Errore di connessione!";
+    backendMessage.value = "Connection error!";
   }
 }
 
 onMounted(() => {
-  healtcheck()
+  healthCheck()
 })
 </script>
 
 <template>
   <div style="text-align: center; margin-top: 50px;">
-    <h1>Test Integrazione</h1>
+    <h1>Integration Test</h1>
     <p style="font-size: 20px; color: green;">
-      {{ messaggioDalBackend }}
+      {{ backendMessage }}
     </p>
   </div>
 </template>

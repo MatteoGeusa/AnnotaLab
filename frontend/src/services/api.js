@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,12 +34,12 @@ api.interceptors.response.use(
     const status = error.response ? error.response.status : null;
 
     if (status === 401) {
-      console.error("Sessione scaduta, reindirizzamento al login...");
+      console.error("Session expired, redirecting to login...");
       window.location.href = '/login';
     } else if (status === 404) {
-      console.error("Risorsa non trovata");
+      console.error("Resource not found");
     } else {
-      console.error("Errore API:", error.response?.data?.message || error.message);
+      console.error("API Error:", error.response?.data?.message || error.message);
     }
 
     return Promise.reject(error);

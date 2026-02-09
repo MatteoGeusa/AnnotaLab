@@ -9,10 +9,10 @@ from django.contrib import admin
 from django.urls import path
 from django.http import JsonResponse
 
-def api_test(request):
-    return JsonResponse({"messaggio": "Ciao! Sono Django e sto parlando con Vue!"})
+def healthcheck(request):
+    return JsonResponse({"message": "OK"})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('v1/test', api_test), # api di testing non esiste una view per questo endpoint
+    path('api/v1/healthcheck', healthcheck),
 ]
