@@ -1,0 +1,19 @@
+# Ignora le cartelle degli ambienti virtuali locali
+venv/
+.venv/
+env/
+
+# Ignora i file compilati di Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignora le cartelle del frontend inutili per il backend
+frontend/node_modules/
+frontend/dist/
+
+# Ignora i file di sistema e IDE
+.git/
+.vscode/
+.idea/
+.DS_Store
