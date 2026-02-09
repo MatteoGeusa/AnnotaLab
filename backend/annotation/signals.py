@@ -16,20 +16,25 @@ receives the target number of valid annotations.
 @receiver(post_save, sender=Annotation)
 def update_annotation_count_on_save(sender, instance, created, **kwargs):
     """
-    If a new annotation is created, we update the parent document counter.
+    Triggered when an Annotation is saved.
+    Increments the 'current_annotations_count' on the parent Document.
     """
     if created:
         doc = instance.document
-        # We count how many annotations actually exist in the DB to be 100% sure
-        real_count = doc.annotations.count()
-        
-        doc.current_annotations_count = real_count
-        doc.save(update_fields=['current_annotations_count']) # We save only this field for speed
+        # We count the actual records in the DB to ensure consistency
+        # (Safer than blindly incrementing +1)
+        doc.current_annotations_count = doc.annotations.count()
+        # We only update the specific field to optimize performance
+        doc.save(update_fields=['current_annotations_count'])
 
 @receiver(post_delete, sender=Annotation)
 def update_annotation_count_on_delete(sender, instance, **kwargs):
     """
-    If we delete an annotation by mistake, the counter must decrease!
+    Triggered when an Annotation is deleted (e.g., removing spam).
+    Decrements the 'current_annotations_count'.
+    
+    This effectively 're-opens' the task if the count drops below 
+    the 'min_annotations_required' threshold.
     """
     doc = instance.document
     doc.current_annotations_count = doc.annotations.count()

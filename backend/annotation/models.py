@@ -13,13 +13,35 @@ class Project(models.Model):
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
 
-    # Since we use Postgres, this field will be used to save frontend configuration and results
-    # JSON Example: {"labels": [{"name": "PER", "color": "red"}, {"name": "LOC", "color": "blue"}]}
-    # The Vue frontend will read this field to know which buttons to show.
-    configuration = JSONField(default=dict, help_text="JSON configuration for the frontend (labels, colors, instructions)")
-    
+    # CONFIGURATION FOR PSYCOMARK:
+    # The JSON should contain definitions for both span highlighting and classification.
+    # Example structure:
+    # {
+    #   "task_type": "hybrid",
+    #   "span_labels": [
+    #       {"name": "Actor", "color": "#FF5733"}, 
+    #       {"name": "Action", "color": "#33FF57"},
+    #       {"name": "Victim", "color": "#3357FF"},
+    #       {"name": "Effect", "color": "#F333FF"},
+    #       {"name": "Evidence", "color": "#FF33F6"}
+    #   ],
+    #   "class_labels": [
+    #       {"value": "Yes", "label": "Conspiracy"},
+    #       {"value": "No", "label": "Not Conspiracy"},
+    #       {"value": "Can't tell", "label": "Ambiguous"}
+    #   ]
+    # }
+    configuration = JSONField(default=dict, help_text="Frontend configuration (labels, colors, UI settings)")
+
     # Textual instructions for the annotator (supports Markdown/HTML)
     guidelines = models.TextField(blank=True, help_text="Textual instructions for the annotator (supports Markdown/HTML)")
+
+    dataset_file = models.FileField(
+        upload_to='datasets/', 
+        blank=True, 
+        null=True, 
+        help_text="Carica un file .jsonl per popolare automaticamente i documenti."
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -30,19 +52,21 @@ class Project(models.Model):
 
 
 class Annotator(models.Model):
-    """
-    The user performing the work. We only need the unique platform ID.
-    """
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
-    # Optional metadata if Prolific passes demographic info
     metadata = JSONField(default=dict, blank=True)
+    
+    # --- NUOVI CAMPI PER IL FLUSSO ---
+    consent_accepted = models.BooleanField(default=False)
+    onboarding_completed = models.BooleanField(default=False) # Istruzioni + Training
+    
+    # Quanti task deve fare in totale? (Default 10)
+    target_tasks = models.IntegerField(default=10)
 
     objects = models.Manager()
 
     def __str__(self):
-        return self.prolific_pid
+        return f"{self.prolific_pid} (Consenso: {self.consent_accepted})"
 
 
 class Document(models.Model):
@@ -55,11 +79,16 @@ class Document(models.Model):
     # Link the document to a batch
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='documents')
     
-    # The actual text
+    # The actual text content.
+    # Since the source dataset is redacted, this field might need to be populated 
+    # via Reddit API using the external_id.
     text = models.TextField()
     
     # External ID (e.g. ID from the original dataset)
     external_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # Metadata for context (e.g., {"subreddit": "conspiracy", "thread_id": "..."})
+    metadata = JSONField(default=dict, blank=True)
     
     # GOLD UNITS MANAGEMENT (Quality Control)
     # If True, this document has a known correct answer.
@@ -94,8 +123,14 @@ class Annotation(models.Model):
     # Link the annotation to an annotator
     annotator = models.ForeignKey(Annotator, on_delete=models.PROTECT, related_name='annotations')
     
-    # The actual highlight data.
-    # Example: [{"start": 0, "end": 5, "label": "PER", "text": "Mario"}]
+    # THE RESULT PAYLOAD
+    # Expected structure for PsyCoMark:
+    # {
+    #   "classification": "Yes",
+    #   "spans": [
+    #       {"start": 10, "end": 20, "label": "Actor", "text": "The government"}
+    #   ]
+    # }
     result = JSONField()
     
     # How long it took (useful to discard those taking 2 seconds = bot/spam)
