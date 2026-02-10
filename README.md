@@ -1,6 +1,5 @@
 # Relazione Tecnica: Piattaforma di Annotazione “Cospiracy Fullstack”
 
-
 ## Guida all’Avvio (Quickstart)
 
 ### Prerequisiti
@@ -8,6 +7,14 @@
 - Python 3.10+
 - Node.js 18+
 - PostgreSQL (o SQLite per default)
+
+### Docker starting database
+
+execute docker compose only-db
+
+```bash
+docker compose -f 'docker-compose-only-db.yaml' up -d --build 'db'
+```
 
 ### Backend Setup
 
@@ -40,7 +47,6 @@ Per simulare un utente Prolific sul Progetto #1:
 `http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=1`
 
 ---
-
 
 ## 1. Introduzione e Obiettivi
 
@@ -83,24 +89,24 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      - Verifica esistenza di `prolific_pid` e `project_id`.
      - **Check Ban/Esclusione:** Se l'annotatore ha il flag `exclude_from_distribution` attivo (es. bannato per scarsa qualità), il sistema restituisce immediatmente lo status `stopped`.
      - **Check Quota Personale:** Verifica se l'utente ha già raggiunto il suo `target_tasks` (es. 20 documenti). Se sì, restituisce lo status `completed` con il link di completamento per Prolific.
-     Il sistema supporta diverse modalità (`STANDARD`, `FULL_OVERLAP`, `METADATA_MATCH`) per assegnare i documenti agli utenti.
-     **1. `STANDARD` (Pool Pubblico - Default)**
-     Questa è la modalità classica di crowdsourcing
+       Il sistema supporta diverse modalità (`STANDARD`, `FULL_OVERLAP`, `METADATA_MATCH`) per assegnare i documenti agli utenti.
+       **1. `STANDARD` (Pool Pubblico - Default)**
+       Questa è la modalità classica di crowdsourcing
      - **Obiettivo:** Raggiungere un target di annotazioni per ogni documento (es. 3 persone diverse).
      - **Funzionamento:**
        1. Il sistema cerca tutti i documenti che **NON** hanno ancora raggiunto il numero massimo di annotazioni `max_annotations_per_doc`.
        2. Esclude quelli che l'utente corrente ha già fatto.
        3. Se è attiva l'opzione  (**`Prioritize unannotated`**), sceglie prima i documenti che hanno **0 annotazioni**.
        4. Altrimenti, pesca casualmente dal pool disponibile.
-     **2. `FULL_OVERLAP` (Alta Ridondanza)**
-     Questa modalità ignora i contatori di quante persone hanno visto un documento. È utile per studi pilota o test di accordo tra annotatori (Inter-Annotator Agreement).
+          **2. `FULL_OVERLAP` (Alta Ridondanza)**
+          Questa modalità ignora i contatori di quante persone hanno visto un documento. È utile per studi pilota o test di accordo tra annotatori (Inter-Annotator Agreement).
      - **Obiettivo:** Far sì che ogni documento venga visto dal maggior numero possibile di persone, senza limiti.
      - **Funzionamento:**
        1. Il sistema considera **tutti** i documenti del progetto.
        2. L'unico filtro applicato è escludere quelli che l'utente corrente ha già annotato (per non fargli rifare lo stesso lavoro).
        3. Sceglie un documento a caso tra quelli rimanenti.
-     **3. `METADATA_MATCH` (Assegnazione per Gruppi)**
-     Questa è la modalità più avanzata e permette di segmentare la forza lavoro in base a caratteristiche specifiche.
+          **3. `METADATA_MATCH` (Assegnazione per Gruppi)**
+          Questa è la modalità più avanzata e permette di segmentare la forza lavoro in base a caratteristiche specifiche.
      - **Obiettivo:** Assegnare specifici sotto-insiemi di documenti a specifici gruppi di utenti.
      - **Funzionamento:**
        1. Il sistema legge i metadati dell'annotatore, passati _si presuppone_ da prolific stesso, oppure un nostro appunto per premiare qualificatori bravi.
@@ -116,12 +122,17 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
           ```
 
        3. Tra questi, applica la logica standard (rispettando i limiti di annotazioni massime).
+
      - **Uso Tipico:** riservare documenti difficili solo ad annotatori esperti/qualificati.
+
      ***
+
      ### **Nota Importante: Le "Gold Units"**
+
      Indipendentemente dalla strategia scelta, il sistema ha una direttiva da rispettare sempre:
      - Prima di applicare qualsiasi logica sopra descritta, il sistema controlla se ci sono **Gold Units** (documenti di controllo qualità) che l'utente non ha ancora visto.
      - Se ce ne sono, queste vengono assegnate con **priorità assoluta**. Questo garantisce che tu possa misurare la qualità dell'annotatore fin dalle prime fasi della sessione.
+
    - **Gestione della concorrenza**
      **3.2 Gestione della Concorrenza: Pattern "Fetch-then-Lock"**
      La gestione della concorrenza è critica per evitare che due utenti ricevano lo stesso documento contemporaneamente, sforando il limite `max_annotations_per_doc`.
@@ -177,6 +188,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
    - Registra i tempi di esecuzione (`milliseconds_to_complete`) per filtrare bot o annotatori disattenti.
    - Spiegazione tecnica
      Quando un utente invia un'annotazione che include evidenziazioni (NER/Span tasks), il salvataggio avviene in questo formato standardizzato all'interno di `result`:
+
      ```json
      {
        "classification": "Yes",
@@ -196,8 +208,11 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
        ]
      }
      ```
+
      ### **2. Ruolo della Configurazione del Progetto**
+
      Nel backend, il campo configuration del progetto definisce quali etichette sono disponibili. Esempio di configurazione JSON
+
      ```json
      {
        "task_type": "hybrid",
@@ -215,6 +230,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
        ]
      }
      ```
+
      ### **3. Flusso Tecnico Frontend -> Backend**
      1. **Frontend ()**:
 
