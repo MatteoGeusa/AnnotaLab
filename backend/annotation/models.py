@@ -32,6 +32,19 @@ class Project(models.Model):
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
 
+    dataset_text_key = models.CharField(
+        max_length=100, 
+        default='text',
+        help_text="The JSON key containing the text to be annotated (e.g., 'text', 'body', 'content')."
+    )
+    
+    dataset_id_key = models.CharField(
+        max_length=100, 
+        default='_id',
+        blank=True,
+        help_text="The JSON key for the ID. If empty or not found, it will use the row number."
+    )
+
     # CONFIGURATION
     configuration = models.JSONField(
         default=get_default_configuration, 

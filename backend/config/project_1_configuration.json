@@ -1,0 +1,10 @@
+{
+  "task_type": "classification",
+  "instruction": "Il commento è offensivo?",
+  "span_labels": [],
+  "class_labels": [
+    { "value": "Hate", "label": "Hate Speech" },
+    { "value": "Offensive", "label": "Offensive" },
+    { "value": "Safe", "label": "Safe / Neutral" }
+  ]
+}
