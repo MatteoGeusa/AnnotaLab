@@ -11,7 +11,11 @@ try:
         DEFAULT_CONFIG = json.load(f)
 except Exception as e:
     print(f"Error loading default config: {e}")
-    DEFAULT_CONFIG = {}
+    DEFAULT_CONFIG = {
+        "task_type": "hybrid",
+        "span_labels": [{"name": "Evidence", "color": "#FFA500"}],
+        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+    }
 
 class DocumentSerializer(serializers.ModelSerializer):
     """
@@ -25,7 +29,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def get_project_config(self, obj):
         # Merge DB config with default config / Merge config DB con default
-        db_config = obj.project.configuration
+        db_config = obj.project.task_type_config
         
         # Handle string case (bug fix for some DBs) / Gestione caso stringa
         if isinstance(db_config, str):

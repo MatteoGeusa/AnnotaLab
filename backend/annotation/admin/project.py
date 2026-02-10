@@ -7,14 +7,14 @@ from django.http import HttpResponse
 from django.contrib import messages
 import json
 from ..models import Project, Annotation
-from .utils import process_uploaded_config, process_uploaded_dataset
+from .utils import process_task_config, process_screening_config, process_uploaded_dataset
 
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Aggiungi i nuovi campi a list_display se vuoi vederli subito
     list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button')
     
-    readonly_fields = ('formatted_configuration',)
+    readonly_fields = ('formatted_task_type_config', 'formatted_screening_config')
     
     fieldsets = (
         ("General Information", {
@@ -22,8 +22,29 @@ class ProjectAdmin(ModelAdmin):
         }),
 
         ("Configuration", {
-            "fields": ("configuration_file", "formatted_configuration"),
-            "description": "Upload a JSON file to overwrite the configuration displayed below."
+            "fields": (
+                ("configuration_task_type_file", "configuration_screening_file"),
+                ("formatted_task_type_config", "formatted_screening_config")
+            ),
+            "description": """
+               Upload specific JSON files to overwrite the project configuration.<br><br>
+               <b>1. Task Configuration File:</b>
+               <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 5px;">
+                   <li><b>Purpose:</b> Defines the task interface and logic.</li>
+                   <li><b>Keys:</b> <code>task_type</code>, <code>class_labels</code>, <code>span_labels</code>, <code>gold_injection_frequency</code>.</li>
+               </ul>
+               <b>2. Screening Configuration File:</b>
+               <ul style="margin-left: 20px; list-style-type: disc;">
+                   <li><b>Purpose:</b> Defines the screening/training logic.</li>
+                   <li><b>Keys:</b> <code>min_accuracy_required</code>, <code>training_tasks_required</code>.</li>
+               </ul>
+               <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
+                <b>💡 Golden Units injection frequency:</b><br>
+                The frequency of golden units injection is determined by the <code>gold_injection_frequency</code> key in the task configuration file.<br>
+                The value of this key is the number of regular units to be annotated between two golden units.<br>
+                For example, if the value is 5, a golden unit will be injected every 5 regular units.
+                </div>
+            """
         }),
   
         ("Input Data Mapping", {
@@ -31,7 +52,22 @@ class ProjectAdmin(ModelAdmin):
                 ("dataset_text_key", "dataset_id_key"), # Sulla stessa riga
                 "dataset_file", 
             ),
-            "description": "define which JSON keys to read from the file. If the ID is missing, the row number will be used."
+            "description": """
+                Upload a <b>.jsonl</b> file where each line is a JSON object.<br><br>
+                <b>Supported Fields:</b>
+                <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 10px;">
+                    <li><b>Text</b>: Key corresponding to 'Dataset text key' (default: <code>text</code>).</li>
+                    <li><b>ID</b>: Key corresponding to 'Dataset id key' (default: <code>_id</code>).</li>
+                    <li><b>is_gold_unit</b> (bool): If <code>true</code>, the document is a <b>Golden Unit</b>.</li>
+                    <li><b>gold_solution</b> (json): The correct solution for quality control.</li>
+                    <li><b>metadata</b> (json): Optional metadata. e.g. <code>{'subreddit': 'r/AskReddit',other_metadata: 'value'}</code></li>
+                </ul>
+                <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
+                    <b>💡 Golden Units & Screening:</b><br>
+                    <i>Golden Units</i> are the foundation of the Screening system. They are used to measure annotator reliability.
+                    During the training/screening phase, user responses are automatically compared with the full <code>gold_solution</code>.
+                </div>
+            """
         }),
 
         ("Distribution Strategy", {
@@ -43,13 +79,28 @@ class ProjectAdmin(ModelAdmin):
         })
     )
 
-    @admin.display(description="Current Configuration (JSON)")
-    def formatted_configuration(self, obj):
+    @admin.display(description="Current Task Config (JSON)")
+    def formatted_task_type_config(self, obj):
         # Se il campo è vuoto, mostra un trattino
-        if not obj.configuration:
+        if not obj.task_type_config:
             return "-"
         
-        json_str = json.dumps(obj.configuration, indent=4, sort_keys=True)
+        json_str = json.dumps(obj.task_type_config, indent=4, sort_keys=True)
+        
+        return format_html(
+            '''
+            <pre style="background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto; max-height: 500px; border: 1px solid #333;"><code>{}</code></pre>
+            ''',
+            json_str
+        )
+
+    @admin.display(description="Current Screening Config (JSON)")
+    def formatted_screening_config(self, obj):
+        # Se il campo è vuoto, mostra un trattino
+        if not obj.screening_config:
+            return "-"
+        
+        json_str = json.dumps(obj.screening_config, indent=4, sort_keys=True)
         
         return format_html(
             '''
@@ -162,12 +213,19 @@ class ProjectAdmin(ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if 'configuration_file' in form.changed_data and obj.configuration_file:
+        if 'configuration_task_type_file' in form.changed_data and obj.configuration_task_type_file:
             try:
-                process_uploaded_config(obj, obj.configuration_file)
-                messages.success(request, "Configuration updated from JSON file!")
+                process_task_config(obj, obj.configuration_task_type_file)
+                messages.success(request, "Task Configuration updated from JSON file!")
             except Exception as e:
-                messages.error(request, f"Config Error: {str(e)}")
+                messages.error(request, f"Task Config Error: {str(e)}")
+        
+        if 'configuration_screening_file' in form.changed_data and obj.configuration_screening_file:
+            try:
+                process_screening_config(obj, obj.configuration_screening_file)
+                messages.success(request, "Screening Configuration updated from JSON file!")
+            except Exception as e:
+                messages.error(request, f"Screening Config Error: {str(e)}")
         if 'dataset_file' in form.changed_data and obj.dataset_file:
             try:
                 count = process_uploaded_dataset(obj, obj.dataset_file)

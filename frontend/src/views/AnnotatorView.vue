@@ -16,11 +16,44 @@
         </div>
 
         <div v-else-if="stopped" class="finished">
-            <h2>🎉 All tasks completed!</h2>
-            <p>Thank you for your contribution.</p>
+            <h2>🎉 Session Ended</h2>
+            <p>{{ stopMessage || "Thank you for your contribution." }}</p>
+        </div>
+
+        <div v-else-if="isSurvey" class="task-area survey-container">
+            <div class="instructions">
+                <h3>Preliminary Survey / Sondaggio Preliminare</h3>
+                <p>Please answer the following questions to proceed.</p>
+            </div>
+
+            <div v-for="(q, idx) in surveyQuestions" :key="idx" class="survey-item">
+                <label class="survey-label">{{ q.text }}</label>
+
+                <!-- Multiple Choice -->
+                <div v-if="q.options" class="survey-options">
+                    <label v-for="opt in q.options" :key="opt" class="radio-label">
+                        <input type="radio" :name="'q' + idx" :value="opt" v-model="surveyAnswers[idx]">
+                        {{ opt }}
+                    </label>
+                </div>
+
+                <!-- Free Text -->
+                <input v-else type="text" class="survey-input" v-model="surveyAnswers[idx]"
+                    placeholder="Your answer...">
+            </div>
+
+            <div class="actions">
+                <button class="submit-btn" @click="submitSurvey" :disabled="!canSubmitSurvey">
+                    Submit Survey
+                </button>
+            </div>
         </div>
 
         <div v-else class="task-area">
+
+            <div v-if="isTraining" class="training-badge">
+                TRAINING MODE (Feedback Enabled)
+            </div>
 
             <div class="instructions">
                 <h3>Task Instruction</h3>
@@ -92,6 +125,11 @@ const startTime = ref(0); // Timer start timestamp
 const countdown = ref(10);
 let redirectTimer = null;
 const stopped = ref(false);
+const stopMessage = ref('');
+const isSurvey = ref(false);
+const surveyQuestions = ref([]); // [{text: "...", options: [...]}]
+const surveyAnswers = ref({}); // {0: "Ans", 1: "..."}
+const isTraining = ref(false);
 
 onUnmounted(() => {
     if (redirectTimer) clearInterval(redirectTimer);
@@ -147,7 +185,26 @@ const fetchNextTask = async () => {
         } else if (res.data.status === 'stopped') {
             loading.value = false;
             stopped.value = true;
+            stopMessage.value = res.data.message;
             return;
+        }
+
+        // CONTROL TYPE
+        if (res.data.type === 'SURVEY') {
+            currentDoc.value = null; // Ensure doc is null
+            isSurvey.value = true;
+            surveyQuestions.value = res.data.questions || [];
+            surveyAnswers.value = {};
+            loading.value = false;
+            return;
+        } else {
+            isSurvey.value = false;
+        }
+
+        if (res.data.type === 'TRAINING') {
+            isTraining.value = true;
+        } else {
+            isTraining.value = false;
         }
 
         currentDoc.value = res.data;
@@ -232,6 +289,35 @@ const submitTask = async () => {
         fetchNextTask();
     } catch (err) {
         errorMsg.value = "Error saving. Try again.";
+        loading.value = false;
+    }
+};
+
+const canSubmitSurvey = computed(() => {
+    // Check if all questions have an answer (basic check)
+    if (surveyQuestions.value.length === 0) return true;
+    // Check if we have keys for all indices
+    for (let i = 0; i < surveyQuestions.value.length; i++) {
+        if (!surveyAnswers.value[i] || surveyAnswers.value[i].trim() === '') return false;
+    }
+    return true;
+});
+
+const submitSurvey = async () => {
+    loading.value = true;
+    const pid = localStorage.getItem('prolific_pid');
+    const projectId = localStorage.getItem('project_id');
+
+    try {
+        await api.post('submit-survey/', {
+            pid: pid,
+            project_id: projectId,
+            survey_data: surveyAnswers.value
+        });
+        // Reload to get next step (Training or Task)
+        fetchNextTask();
+    } catch (err) {
+        errorMsg.value = "Error submitting survey. " + (err.response?.data?.error || err.message);
         loading.value = false;
     }
 };
@@ -450,5 +536,58 @@ header {
     100% {
         opacity: 0.6;
     }
+}
+
+.training-badge {
+    background: #ffc107;
+    color: #333;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 6px;
+    border: 1px solid #e0a800;
+}
+
+.survey-container {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.survey-item {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.survey-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.survey-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.survey-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 1rem;
 }
 </style>

@@ -11,5 +11,6 @@
     { "label": "Conspiracy", "value": "Yes" },
     { "label": "Not Conspiracy", "value": "No" },
     { "label": "Ambiguous", "value": "Can't tell" }
-  ]
+  ],
+  "gold_injection_frequency": 5
 }

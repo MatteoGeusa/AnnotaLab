@@ -8,7 +8,7 @@ import os
 from django.conf import settings
 import json
 
-def get_default_configuration():
+def get_default_configuration_for_task_type():
     config_path = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
     
     if os.path.exists(config_path):
@@ -21,7 +21,14 @@ def get_default_configuration():
     return {
         "task_type": "hybrid",
         "span_labels": [{"name": "Evidence", "color": "#FFA500"}],
-        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}],
+        "gold_injection_frequency": 5
+    }
+
+def get_default_configuration_for_screening():
+    return {
+        "training_tasks_required": 0,
+        "min_accuracy_required": 0.0
     }
 
 class Project(models.Model):
@@ -46,47 +53,59 @@ class Project(models.Model):
     )
 
     # CONFIGURATION
-    configuration = models.JSONField(
-        default=get_default_configuration, 
-        help_text="Frontend configuration (labels, colors, UI settings)"
+    task_type_config = models.JSONField(
+        default=get_default_configuration_for_task_type, 
+        help_text="Task Configuration (labels, colors, questions)"
     )
 
-    # Questo serve per l'upload manuale dall'admin (quello che abbiamo fatto prima)
-    configuration_file = models.FileField(
+    screening_config = models.JSONField(
+        default=get_default_configuration_for_screening,
+        blank=True,
+        help_text="Configuration for screening: { 'training_tasks_required': int, 'min_accuracy_required': float }"
+    )
+
+    configuration_task_type_file = models.FileField(
         upload_to='configs/', 
         blank=True, 
         null=True,
-        help_text="Opzionale: Carica un file JSON per sovrascrivere la configurazione."
+        help_text="Optional: Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
+    )
+    
+    configuration_screening_file = models.FileField(
+        upload_to='configs/', 
+        blank=True, 
+        null=True,
+        help_text="Optional: Upload a JSON file to overwrite the Screening configuration (Survey, Training)."
     )
 
     STRATEGY_CHOICES = [
-        ('STANDARD', 'Standard (Pool Pubblico)'),
-        ('FULL_OVERLAP', 'Tutti vedono tutto (Alta Ridondanza)'),
-        ('METADATA_MATCH', 'Assegnazione per Gruppi (Metadata Based)'),
+        ('STANDARD', 'Standard (Public Pool)'),
+        ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy)'),
+        ('METADATA_MATCH', 'Group Assignment (Metadata Based)'),
     ]
     
     distribution_strategy = models.CharField(
         max_length=20, 
         choices=STRATEGY_CHOICES, 
         default='STANDARD',
-        help_text="Definisce come i documenti vengono assegnati agli annotatori."
+        help_text="Defines how documents are assigned to annotators."
     )
 
     # --- VINCOLI DI RIDONDANZA ---
     min_annotations_per_doc = models.IntegerField(
         default=3, 
-        help_text="Obiettivo: Quante persone devono annotare ogni documento."
+        help_text="Target: How many people must annotate each document."
     )
     
     max_annotations_per_doc = models.IntegerField(
         default=5, 
-        help_text="Hard Cap: Smetti di servire il documento se raggiunge questo numero (evita sprechi)."
+        help_text="Hard Cap: Stop serving the document if it reaches this number (prevents waste)."
     )
 
     # Serve per dire: "Se un documento ha 2 annotazioni e gli altri 0, dai priorità a quelli con 0?"
     prioritize_unannotated = models.BooleanField(
         default=True,
-        help_text="Se True, il sistema cercherà di finire prima i documenti mai visti."
+        help_text="If True, the system will try to finish unannotated documents first."
     )
 
     dataset_file = models.FileField(
@@ -95,6 +114,8 @@ class Project(models.Model):
         null=True, 
         help_text="Upload a .jsonl file to automatically populate documents."
     )
+    
+
     
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -123,6 +144,43 @@ class Annotator(models.Model):
 
     def __str__(self):
         return f"{self.prolific_pid} (Consent: {self.consent_accepted})"
+
+
+class ProjectEnrollment(models.Model):
+    """
+    Tracks the status of an annotator for a specific project (Screening/Training phase).
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='enrollments')
+    annotator = models.ForeignKey(Annotator, on_delete=models.CASCADE, related_name='enrollments')
+    
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'), # Not started or in progress
+        ('PASSED', 'Passed'),   # Completed screening successfully
+        ('FAILED', 'Failed'),   # Failed screening
+    ]
+    screening_status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='PENDING'
+    )
+    
+    # Survey responses
+    survey_data = models.JSONField(default=dict, blank=True) 
+    
+    # Training Metrics
+    training_tasks_completed = models.IntegerField(default=0)
+    training_accuracy = models.FloatField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = models.Manager()
+    
+    class Meta:
+        unique_together = ('project', 'annotator')
+
+    def __str__(self):
+        return f"{self.annotator} -> {self.project} ({self.screening_status})"
 
 
 class Document(models.Model):

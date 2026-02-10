@@ -1,0 +1,9 @@
+{
+  "survey_enabled": true,
+  "survey_questions": [
+    { "text": "Have you used Reddit before?", "options": ["Yes", "No"] },
+    { "text": "Why do you want to join?", "type": "text" }
+  ],
+  "training_tasks_required": 3,
+  "min_accuracy_required": 0.6
+}
