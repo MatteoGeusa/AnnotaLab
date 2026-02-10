@@ -118,7 +118,7 @@ class ProjectAdmin(ModelAdmin):
             url
         )
 
-    # --- LINKS ---
+
     @admin.display(description="Documents")
     def documents_link(self, obj):
         count = obj.documents.count()
@@ -127,9 +127,18 @@ class ProjectAdmin(ModelAdmin):
             + "?"
             + urlencode({"project__id": f"{obj.id}"})
         )
-        return format_html('<a href="{}" style="font-weight:bold; color:#007bff;">View {} Docs</a>', url, count)
+        return format_html(
+            '''
+            <a href="{}" 
+               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[100px]"
+               title="View Documents">
+               🔗 View {} Documents
+            </a>
+            ''',
+            url, count
+        )
 
-    @admin.display(description="Total Annotations")
+    @admin.display(description="Result", ordering='-created_at')
     def annotations_link(self, obj):
         count = Annotation.objects.filter(document__project=obj).count()
         url = (
@@ -137,8 +146,19 @@ class ProjectAdmin(ModelAdmin):
             + "?"
             + urlencode({"document__project__id": f"{obj.id}"})
         )
-        color = "green" if count > 0 else "gray"
-        return format_html('<a href="{}" style="color:{};">View {} Anns</a>', url, color, count)
+        
+        bg_class = "bg-green-600 hover:bg-green-700" if count > 0 else "bg-gray-400 hover:bg-gray-500"
+        
+        return format_html(
+            '''
+            <a href="{}" 
+               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[100px]"
+               title="View Annotations">
+               🔗 View {} Annotations
+            </a>
+            ''',
+            url, bg_class, count
+        )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

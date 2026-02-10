@@ -7,25 +7,15 @@ from ..models import Annotation
 
 @admin.register(Annotation)
 class AnnotationAdmin(ModelAdmin):
-    list_display = ('short_id', 'document_link', 'annotator_link', 'created_at', 'milliseconds_to_complete')
+    list_display = ('short_id', 'document_link', 'annotator_link', 'created_at', 'seconds_to_complete')
     list_filter = ('document__project', 'created_at', 'annotator')
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
-    readonly_fields = ('created_at', 'formatted_result')
+    readonly_fields = ('created_at',)
     exclude = ('result',)
-
-    # Configurazione CSS/JS per Highlight.js
-    class Media:
-        css = {
-            'all': ('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/stackoverflow-light.min.css',)
-        }
-        js = (
-            'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
-            'js/admin_highlight_init.js',
-        )
 
     @admin.display(description="ID")
     def short_id(self, obj):
-        return str(obj.id)[:8]
+        return str(obj.id)[:8]+'...'
 
     @admin.display(description="Document")
     def document_link(self, obj):
@@ -39,11 +29,8 @@ class AnnotationAdmin(ModelAdmin):
         url = reverse("admin:annotation_annotator_change", args=[obj.annotator.id])
         return format_html('<a href="{}">{}</a>', url, str(obj.annotator))
 
-    @admin.display(description="Result (JSON)")
-    def formatted_result(self, obj):
-        if not obj.result: return "-"
-        json_str = json.dumps(obj.result, indent=2, sort_keys=True)
-        return format_html(
-            '<pre style="margin:0;"><code class="json" style="max-height: 300px; overflow: auto; font-size: 12px;">{}</code></pre>',
-            json_str
-        )
+    def seconds_to_complete(self, obj):
+        if obj.milliseconds_to_complete < 2000:
+            return format_html('<span style="color: red;">{}ms</span>', obj.milliseconds_to_complete)
+        return format_html('<span style="color: green;">{}ms</span>', obj.milliseconds_to_complete)
+

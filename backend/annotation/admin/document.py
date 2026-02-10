@@ -12,11 +12,10 @@ class DocumentResource(resources.ModelResource):
 @admin.register(Document)
 class DocumentAdmin(ModelAdmin, ImportExportModelAdmin):
     resource_class = DocumentResource
-    list_display = ('external_id', 'short_text', 'project', 'current_annotations_count', 'is_gold_unit','gold_solution', 'is_completed')
+    list_display = ('external_id', 'short_text', 'project', 'current_annotations_count', 'is_gold_unit', 'is_completed')
     list_filter = ('project', 'is_gold_unit', 'min_annotations_required')
     search_fields = ('text', 'external_id', 'metadata')
     
-
 
     fieldsets = (
         ("Document Content", {
