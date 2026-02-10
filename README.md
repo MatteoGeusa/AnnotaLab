@@ -1,5 +1,47 @@
 # Relazione Tecnica: Piattaforma di Annotazione “Cospiracy Fullstack”
 
+
+## Guida all’Avvio (Quickstart)
+
+### Prerequisiti
+
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL (o SQLite per default)
+
+### Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+# Windows
+./venv/Scripts/Activate
+# Installazione dipendenze
+pip install -r requirements.txt
+# Migrazioni DB
+python manage.py migrate
+# Creazione Superuser
+python manage.py createsuperuser
+# Avvio Server
+python manage.py runserver
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Accesso alla Piattaforma
+
+Per simulare un utente Prolific sul Progetto #1:
+`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=1`
+
+---
+
+
 ## 1. Introduzione e Obiettivi
 
 Il progetto consiste nello sviluppo di una piattaforma web fullstack per la raccolta di annotazioni testuali (es. sentiment analysis, NER, classificazione di teorie del complotto). L’obiettivo è fornire un’interfaccia intuitiva per gli annotatori (reclutati ad esempio via Prolific) e un pannello di controllo potente per i ricercatori.
@@ -219,45 +261,5 @@ Il file `default_project_config.json` o il campo nel DB permettono di definire:
 - `span_labels`: Etichette per l’evidenziatore (nome e colore).
 - `class_labels`: Opzioni per domande a scelta multipla.
 - `scale`: Configurazione per domande di tipo Likert (scale 1-5, 1-7, ecc.).
-
----
-
-## 4. Guida all’Avvio (Quickstart)
-
-### Prerequisiti
-
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL (o SQLite per default)
-
-### Backend Setup
-
-```bash
-cd backend
-python -m venv venv
-# Windows
-./venv/Scripts/Activate
-# Installazione dipendenze
-pip install -r requirements.txt
-# Migrazioni DB
-python manage.py migrate
-# Creazione Superuser
-python manage.py createsuperuser
-# Avvio Server
-python manage.py runserver
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Accesso alla Piattaforma
-
-Per simulare un utente Prolific sul Progetto #1:
-`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=1`
 
 ---
