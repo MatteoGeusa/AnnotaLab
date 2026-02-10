@@ -1,2 +1,75 @@
-### GET healthcheck
-GET http://localhost:8000/api/v1/healthcheck
+@host = http://localhost:8000
+@pid = TEST_USER_123
+
+### 1. Healthcheck
+GET {{host}}/api/v1/healthcheck
+
+### 2. Initialize Session (New User)
+# Expected response: step="CONSENT" (if new) or current state
+POST {{host}}/api/v1/session/
+Content-Type: application/json
+
+{
+    "prolific_pid": "{{pid}}"
+}
+
+### 3. Accept Consent
+# Moves user from CONSENT -> INSTRUCTIONS
+POST {{host}}/api/v1/consent/
+Content-Type: application/json
+
+{
+    "pid": "{{pid}}"
+}
+
+### 4. Initialize Session (Check Progress)
+# Expected response: step="INSTRUCTIONS"
+POST {{host}}/api/v1/session/
+Content-Type: application/json
+
+{
+    "prolific_pid": "{{pid}}"
+}
+
+### 5. Complete Onboarding
+# Moves user from INSTRUCTIONS -> ANNOTATION
+POST {{host}}/api/v1/onboarding/
+Content-Type: application/json
+
+{
+    "pid": "{{pid}}"
+}
+
+### 6. Initialize Session (Check Progress)
+# Expected response: step="ANNOTATION"
+POST {{host}}/api/v1/session/
+Content-Type: application/json
+
+{
+    "prolific_pid": "{{pid}}"
+}
+
+### 7. Get Next Task
+# Returns a document to annotate or completion status
+GET {{host}}/api/v1/next-task/?pid={{pid}}
+
+### 8. Submit Annotation
+# Replace "document": 1 with the actual ID received from "Get Next Task"
+POST {{host}}/api/v1/submit/
+Content-Type: application/json
+
+{
+    "pid": "{{pid}}",
+    "document": 1, 
+    "result": {
+        "annotations": [
+            {
+                "start": 0,
+                "end": 10,
+                "label": "CONSPIRACY",
+                "text": "Some text"
+            }
+        ]
+    },
+    "milliseconds_to_complete": 45500
+}

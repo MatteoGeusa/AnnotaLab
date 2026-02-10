@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view
 from django.conf import settings
 from .models import Document, Annotator, Annotation, Project
 from .serializers import DocumentSerializer, AnnotationSerializer
+from django.db.models import Count
 
 PROLIFIC_COMPLETION_URL = "https://app.prolific.co/submissions/complete?cc=TUO_CODICE_PROLIFIC"
 
@@ -104,60 +105,92 @@ class SubmitAnnotation(APIView):
 
 class GetNextTask(APIView):
     def get(self, request):
+        # 1. RECUPERO PARAMETRI
         pid = request.query_params.get('pid')
-        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        project_id = request.query_params.get('project_id')
 
-        # 1. TASK LIMIT CHECK (e.g. 10)
-        done_count = annotator.annotations.count()
+        if not pid or not project_id:
+            return Response({"error": "Missing 'pid' or 'project_id'"}, status=400)
+
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        project = get_object_or_404(Project, id=project_id)
+
+        # 2. CONTROLLO LIMITE TASK UTENTE
+        done_count = annotator.annotations.filter(document__project=project).count()
         if done_count >= annotator.target_tasks:
             return Response({
                 "status": "completed", 
                 "completion_url": PROLIFIC_COMPLETION_URL
             })
 
-        # TASK ASSIGNMENT / ASSEGNAZIONE TASK
-        # EN: This is the core logic for distributing work to crowd workers.
-        #     Priority 1: Gold Units (Quality Checks).
-        #         - If there are Gold Units the user hasn't seen yet, assign one.
-        #         - This ensures we can measure annotator quality.
-        #     Priority 2: Normal Documents (Redundancy Management).
-        #         - Assign documents that have NOT reached the redundancy target (e.g. < 3 annotations).
-        #         - 'select_for_update' locks the row to prevent race conditions during high concurrency.
-        #         - 'skip_locked=True' prevents workers from waiting; they just skip to the next available doc.
-        #
-        # IT: Questa è la logica centrale per distribuire il lavoro ai worker.
-        #     Priorità 1: Gold Units (Controllo Qualità).
-        #         - Se ci sono Gold Unit che l'utente non ha ancora visto, assegnane una.
-        #         - Questo assicura di poter misurare la qualità dell'annotatore.
-        #     Priorità 2: Documenti Normali (Gestione Ridondanza).
-        #         - Assegna documenti che NON hanno raggiunto il target di ridondanza (es. < 3 annotazioni).
-        #         - 'select_for_update' blocca la riga per prevenire race condition con alta concorrenza.
-        #         - 'skip_locked=True' evita che i worker aspettino; passano semplicemente al prossimo doc libero.
-        
+        final_doc = None
+
+        # 3. LOGICA DI ASSEGNAZIONE
         with transaction.atomic():
-            # A. First search for a Gold Unit not yet completed by the user
-            next_doc = Document.objects.filter(
+            
+            # --- FASE A: Cerca ID Candidato (Senza Locking) ---
+            # Qui usiamo annotate/filter liberamente perché non blocchiamo nulla
+            
+            # A1. GOLD UNITS
+            gold_candidate_id = Document.objects.filter(
+                project=project,
                 is_gold_unit=True
             ).exclude(
                 annotations__annotator=annotator
-            ).first()
+            ).values_list('id', flat=True).first()
 
-            # B. If no Gold Units are available, take a normal doc
-            if not next_doc:
-                next_doc = Document.objects.select_for_update(skip_locked=True).filter(
-                    is_gold_unit=False,
-                    current_annotations_count__lt=3 
+            target_id = gold_candidate_id
+
+            # A2. DOCUMENTI NORMALI (Se non c'è Gold Unit)
+            if not target_id:
+                # Query base
+                base_qs = Document.objects.filter(
+                    project=project,
+                    is_gold_unit=False
                 ).exclude(
                     annotations__annotator=annotator
-                ).order_by('-current_annotations_count').first()
+                ).annotate(
+                    num_anns=Count('annotations')
+                )
 
-            if next_doc:
-                serializer = DocumentSerializer(next_doc)
-                return Response(serializer.data)
-            else:
-                # No more documents to annotate
-                # Nessun documento disponibile
-                return Response({
-                    "status": "completed", 
-                    "completion_url": PROLIFIC_COMPLETION_URL
-                })
+                # Applicazione Strategia per trovare l'ID
+                candidates = base_qs
+                
+                if project.distribution_strategy == 'STANDARD':
+                    candidates = candidates.filter(num_anns__lt=project.max_annotations_per_doc)
+                    if project.prioritize_unannotated:
+                        candidates = candidates.order_by('num_anns')
+                    else:
+                        candidates = candidates.order_by('?')
+                
+                elif project.distribution_strategy == 'FULL_OVERLAP':
+                    candidates = candidates.order_by('?')
+                
+                elif project.distribution_strategy == 'METADATA_MATCH':
+                    user_group = annotator.metadata.get('group')
+                    if user_group:
+                        candidates = candidates.filter(
+                            metadata__group=user_group,
+                            num_anns__lt=project.max_annotations_per_doc
+                        )
+                
+                # Prendiamo solo l'ID del primo risultato
+                target_id = candidates.values_list('id', flat=True).first()
+
+            # Ora che abbiamo l'ID, possiamo bloccare la riga specifica senza usare annotate/group_by
+            if target_id:
+                # select_for_update funziona perfettamente su una .get() o .filter() semplice
+                final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
+
+        # 4. RISPOSTA
+        if final_doc:
+            from .serializers import DocumentSerializer
+            serializer = DocumentSerializer(final_doc)
+            data = serializer.data
+            data['project_config'] = project.configuration 
+            return Response(data)
+        else:
+            return Response({
+                "status": "completed", 
+                "completion_url": PROLIFIC_COMPLETION_URL
+            })

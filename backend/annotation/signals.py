@@ -12,7 +12,7 @@ and places it back into the assignment pool, guaranteeing that every document ev
 receives the target number of valid annotations.
 '''
 
-# This decorator says: "Execute this function AFTER (post) an Annotation has been saved"
+#Execute this function AFTER (post) an Annotation has been saved
 @receiver(post_save, sender=Annotation)
 def update_annotation_count_on_save(sender, instance, created, **kwargs):
     """

@@ -6,6 +6,7 @@ from import_export.admin import ImportExportModelAdmin
 import json
 from django.contrib import messages
 from django.http import HttpResponse
+from unfold.admin import ModelAdmin
 
 def process_uploaded_dataset(project, file_obj):
     """
@@ -126,7 +127,7 @@ def export_annotations_jsonl(modeladmin, request, queryset):
     return response
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(ModelAdmin):
     list_display = ('name', 'created_at', 'doc_count')
     actions = [export_annotations_jsonl]
 
@@ -173,7 +174,7 @@ class DocumentAdmin(ImportExportModelAdmin):
 
 # 3. ANNOTATOR Configuration
 @admin.register(Annotator)
-class AnnotatorAdmin(admin.ModelAdmin):
+class AnnotatorAdmin(ModelAdmin):
     list_display = ('prolific_pid', 'created_at', 'annotations_made')
     search_fields = ('prolific_pid',)
 
@@ -183,7 +184,7 @@ class AnnotatorAdmin(admin.ModelAdmin):
 
 # 4. ANNOTATION Configuration (Results)
 @admin.register(Annotation)
-class AnnotationAdmin(admin.ModelAdmin):
+class AnnotationAdmin(ModelAdmin):
     list_display = ('id', 'document', 'annotator', 'created_at')
     list_filter = ('document__project',) # Filter annotations by Batch
     readonly_fields = ('created_at',)    # Avoid accidental date edits

@@ -8,6 +8,22 @@ import os
 from django.conf import settings
 import json
 
+def get_default_configuration():
+    config_path = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"task_type": "classification", "class_labels": []}
+            
+    return {
+        "task_type": "hybrid",
+        "span_labels": [{"name": "Evidence", "color": "#FFA500"}],
+        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+    }
+
 class Project(models.Model):
     """
     Represents an annotation 'campaign' or 'batch'.
@@ -15,33 +31,50 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
-    DEFAULT_CONFIGURATION = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
-    
-    with open(DEFAULT_CONFIGURATION, 'r') as f:
-        DEFAULT_CONFIGURATION = json.load(f)
 
     # CONFIGURATION
-    # ---------------------------------------------------------
-    # The JSON configuration defines the annotation schema for the frontend.
-    # It MUST contain 'span_labels' for highlighting and 'class_labels' for classification.
-    # This allows changing the task (e.g., from Sentiment to NER) without changing the code.
-    #
-    # Example:
-    # {
-    #   "task_type": "hybrid",
-    #   "span_labels": [
-    #       {"name": "Actor", "color": "#FF5733"}, 
-    #       {"name": "Action", "color": "#33FF57"}
-    #   ],
-    #   "class_labels": [
-    #       {"value": "Yes", "label": "Conspiracy"},
-    #       {"value": "No", "label": "Not Conspiracy"}
-    #   ]
-    # }
-    configuration = JSONField(default=DEFAULT_CONFIGURATION, help_text="Frontend configuration (labels, colors, UI settings)")
+    configuration = models.JSONField(
+        default=get_default_configuration, 
+        help_text="Frontend configuration (labels, colors, UI settings)"
+    )
 
-    # Textual instructions for the annotator (supports Markdown/HTML)
-    guidelines = models.TextField(blank=True, help_text="Textual instructions for the annotator (supports Markdown/HTML)")
+    # Questo serve per l'upload manuale dall'admin (quello che abbiamo fatto prima)
+    configuration_file = models.FileField(
+        upload_to='configs/', 
+        blank=True, 
+        null=True,
+        help_text="Opzionale: Carica un file JSON per sovrascrivere la configurazione."
+    )
+
+    STRATEGY_CHOICES = [
+        ('STANDARD', 'Standard (Pool Pubblico)'),
+        ('FULL_OVERLAP', 'Tutti vedono tutto (Alta Ridondanza)'),
+        ('METADATA_MATCH', 'Assegnazione per Gruppi (Metadata Based)'),
+    ]
+    
+    distribution_strategy = models.CharField(
+        max_length=20, 
+        choices=STRATEGY_CHOICES, 
+        default='STANDARD',
+        help_text="Definisce come i documenti vengono assegnati agli annotatori."
+    )
+
+    # --- VINCOLI DI RIDONDANZA ---
+    min_annotations_per_doc = models.IntegerField(
+        default=3, 
+        help_text="Obiettivo: Quante persone devono annotare ogni documento."
+    )
+    
+    max_annotations_per_doc = models.IntegerField(
+        default=5, 
+        help_text="Hard Cap: Smetti di servire il documento se raggiunge questo numero (evita sprechi)."
+    )
+
+    # Serve per dire: "Se un documento ha 2 annotazioni e gli altri 0, dai priorità a quelli con 0?"
+    prioritize_unannotated = models.BooleanField(
+        default=True,
+        help_text="Se True, il sistema cercherà di finire prima i documenti mai visti."
+    )
 
     dataset_file = models.FileField(
         upload_to='datasets/', 
@@ -147,7 +180,7 @@ class Annotation(models.Model):
     result = JSONField()
     
     # How long it took (useful to discard those taking 2 seconds = bot/spam)
-    seconds_to_complete = models.IntegerField(null=True, blank=True)
+    milliseconds_to_complete = models.IntegerField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 

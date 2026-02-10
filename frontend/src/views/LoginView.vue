@@ -2,8 +2,16 @@
     <div class="login-container">
         <div class="card">
             <h1>Annotation Task</h1>
-            <p class="subtitle">Please join from your Prolific account with ID in the URL to start the annotation task.
+            <p class="subtitle">Please join from your Prolific account with ID and project ID in the URL to start the
+                annotation task.
             </p>
+            <p v-if="!projectId || !prolificPid" class="error-text">⚠️ Warning: Missing Parameters in URL</p>
+            <p v-if="!projectId" class="error-text small">No Project ID found</p>
+            <p v-if="!prolificPid" class="error-text small">No Prolific ID found</p>
+
+            <button @click="startSession" :disabled="!isValid || isLoading" class="start-btn">
+                {{ isLoading ? 'Loading...' : 'Start Session' }}
+            </button>
 
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         </div>
@@ -11,58 +19,68 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../axios';
 
 const router = useRouter();
 const route = useRoute();
+
 const prolificPid = ref('');
+const projectId = ref(null);
+
 const isLoading = ref(false);
 const errorMessage = ref('');
 
 const startSession = async () => {
-    isLoading.value = true;
-    errorMessage.value = '';
+    if (!isValid.value) return;
 
     try {
         const response = await api.post('session/', { prolific_pid: prolificPid.value });
-        localStorage.setItem('prolific_pid', response.data.pid);
 
-        // DYNAMIC REDIRECT
+        // Salvataggio dati critici
+        localStorage.setItem('prolific_pid', response.data.pid);
+        // Nota: project_id è già in localStorage da onMounted
+
+        // Routing
         const step = response.data.step;
         if (step === 'CONSENT') router.push('/consent');
         else if (step === 'INSTRUCTIONS') router.push('/instructions');
         else if (step === 'ANNOTATION') router.push('/annotate');
-        else if (step === 'COMPLETED') router.push('/annotate'); // Annotator view will handle the final message
+        else if (step === 'COMPLETED') router.push('/annotate');
 
-    } catch (error) {
-        console.error(error);
-        errorMessage.value = "Connection error.";
-    } finally {
-        isLoading.value = false;
+    } catch (err) {
+        alert("Login failed. Check console.");
+        console.error(err);
     }
 };
 
 onMounted(() => {
-    // 1. Prolific uses 'PROLIFIC_PID' parameter (usually all caps)
-    if (route.query.PROLIFIC_PID) {
-        console.log("Auto-login detecting for:", route.query.PROLIFIC_PID);
-        prolificPid.value = route.query.PROLIFIC_PID;
-
-        // Start session immediately!
-        startSession();
-        return;
+    // 1. Cerca il project_id nella query string (es. ?project_id=1)
+    if (route.query.project_id) {
+        projectId.value = route.query.project_id;
+        localStorage.setItem('project_id', projectId.value);
+    } else {
+        // Fallback: prova a vedere se era salvato in precedenza
+        const saved = localStorage.getItem('project_id');
+        if (saved) projectId.value = saved;
     }
 
-    // 2. Check Recent Session in LocalStorage
-    const storedPID = localStorage.getItem('prolific_pid');
-    if (storedPID) {
-        console.log("Resuming session for:", storedPID);
-        prolificPid.value = storedPID;
+    // Auto-fill PID se presente nell'URL (comodo per Prolific)
+    if (route.query.PROLIFIC_PID) {
+        prolificPid.value = route.query.PROLIFIC_PID;
+    }
+
+    // Auto-login if we have everything
+    if (isValid.value) {
         startSession();
     }
 });
+
+const isValid = computed(() => {
+    return prolificPid.value.length > 3 && projectId.value;
+});
+
 </script>
 
 <style scoped>

@@ -46,7 +46,44 @@ LOGGING = {
     },
 }
 
+UNFOLD = {
+    # Titolo nella barra laterale
+    "SITE_TITLE": "Annotation Portal",
+    
+    # Sottotitolo o header
+    "SITE_HEADER": "Pannel Admin",
+    
+    # Link quando clicchi sul logo/titolo (di solito la homepage del sito o la dashboard)
+    "SITE_URL": "/",
+
+    # (Opzionale) Puoi anche mettere un logo personalizzato se hai il file statico
+    # "SITE_ICON": {
+    #     "light": lambda request: static("images/logo-light.svg"),  # Icona tema chiaro
+    #     "dark": lambda request: static("images/logo-dark.svg"),    # Icona tema scuro
+    # },
+    
+    # Colori della sidebar (opzionale)
+    "COLORS": {
+        "primary": {
+            "50": "239 246 255",
+            "100": "219 234 254",
+            "200": "191 219 254",
+            "300": "147 197 253",
+            "400": "96 165 250",
+            "500": "59 130 246",
+            "600": "37 99 235",
+            "700": "29 78 216",
+            "800": "30 64 175",
+            "900": "30 58 138",
+        },
+    },
+}
+
 INSTALLED_APPS = [
+    'unfold',
+    "unfold.contrib.filters",       
+    "unfold.contrib.forms",         
+    "unfold.contrib.import_export", 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

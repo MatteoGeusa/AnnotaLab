@@ -15,7 +15,7 @@ except Exception as e:
 
 class DocumentSerializer(serializers.ModelSerializer):
     """
-    Invia al frontend il testo e la configurazione del progetto (etichette, colori).
+    The document serializer sends the text and the project configuration to the frontend
     """
     project_config = serializers.SerializerMethodField()
 
@@ -43,9 +43,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         return final_config
 
 class AnnotationSerializer(serializers.ModelSerializer):
-    """
-    Riceve dal frontend il risultato dell'annotazione.
+    """ 
+    The annotation serializer receives the annotation result from the frontend
     """
     class Meta:
         model = Annotation
-        fields = ['document', 'result', 'seconds_to_complete']
+        fields = ['document', 'result', 'milliseconds_to_complete']

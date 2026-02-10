@@ -83,6 +83,7 @@ const loading = ref(true);
 const currentDoc = ref(null);
 const errorMsg = ref('');
 const config = ref({}); // Contiene l'intero JSON di configurazione
+const startTime = ref(0); // Timer start timestamp
 
 // RISPOSTE DELL'UTENTE
 const classification = ref(null); // Stringa (Radio), Numero (Scala) o Array (Checkbox)
@@ -106,8 +107,18 @@ const fetchNextTask = async () => {
     errorMsg.value = '';
     spans.value = [];
 
+    const pid = localStorage.getItem('prolific_pid');
+    const projectId = localStorage.getItem('project_id');
+
+    if (!projectId) {
+        errorMsg.value = "Fatal Error: No Project ID found. Please restart from link.";
+        loading.value = false;
+        return;
+    }
+
+
     try {
-        const res = await api.get(`next-task/?pid=${pid}`);
+        const res = await api.get(`next-task/?pid=${pid}&project_id=${projectId}`);
 
         // GESTIONE COMPLETAMENTO
         if (res.data.status === 'completed') {
@@ -130,6 +141,9 @@ const fetchNextTask = async () => {
         } else {
             classification.value = null;
         }
+
+        // Start the timer
+        startTime.value = Date.now();
 
     } catch (err) {
         if (err.response && err.response.status === 404) {
@@ -171,7 +185,12 @@ const canSubmit = computed(() => {
 });
 
 const submitTask = async () => {
-    if (!canSubmit.value) return;
+    if (!canSubmit.value) return; // double check
+
+    // Calculate duration
+    const endTime = Date.now();
+    const duration = (endTime - startTime.value);
+
     loading.value = true;
 
     const payload = {
@@ -181,7 +200,7 @@ const submitTask = async () => {
             classification: classification.value,
             spans: spans.value
         },
-        seconds_to_complete: 0 // TODO: Implementare timer
+        milliseconds_to_complete: duration
     };
 
     try {

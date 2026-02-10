@@ -4,7 +4,7 @@ Fork from [https://github.com/MatteoGeusa/Django-REST-full](https://github.com/M
 
 ## Prolific example link
 
-http://localhost:5173/?PROLIFIC_PID=68e947747351660001550859
+http://localhost:5173/?PROLIFIC_PID=TEST_321&project_id=1
 
 ## Admin example link
 

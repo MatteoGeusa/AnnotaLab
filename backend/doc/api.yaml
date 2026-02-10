@@ -1,0 +1,250 @@
+openapi: 3.0.0
+info:
+  title: Annotation Backend API
+  version: 1.0.0
+  description: API for the annotation platform handling user sessions, task assignment, and annotation submission.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local Development Server
+
+paths:
+  /healthcheck:
+    get:
+      summary: Health Check
+      description: Basic health check endpoint to verify backend status.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OK
+
+  /session/:
+    post:
+      summary: Initialize Session
+      description: Determines the user's current state in the annotation workflow (Consent, Instructions, Annotation, or Completed).
+      operationId: initializeSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prolific_pid
+                - project_id
+              properties:
+                prolific_pid:
+                  type: string
+                  description: The Prolific Participant ID of the user.
+                project_id:
+                  type: string
+                  description: The ID of the project the user is working on.
+      responses:
+        "200":
+          description: User state retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  pid:
+                    type: string
+                  step:
+                    type: string
+                    enum: [CONSENT, INSTRUCTIONS, ANNOTATION, COMPLETED]
+                    description: The current step in the workflow.
+                  done_count:
+                    type: integer
+                    description: Number of completed annotations.
+                  completion_url:
+                    type: string
+                    nullable: true
+                    description: URL to redirect the user upon completion.
+        "400":
+          description: Missing PID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /consent/:
+    post:
+      summary: Accept Consent
+      description: Marks that the user has accepted the informed consent.
+      operationId: acceptConsent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pid
+              properties:
+                pid:
+                  type: string
+                  description: The Prolific Participant ID.
+      responses:
+        "200":
+          description: Consent accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  next_step:
+                    type: string
+                    example: INSTRUCTIONS
+
+  /onboarding/:
+    post:
+      summary: Complete Onboarding
+      description: Marks that the user has completed the instructions/onboarding phase.
+      operationId: completeOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pid
+              properties:
+                pid:
+                  type: string
+                  description: The Prolific Participant ID.
+      responses:
+        "200":
+          description: Onboarding completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  next_step:
+                    type: string
+                    example: ANNOTATION
+
+  /next-task/:
+    get:
+      summary: Get Next Task
+      description: Retrieves the next document for the user to annotate, based on redundancy and gold unit logic.
+      operationId: getNextTask
+      parameters:
+        - name: pid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The Prolific Participant ID.
+        - name: project_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The ID of the project the user is working on.
+      responses:
+        "200":
+          description: Next task or completion status
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Document"
+                  - $ref: "#/components/schemas/CompletionStatus"
+
+  /submit/:
+    post:
+      summary: Submit Annotation
+      description: Saves the user's annotation result for a specific document.
+      operationId: submitAnnotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pid
+                - document
+                - result
+              properties:
+                pid:
+                  type: string
+                  description: The Prolific Participant ID.
+                document:
+                  type: integer
+                  description: The ID of the document being annotated.
+                result:
+                  type: object
+                  description: The JSON result of the annotation.
+                milliseconds_to_complete:
+                  type: number
+                  description: Time taken to complete the annotation in milliseconds.
+      responses:
+        "201":
+          description: Annotation saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: saved
+        "400":
+          description: Bad Request (Invalid data or duplicate submission)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+components:
+  schemas:
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        external_id:
+          type: string
+          nullable: true
+        project_config:
+          type: object
+          description: Configuration for the frontend (labels, colors, etc).
+        metadata:
+          type: object
+          nullable: true
+
+    CompletionStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [completed]
+        completion_url:
+          type: string
