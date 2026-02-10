@@ -9,10 +9,15 @@
             <p>Loading next task...</p>
         </div>
 
-        <div v-else-if="!currentDoc" class="finished">
+        <div v-else-if="!currentDoc && !stopped" class="finished">
             <h2>🎉 All tasks completed!</h2>
             <p>Thank you for your contribution.</p>
-            <p>Redirecting to provider in 5 seconds...</p>
+            <p>Redirecting to provider in {{ countdown }} seconds...</p>
+        </div>
+
+        <div v-else-if="stopped" class="finished">
+            <h2>🎉 All tasks completed!</h2>
+            <p>Thank you for your contribution.</p>
         </div>
 
         <div v-else class="task-area">
@@ -70,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../axios';
 import TextHighlighter from '../components/TextHighlighter.vue';
@@ -84,6 +89,13 @@ const currentDoc = ref(null);
 const errorMsg = ref('');
 const config = ref({}); // Contiene l'intero JSON di configurazione
 const startTime = ref(0); // Timer start timestamp
+const countdown = ref(10);
+let redirectTimer = null;
+const stopped = ref(false);
+
+onUnmounted(() => {
+    if (redirectTimer) clearInterval(redirectTimer);
+});
 
 // RISPOSTE DELL'UTENTE
 const classification = ref(null); // Stringa (Radio), Numero (Scala) o Array (Checkbox)
@@ -106,6 +118,7 @@ const fetchNextTask = async () => {
     currentDoc.value = null;
     errorMsg.value = '';
     spans.value = [];
+    stopped.value = false;
 
     const pid = localStorage.getItem('prolific_pid');
     const projectId = localStorage.getItem('project_id');
@@ -122,7 +135,18 @@ const fetchNextTask = async () => {
 
         // GESTIONE COMPLETAMENTO
         if (res.data.status === 'completed') {
-            window.location.href = res.data.completion_url;
+            loading.value = false;
+            redirectTimer = setInterval(() => {
+                countdown.value--;
+                if (countdown.value <= 0) {
+                    clearInterval(redirectTimer);
+                    window.location.href = res.data.completion_url;
+                }
+            }, 1000);
+            return;
+        } else if (res.data.status === 'stopped') {
+            loading.value = false;
+            stopped.value = true;
             return;
         }
 
@@ -369,5 +393,62 @@ header {
     color: red;
     margin-top: 10px;
     font-weight: bold;
+}
+
+.finished {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.finished h2 {
+    color: #2e7d32;
+    margin-bottom: 15px;
+    font-size: 2rem;
+}
+
+.finished p {
+    font-size: 1.1rem;
+    color: #333;
+    margin: 10px 0;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    font-size: 1.2rem;
+    color: #666;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
 }
 </style>

@@ -37,6 +37,10 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
    - **Configurazione Dinamica**: Un campo `JSONField` (`configuration`) controlla l'interfaccia utente (etichette, colori, istruzioni).
    - **Nota**: La configurazione è legata al Progetto, quindi tutti i documenti di un progetto condividono lo stesso task (es. tutti NER o tutti Classificazione).
    - **Strategia di Distribuzione**
+     **Validazione Preliminare:**
+     - Verifica esistenza di `prolific_pid` e `project_id`.
+     - **Check Ban/Esclusione:** Se l'annotatore ha il flag `exclude_from_distribution` attivo (es. bannato per scarsa qualità), il sistema restituisce immediatmente lo status `stopped`.
+     - **Check Quota Personale:** Verifica se l'utente ha già raggiunto il suo `target_tasks` (es. 20 documenti). Se sì, restituisce lo status `completed` con il link di completamento per Prolific.
      Il sistema supporta diverse modalità (`STANDARD`, `FULL_OVERLAP`, `METADATA_MATCH`) per assegnare i documenti agli utenti.
      **1. `STANDARD` (Pool Pubblico - Default)**
      Questa è la modalità classica di crowdsourcing
@@ -76,6 +80,16 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      Indipendentemente dalla strategia scelta, il sistema ha una direttiva da rispettare sempre:
      - Prima di applicare qualsiasi logica sopra descritta, il sistema controlla se ci sono **Gold Units** (documenti di controllo qualità) che l'utente non ha ancora visto.
      - Se ce ne sono, queste vengono assegnate con **priorità assoluta**. Questo garantisce che tu possa misurare la qualità dell'annotatore fin dalle prime fasi della sessione.
+   - **Gestione della concorrenza**
+     **3.2 Gestione della Concorrenza: Pattern "Fetch-then-Lock"**
+     La gestione della concorrenza è critica per evitare che due utenti ricevano lo stesso documento contemporaneamente, sforando il limite `max_annotations_per_doc`.
+     Il codice risolve il problema delle limitazioni di PostgreSQL/Django (che non permettono `select_for_update` su query contenenti aggregazioni come `Count` o `Group By`) adottando un approccio a due fasi:
+     1. **Identificazione (No Lock):** Si esegue la query complessa (con i filtri `annotate` e `order_by`) solo per recuperare la chiave primaria (`id`) del documento candidato. Questa query è leggera e non blocca la tabella.
+     2. **Lock Chirurgico:** Una volta ottenuto l'`id`, si esegue una seconda query puntuale:Python
+
+        `Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()`
+
+        L'uso di `skip_locked=True` è fondamentale per la User Experience: se il documento `target_id` è oggetto di scrittura da parte di un altro processo in quel micro-secondo, il sistema non mette l'utente in attesa (che causerebbe latenza), ma ignora il record.
 
 2. **`Document`**: Il singolo task che contiene il testo da annotare.
 
@@ -178,30 +192,9 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
         - **Non fa validazione profonda** sul contenuto degli span (es. non controlla se gli indici sono validi rispetto al testo) per performance, ma si fida del frontend.
         - Salva il JSON nel campo  del modello **Annotation**.
 
-### Logica di Assegnazione Task (`GetNextTask` in `views.py`)
-
-L’algoritmo di distribuzione dei documenti segue una logica a priorità:
-
-1. **Gold Units**: Se l’utente non ha ancora completato le Gold Units previste, ne riceve una prioritaria.
-2. **Strategia di Distribuzione**:
-   - Se `STANDARD`: Cerca documenti con meno annotazioni del target, prioritizzando quelli ancora a zero se configurato (`prioritize_unannotated`).
-   - Se `METADATA_MATCH`: Assegna documenti che corrispondono al gruppo dell’utente (es. annotatori esperti su testi difficili).
-
 ### Admin Interface (`django-unfold`)
 
 Il pannello di amministrazione è stato personalizzato con `django-unfold` per offrire una UI moderna e “premium”. Include dashboard per il monitoraggio del progresso e strumenti di import/export dei dati.
-
-### 2.2 Frontend (Vue.js 3 + Vite)
-
-L’interfaccia utente è una Single Page Application (SPA) reattiva.
-
-### Struttura del Codice
-
-Per garantire manutenibilità e pulizia, il codice delle Viste è stato separato secondo il pattern **Separation of Concerns**:
-
-- `View.vue`: Template HTML e struttura.
-- `View.js`: Logica, gestione dello stato e chiamate API.
-- `View.css`: Stili e design.
 
 ### Flusso Utente
 
@@ -226,17 +219,6 @@ Il file `default_project_config.json` o il campo nel DB permettono di definire:
 - `span_labels`: Etichette per l’evidenziatore (nome e colore).
 - `class_labels`: Opzioni per domande a scelta multipla.
 - `scale`: Configurazione per domande di tipo Likert (scale 1-5, 1-7, ecc.).
-
-### 3.2 Gestione della Concorrenza
-
-Il backend gestisce l’accesso concorrente ai documenti. Anche se la clausola `select_for_update` è stata ottimizzata per evitare conflitti con le aggregazioni, il sistema è disegnato per minimizzare la probabilità che due utenti ricevano lo stesso documento se la ridondanza è già soddisfatta.
-
-### 3.3 Monitoraggio Qualità
-
-Oltre alle Gold Units, il sistema registra:
-
-- **Tempo di Esecuzione**: Permette di scartare annotazioni fatte troppo velocemente (“click-through”).
-- **Consenso e Training**: Assicura che ogni utente abbia esplicitamente accettato le condizioni e letto le istruzioni prima di iniziare.
 
 ---
 

@@ -9,10 +9,6 @@
             <p v-if="!projectId" class="error-text small">No Project ID found</p>
             <p v-if="!prolificPid" class="error-text small">No Prolific ID found</p>
 
-            <button @click="startSession" :disabled="!isValid || isLoading" class="start-btn">
-                {{ isLoading ? 'Loading...' : 'Start Session' }}
-            </button>
-
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         </div>
     </div>

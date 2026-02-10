@@ -104,6 +104,8 @@ class Annotator(models.Model):
     # Default is 10. Increase this for longer sessions, decrease for shorter pilots.
     target_tasks = models.IntegerField(default=10)
 
+    exclude_from_distribution = models.BooleanField(default=False)
+
     objects = models.Manager()
 
     def __str__(self):

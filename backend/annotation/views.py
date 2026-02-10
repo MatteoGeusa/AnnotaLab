@@ -105,7 +105,7 @@ class SubmitAnnotation(APIView):
 
 class GetNextTask(APIView):
     def get(self, request):
-        # 1. RECUPERO PARAMETRI
+        # RECUPERO PARAMETRI
         pid = request.query_params.get('pid')
         project_id = request.query_params.get('project_id')
 
@@ -115,7 +115,13 @@ class GetNextTask(APIView):
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         project = get_object_or_404(Project, id=project_id)
 
-        # 2. CONTROLLO LIMITE TASK UTENTE
+        # CONTROLLO ESCLUSIONE
+        if annotator.exclude_from_distribution:
+            return Response({
+                "status": "stopped"
+            })
+
+        # CONTROLLO LIMITE TASK UTENTE
         done_count = annotator.annotations.filter(document__project=project).count()
         if done_count >= annotator.target_tasks:
             return Response({
@@ -125,10 +131,10 @@ class GetNextTask(APIView):
 
         final_doc = None
 
-        # 3. LOGICA DI ASSEGNAZIONE
+        # LOGICA DI ASSEGNAZIONE
         with transaction.atomic():
             
-            # --- FASE A: Cerca ID Candidato (Senza Locking) ---
+            # FASE A: Cerca ID Candidato (Senza Locking)
             # Qui usiamo annotate/filter liberamente perché non blocchiamo nulla
             
             # A1. GOLD UNITS

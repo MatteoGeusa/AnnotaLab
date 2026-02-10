@@ -290,7 +290,7 @@ class AnnotatorAdmin(ModelAdmin):
 
 @admin.register(Annotation)
 class AnnotationAdmin(ModelAdmin):
-    list_display = ('id', 'document_link', 'annotator_link', 'created_at')
+    list_display = ('id', 'document_link', 'annotator_link', 'created_at', 'milliseconds_to_complete')
     list_filter = ('document__project',) 
     readonly_fields = ('created_at',)
     
