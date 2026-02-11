@@ -8,12 +8,21 @@
 - Node.js 18+
 - PostgreSQL (o SQLite per default)
 
-### Docker starting database
+### Docker per il database
 
-execute docker compose only-db
+in base alla configurazione del sistema si può usare docker compose only-db o docker compose-selfthosted-db
 
 ```bash
+# solo database (utile per lo sviluppo locale)
 docker compose -f 'docker-compose-only-db.yaml' up -d --build 'db'
+
+# database, backend e frontend
+docker compose -f 'docker-compose-fullstack.yaml' up -d --build 'db'
+
+# backend e frontend (non viene eseguito il database ma ci colleghiamo ad un'istanza postgres hostata su supabase)
+docker compose -f 'docker-compose-only-backend.yaml' up -d --build 'db'
+
+
 ```
 
 ### Backend Setup
