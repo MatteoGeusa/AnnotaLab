@@ -10,8 +10,7 @@ class AnnotationAdmin(ModelAdmin):
     list_display = ('short_id', 'document_link', 'annotator_link', 'created_at', 'seconds_to_complete')
     list_filter = ('document__project', 'created_at', 'annotator')
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
-    readonly_fields = ('created_at',)
-    exclude = ('result',)
+    readonly_fields = ('created_at','result')
 
     @admin.display(description="ID")
     def short_id(self, obj):

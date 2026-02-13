@@ -77,19 +77,7 @@
                 </div>
             </div>
 
-            <div class="section scale-box" v-if="config.scale">
-                <h4>{{ config.scale.instruction || "Rate this text:" }}</h4>
-                <div class="scale-container">
-                    <span class="scale-legend">{{ config.scale.min_label || 'Low' }}</span>
-                    <div class="scale-buttons">
-                        <button v-for="n in (config.scale.max || 5)" :key="n" class="scale-btn"
-                            :class="{ active: classification === n }" @click="classification = n">
-                            {{ n }}
-                        </button>
-                    </div>
-                    <span class="scale-legend">{{ config.scale.max_label || 'High' }}</span>
-                </div>
-            </div>
+
 
             <div class="section" v-if="hasHighlighter">
                 <h4>Highlight Evidence</h4>
@@ -136,7 +124,7 @@ onUnmounted(() => {
 });
 
 // RISPOSTE DELL'UTENTE
-const classification = ref(null); // Stringa (Radio), Numero (Scala) o Array (Checkbox)
+const classification = ref(null);
 const spans = ref([]);
 
 // OPZIONI ESTRATTE DAL CONFIG
@@ -255,12 +243,7 @@ const canSubmit = computed(() => {
         return classification.value !== null; // Radio: selezionato
     }
 
-    // 2. Se c'è una Scala (Likert), bisogna selezionare un numero
-    if (config.value.scale) {
-        return classification.value !== null;
-    }
-
-    // 3. Se c'è SOLO l'evidenziatore (NER puro), l'invio è sempre possibile
+    // 2. Se c'è SOLO l'evidenziatore (NER puro), l'invio è sempre possibile
     // (perché potrebbe non esserci nulla da evidenziare nel testo)
     return true;
 });
@@ -397,58 +380,8 @@ header {
     border-color: #0056b3;
 }
 
-/* STILI SCALA LIKERT */
-.scale-box {
-    background: #fffdeb;
-    /* Colore diverso per distinguerla */
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    border: 1px solid #eee;
-}
 
-.scale-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.scale-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.scale-btn {
-    width: 45px;
-    height: 45px;
-    border: 2px solid #ddd;
-    background: white;
-    border-radius: 50%;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 1.1rem;
-    transition: all 0.2s;
-}
-
-.scale-btn:hover {
-    border-color: #999;
-}
-
-.scale-btn.active {
-    background: #ff9800;
-    color: white;
-    border-color: #f57c00;
-    transform: scale(1.1);
-}
-
-.scale-legend {
-    font-size: 0.85rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #666;
-}
+/* REMOVED SCALE STYLES */
 
 /* SUBMIT BUTTON */
 .submit-btn {

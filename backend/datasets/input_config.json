@@ -1,0 +1,17 @@
+{
+  "task_type": "hybrid",
+  "instruction": "seleziona le entità nominate nel testo ed assegna una etichetta alla frase.",
+  "span_labels": [
+    { "name": "Actor", "color": "#FF5733" },
+    { "name": "Action", "color": "#33FF57" },
+    { "name": "Victim", "color": "#3357FF" },
+    { "name": "Threat", "color": "#FF33F6" },
+    { "name": "Evidence", "color": "#FFA500" }
+  ],
+  "multi_select": true,
+  "class_labels": [
+    { "label": "Conspiracy", "value": "Yes" },
+    { "label": "Not Conspiracy", "value": "No" },
+    { "label": "Ambiguous", "value": "Can't tell" }
+  ]
+}

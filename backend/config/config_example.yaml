@@ -1,7 +1,8 @@
-### CONFIG DEFAULT
+### CONFIG Hybrid: CLASSIFICATION and Named Entity Recognition
 
 {
   "task_type": "hybrid",
+  "instruction": "seleziona le entità nominate nel testo ed assegna una etichetta alla frase.",
   "span_labels": [
     { "name": "Actor", "color": "#FF5733" },
     { "name": "Action", "color": "#33FF57" },
@@ -9,6 +10,7 @@
     { "name": "Threat", "color": "#FF33F6" },
     { "name": "Evidence", "color": "#FFA500" }
   ],
+  "multi_select": true,
   "class_labels": [
     { "label": "Conspiracy", "value": "Yes" },
     { "label": "Not Conspiracy", "value": "No" },
@@ -29,19 +31,7 @@
   ]
 }
 
-### CONFIG Named Entity Recognition
-{
-  "task_type": "ner",
-  "instruction": "Evidenzia tutte le entità nominate nel testo.",
-  "span_labels": [
-    {"name": "Person", "color": "#FF0000"},
-    {"name": "Location", "color": "#00FF00"},
-    {"name": "Organization", "color": "#0000FF"}
-  ],
-  "class_labels": []
-}
-
-### CONFIG MULTILABEL
+### CONFIG CLASSIFICATION MULTILABEL
 {
   "task_type": "multilabel", 
   "instruction": "Seleziona tutte le categorie applicabili.",
@@ -55,15 +45,18 @@
   ]
 }
 
-### CONFIG SCALING
+
+### CONFIG Named Entity Recognition
 {
-  "task_type": "scaling",
-  "instruction": "Quanto è minaccioso questo testo da 1 a 5?",
-  "span_labels": [],
-  "scale": {
-      "min": 1,
-      "max": 5,
-      "min_label": "Per nulla",
-      "max_label": "Molto pericoloso"
-  }
+  "task_type": "ner",
+  "instruction": "Evidenzia tutte le entità nominate nel testo.",
+  "span_labels": [
+    {"name": "Person", "color": "#FF0000"},
+    {"name": "Location", "color": "#00FF00"},
+    {"name": "Organization", "color": "#0000FF"}
+  ],
+  "class_labels": []
 }
+
+
+

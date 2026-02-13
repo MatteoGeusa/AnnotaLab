@@ -44,7 +44,7 @@ npm run dev
 ### Accesso alla Piattaforma
 
 Per simulare un utente Prolific sul Progetto #1:
-`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=1`
+`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=2`
 
 ---
 
@@ -276,6 +276,5 @@ Il file `default_project_config.json` o il campo nel DB permettono di definire:
 - `task_type`: “classification”, “ner”, “hybrid”.
 - `span_labels`: Etichette per l’evidenziatore (nome e colore).
 - `class_labels`: Opzioni per domande a scelta multipla.
-- `scale`: Configurazione per domande di tipo Likert (scale 1-5, 1-7, ecc.).
 
 ---

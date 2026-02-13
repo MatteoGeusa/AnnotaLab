@@ -42,6 +42,12 @@ class DocumentSerializer(serializers.ModelSerializer):
         final_config = DEFAULT_CONFIG.copy()
         
         if isinstance(db_config, dict):
+            # If the custom config changes the task_type, do NOT inherit labels from default
+            # Se la configurazione personalizzata cambia il task_type, NON ereditare le etichette di default
+            if 'task_type' in db_config and db_config['task_type'] != final_config.get('task_type'):
+                final_config['class_labels'] = []
+                final_config['span_labels'] = []
+
             final_config.update(db_config)
             
         return final_config
