@@ -8,12 +8,21 @@
 - Node.js 18+
 - PostgreSQL (o SQLite per default)
 
-### Docker starting database
+### Docker per il database
 
-execute docker compose only-db
+in base alla configurazione del sistema si può usare docker compose only-db o docker compose-selfthosted-db
 
 ```bash
+# solo database (utile per lo sviluppo locale)
 docker compose -f 'docker-compose-only-db.yaml' up -d --build 'db'
+
+# database, backend e frontend
+docker compose -f 'docker-compose-fullstack.yaml' up -d --build 'db'
+
+# backend e frontend (non viene eseguito il database ma ci colleghiamo ad un'istanza postgres hostata su supabase)
+docker compose -f 'docker-compose-only-backend.yaml' up -d --build 'db'
+
+
 ```
 
 ### Backend Setup
@@ -111,13 +120,13 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      - **Funzionamento:**
        1. Il sistema legge i metadati dell'annotatore, passati _si presuppone_ da prolific stesso, oppure un nostro appunto per premiare qualificatori bravi.
 
-          ```
+          ```json
           {"group": "expert"}
           ```
 
        2. Filtra i documenti che hanno lo stesso tag nei loro metadati (es. ).
 
-          ```
+          ```python
           metadata__group="expert"
           ```
 
@@ -125,7 +134,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
 
      - **Uso Tipico:** riservare documenti difficili solo ad annotatori esperti/qualificati.
 
-     ***
+     ---
 
      ### **Nota Importante: Le "Gold Units"**
 
@@ -232,15 +241,18 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      ```
 
      ### **3. Flusso Tecnico Frontend -> Backend**
+
      1. **Frontend ()**:
 
         `TextHighlighter.vue`
         - Quando l'utente seleziona del testo, il componente calcola gli indici **start** e **end** relativi al testo originale del documento.
         - Associa a questa selezione l'etichetta correntemente attiva (es. "Actor").
         - Crea un oggetto JavaScript: .
-          ```
+
+          ```json
           { start: 10, end: 25, label: "Actor", text: "..." }
           ```
+
         - Questo oggetto viene aggiunto all'array  nello stato locale (**AnnotatorView.js**).
 
      2. **Invio (AnnotatorView.js -> SubmitAnnotation)**:
