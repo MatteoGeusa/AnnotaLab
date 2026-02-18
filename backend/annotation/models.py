@@ -31,6 +31,9 @@ def get_default_configuration_for_screening():
         "min_accuracy_required": 0.0
     }
 
+def get_default_configuration_for_informed_consent():
+    return "general text"
+
 class Project(models.Model):
     """
     Represents an annotation 'campaign' or 'batch'.
@@ -53,6 +56,12 @@ class Project(models.Model):
     )
 
     # CONFIGURATION
+
+    informed_consent_config = models.TextField(
+        default=get_default_configuration_for_informed_consent, 
+        help_text="Informed Consent Configuration: accept a string can be showed to the annotator before starting the task"
+    )
+    
     task_type_config = models.JSONField(
         default=get_default_configuration_for_task_type, 
         help_text="Task Configuration (labels, colors, questions)"

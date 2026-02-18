@@ -14,17 +14,19 @@ class ProjectAdmin(ModelAdmin):
     # Aggiungi i nuovi campi a list_display se vuoi vederli subito
     list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button')
     
-    readonly_fields = ('formatted_task_type_config', 'formatted_screening_config')
+    readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
     
     fieldsets = (
         ("General Information", {
-            "fields": ("name", "description")
+            "fields": ("name", "description", "informed_consent_config",)
         }),
 
         ("Configuration", {
             "fields": (
+                
                 ("configuration_task_type_file", "configuration_screening_file"),
-                ("formatted_task_type_config", "formatted_screening_config")
+                ("formatted_task_type_config", "formatted_screening_config"),
+               
             ),
             "description": """
                Upload specific JSON files to overwrite the project configuration.<br><br>
@@ -78,6 +80,7 @@ class ProjectAdmin(ModelAdmin):
             )
         })
     )
+
 
     @admin.display(description="Current Task Config (JSON)")
     def formatted_task_type_config(self, obj):
