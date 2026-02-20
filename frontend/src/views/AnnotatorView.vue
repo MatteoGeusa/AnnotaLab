@@ -11,8 +11,14 @@
 
         <div v-else-if="!currentDoc && !stopped" class="finished">
             <h2>🎉 All tasks completed!</h2>
-            <p>Thank you for your contribution.</p>
-            <p>Redirecting to provider in {{ countdown }} seconds...</p>
+            <div class="debrief-text">
+                <p>The texts you annotated were obtained from social media and may include false information and
+                    conspiracy theories. The authors of this task do not endorse them.</p>
+                <p>You may take this task multiple times. The next time you take this task, you will not need to fill in
+                    the onboarding survey.</p>
+                <p>Thank you for your work!</p>
+            </div>
+            <p class="redirect-notice">Redirecting to provider in <strong>{{ countdown }}</strong> seconds...</p>
         </div>
 
         <div v-else-if="stopped" class="finished">
@@ -177,23 +183,9 @@ const fetchNextTask = async () => {
             return;
         }
 
-        // CONTROL TYPE
-        if (res.data.type === 'SURVEY') {
-            currentDoc.value = null; // Ensure doc is null
-            isSurvey.value = true;
-            surveyQuestions.value = res.data.questions || [];
-            surveyAnswers.value = {};
-            loading.value = false;
-            return;
-        } else {
-            isSurvey.value = false;
-        }
-
-        if (res.data.type === 'TRAINING') {
-            isTraining.value = true;
-        } else {
-            isTraining.value = false;
-        }
+        // Detect training mode via feedback_enabled flag
+        isTraining.value = !!res.data.feedback_enabled;
+        isSurvey.value = false; // Surveys are handled via distinct steps now
 
         currentDoc.value = res.data;
         config.value = res.data.project_config || {};
@@ -433,6 +425,29 @@ header {
     font-size: 1.1rem;
     color: #333;
     margin: 10px 0;
+}
+
+.debrief-text {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 18px 24px;
+    margin: 16px 0;
+    text-align: left;
+    border-left: 4px solid #2e7d32;
+}
+
+.debrief-text p {
+    font-size: 0.97rem;
+    color: #444;
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.redirect-notice {
+    font-size: 1rem;
+    color: #555;
+    margin-top: 20px;
+    font-style: italic;
 }
 
 .loading {

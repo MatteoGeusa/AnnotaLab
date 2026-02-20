@@ -53,7 +53,7 @@ npm run dev
 ### Accesso alla Piattaforma
 
 Per simulare un utente Prolific sul Progetto #1:
-`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=2`
+`http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id=1`
 
 ---
 
@@ -121,7 +121,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
        1. Il sistema legge i metadati dell'annotatore, passati _si presuppone_ da prolific stesso, oppure un nostro appunto per premiare qualificatori bravi.
 
           ```json
-          {"group": "expert"}
+          { "group": "expert" }
           ```
 
        2. Filtra i documenti che hanno lo stesso tag nei loro metadati (es. ).
@@ -134,7 +134,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
 
      - **Uso Tipico:** riservare documenti difficili solo ad annotatori esperti/qualificati.
 
-     ---
+     ***
 
      ### **Nota Importante: Le "Gold Units"**
 
@@ -241,7 +241,6 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      ```
 
      ### **3. Flusso Tecnico Frontend -> Backend**
-
      1. **Frontend ()**:
 
         `TextHighlighter.vue`
@@ -250,7 +249,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
         - Crea un oggetto JavaScript: .
 
           ```json
-          { start: 10, end: 25, label: "Actor", text: "..." }
+          { "start": 10, "end": 25, "label": "Actor", "text": "..." }
           ```
 
         - Questo oggetto viene aggiunto all'array  nello stato locale (**AnnotatorView.js**).

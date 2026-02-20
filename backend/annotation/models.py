@@ -9,7 +9,7 @@ from django.conf import settings
 import json
 
 def get_default_configuration_for_task_type():
-    config_path = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_project_config.json')
     
     if os.path.exists(config_path):
         try:
@@ -85,14 +85,14 @@ class Project(models.Model):
     )
 
     configuration_task_type_file = models.FileField(
-        upload_to='configs/', 
+        upload_to='config_uploads/', 
         blank=True, 
         null=True,
         help_text="Optional: Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
     )
     
     configuration_screening_file = models.FileField(
-        upload_to='configs/', 
+        upload_to='config_uploads/', 
         blank=True, 
         null=True,
         help_text="Optional: Upload a JSON file to overwrite the Screening configuration (Survey, Training)."

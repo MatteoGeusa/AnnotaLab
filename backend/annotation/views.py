@@ -196,8 +196,18 @@ class SubmitSurvey(APIView):
         return Response({"status": "ok"})
 
 class GetNextTask(APIView):
+    """
+    DETERMINES THE NEXT TASK FOR THE ANNOTATOR
+    ---------------------------------------------------------
+    Logic:
+    1. Check for exclusion or already meeting target tasks.
+    2. Check screening status (Training phase or Passed phase).
+    3. If training -> Force a Gold Unit.
+    4. If passed -> Gold Injection logic OR Normal document selection based on project strategy.
+    5. Concurrent safe selection using SKIP LOCKED.
+    """
     def get(self, request):
-        # RECUPERO PARAMETRI
+        # 1. RETRIEVE PARAMETERS
         pid = request.query_params.get('pid')
         project_id = request.query_params.get('project_id')
 
@@ -207,178 +217,134 @@ class GetNextTask(APIView):
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         project = get_object_or_404(Project, id=project_id)
 
-        # CONTROLLO ESCLUSIONE
+        # 2. BASIC STATUS CHECKS
         if annotator.exclude_from_distribution:
-            return Response({
-                "status": "stopped"
-            })
+            return Response({"status": "stopped"})
 
-        # CONTROLLO LIMITE TASK UTENTE
+        # Check user progress
         done_count = annotator.annotations.filter(document__project=project).count()
         if done_count >= annotator.target_tasks:
-            return Response({
-                "status": "completed", 
-                "completion_url": PROLIFIC_COMPLETION_URL
-            })
+            return self._completed_response()
 
-        final_doc = None
-
-        # LOGICA DI ASSEGNAZIONE
-        
-        # 0. CONTROLLO SCREENING (SURVEY + TRAINING)
-        enrollment, _ = ProjectEnrollment.objects.get_or_create(
-            project=project, 
-            annotator=annotator
-        )
+        # 3. SCREENING / ENROLLMENT LOGIC
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
         
         if enrollment.screening_status == 'FAILED':
-             return Response({
-                "status": "stopped",
-                "message": "Screening not passed."
-            })
+             return Response({"status": "stopped", "message": "Screening not passed."})
             
         if enrollment.screening_status == 'PENDING':
-            # Check 1: Survey logic removed (Directly to Training)
+            # Check if they have met the training requirements but status hasn't updated
             screening_config = project.screening_config or {}
-
-            
-            # Check 2: Training Tasks
             req_training = screening_config.get('training_tasks_required', 0)
-            if enrollment.training_tasks_completed < req_training:
-                # They need a training task.
-                # Serve a Gold Unit.
-                # Use same logic as A1 but specifically looking for one they haven't done?
-                # Actually A1 logic below does exactly that (excludes annotations__annotator=ann).
-                # But we need to ensure we DO find one, or fail.
-                # And we want to mark it as FEEDBACK ENABLED.
-                
-                # Let's re-use the atomic block logic but force IS_GOLD_UNIT search.
-                pass # Proceed to transaction block, but we will force "gold_only" logic
-                
-            else:
-                # If they completed the count but status is still PENDING, 
-                # check if they passed (logic in submit should have handled this, 
-                # but valid check here too).
-                # If logic in submit didn't fail them, and they are > req, pass them?
-                # For safety, if they are here and have tasks >= req, we assume they passed 
-                # or we just switch them to PASSED now if not set.
+            
+            if enrollment.training_tasks_completed >= req_training:
                 enrollment.screening_status = 'PASSED'
                 enrollment.save()
 
+        # 4. TASK SELECTION (Concurrency Safe)
         with transaction.atomic():
+            target_id = self._get_candidate_id(project, annotator, enrollment, done_count)
             
-            target_id = None
-            
-            # --- SCREENING OVERRIDE ---
-            if enrollment.screening_status == 'PENDING':
-                # Force search for Gold Unit
-                 gold_candidate_id = Document.objects.filter(
-                    project=project,
-                    is_gold_unit=True
-                ).exclude(
-                    annotations__annotator=annotator
-                ).values_list('id', flat=True).first()
-                
-                 target_id = gold_candidate_id
-                 
-                 # If no gold unit available for training?
-                 if not target_id:
-                     return Response({"status": "no_training_data"})
-            
-            else:
-                # FASE A: Cerca ID Candidato (Senza Locking)
-                # Qui usiamo annotate/filter liberamente perché non blocchiamo nulla
-                
-                target_id = None
-                
-                # A1. ONGOING QUALITY CONTROL (Gold Injection)
-                # Check if we should inject a gold unit based on frequency
-                # Changed: frequency is now in task_type_config (Business Logic of the Task)
-                task_config = project.task_type_config or {}
-                injection_freq = task_config.get('gold_injection_frequency', 0)
-                
-                should_inject_gold = False
-                if injection_freq > 0:
-                    # Logic: If I have done N tasks, and (N+1) % freq == 0, then serve Gold.
-                    # Example: Freq=5. Done=4. (4+1)%5 == 0 -> True. Serve Gold.
-                    # Example: Done=9. (9+1)%5 == 0 -> True. Serve Gold.
-                    if (done_count + 1) % injection_freq == 0:
-                        should_inject_gold = True
-                
-                if should_inject_gold:
-                    gold_candidate_id = Document.objects.filter(
-                        project=project,
-                        is_gold_unit=True
-                    ).exclude(
-                        annotations__annotator=annotator
-                    ).values_list('id', flat=True).first()
-                    
-                    if gold_candidate_id:
-                        target_id = gold_candidate_id
-                
-                # If no gold check or no gold found, target_id is still None.
+            if not target_id:
+                # If we are in training and no gold units are left, or no docs left
+                if enrollment.screening_status == 'PENDING':
+                    return Response({"status": "no_training_data"})
+                return self._completed_response()
 
+            # select_for_update allows us to lock the row and avoid double assignment in Race Conditions
+            final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
 
-                # A2. DOCUMENTI NORMALI (Se non c'è Gold Unit)
-                if not target_id:
-                    # Query base
-                    base_qs = Document.objects.filter(
-                        project=project,
-                        is_gold_unit=False
-                    ).exclude(
-                        annotations__annotator=annotator
-                    ).annotate(
-                        num_anns=Count('annotations')
-                    )
-
-                    # Applicazione Strategia per trovare l'ID
-                    candidates = base_qs
-                    
-                    if project.distribution_strategy == 'STANDARD':
-                        candidates = candidates.filter(num_anns__lt=project.max_annotations_per_doc)
-                        if project.prioritize_unannotated:
-                            candidates = candidates.order_by('num_anns')
-                        else:
-                            candidates = candidates.order_by('?')
-                    
-                    elif project.distribution_strategy == 'FULL_OVERLAP':
-                        candidates = candidates.order_by('?')
-                    
-                    elif project.distribution_strategy == 'METADATA_MATCH':
-                        user_group = annotator.metadata.get('group')
-                        if user_group:
-                            candidates = candidates.filter(
-                                metadata__group=user_group,
-                                num_anns__lt=project.max_annotations_per_doc
-                            )
-                    
-                    # Prendiamo solo l'ID del primo risultato
-                    target_id = candidates.values_list('id', flat=True).first()
-
-            # Ora che abbiamo l'ID, possiamo bloccare la riga specifica senza usare annotate/group_by
-            if target_id:
-                # select_for_update funziona perfettamente su una .get() o .filter() semplice
-                final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
-
-        # 4. RISPOSTA
+        # 5. RESPONSE ASSEMBLY
         if final_doc:
-            from .serializers import DocumentSerializer
-            serializer = DocumentSerializer(final_doc)
-            data = serializer.data 
+            return self._task_response(final_doc, enrollment)
+        
+        return self._completed_response()
+
+    def _get_candidate_id(self, project, annotator, enrollment, done_count):
+        """ Internal logic to find the 'next' candidate ID """
+        
+        # A. SCREENING PHASE (FORCE GOLD)
+        if enrollment.screening_status == 'PENDING':
+            return self._find_gold_candidate(project, annotator)
+
+        # B. REGULAR PHASE - QUALITY CONTROL (GOLD INJECTION)
+        if self._should_inject_gold(project, done_count):
+             gold_id = self._find_gold_candidate(project, annotator)
+             if gold_id:
+                 return gold_id
+
+        # C. REGULAR PHASE - NORMAL DOCUMENTS
+        return self._find_normal_candidate(project, annotator)
+
+    def _should_inject_gold(self, project, done_count):
+        """ Determines if a Gold Unit should be injected based on frequency settings """
+        task_config = project.task_type_config or {}
+        injection_freq = task_config.get('gold_injection_frequency', 0)
+        return injection_freq > 0 and (done_count + 1) % injection_freq == 0
+
+    def _find_gold_candidate(self, project, annotator):
+        """ Finds a Gold Unit the annotator hasn't seen yet """
+        return Document.objects.filter(
+            project=project,
+            is_gold_unit=True
+        ).exclude(
+            annotations__annotator=annotator
+        ).values_list('id', flat=True).first()
+
+    def _find_normal_candidate(self, project, annotator):
+        """ Finds a regular document based on the distribution strategy """
+        base_qs = Document.objects.filter(
+            project=project,
+            is_gold_unit=False
+        ).exclude(
+            annotations__annotator=annotator
+        ).annotate(
+            num_anns=Count('annotations')
+        )
+
+        candidates = base_qs
+        
+        if project.distribution_strategy == 'STANDARD':
+            # Respect max capacity and prioritize based on setup
+            candidates = candidates.filter(num_anns__lt=project.max_annotations_per_doc)
+            order = 'num_anns' if project.prioritize_unannotated else '?'
+            candidates = candidates.order_by(order)
             
-            # Add type metadata
-            if enrollment.screening_status == 'PENDING':
-                data['type'] = 'TRAINING'
-                data['feedback_enabled'] = True
-            else:
-                data['type'] = 'NORMAL'
-                
-            return Response(data)
-        else:
-            return Response({
-                "status": "completed", 
-                "completion_url": PROLIFIC_COMPLETION_URL
+        elif project.distribution_strategy == 'FULL_OVERLAP':
+            # Everyone sees everything, just random
+            candidates = candidates.order_by('?')
+            
+        elif project.distribution_strategy == 'METADATA_MATCH':
+            # Group assignment
+            user_group = annotator.metadata.get('group')
+            if user_group:
+                candidates = candidates.filter(
+                    metadata__group=user_group,
+                    num_anns__lt=project.max_annotations_per_doc
+                )
+        
+        return candidates.values_list('id', flat=True).first()
+
+    def _task_response(self, doc, enrollment):
+        """ Prepares the final Response JSON, filtering out sensitive data """
+        # The Serializer already excludes 'metadata' and 'external_id' for privacy
+        serializer = DocumentSerializer(doc)
+        data = serializer.data 
+        
+        # Add frontend-specific tags
+        if enrollment.screening_status == 'PENDING':
+            data.update({
+                'feedback_enabled': True
             })
+            
+        return Response(data)
+
+    def _completed_response(self):
+        """ Standard response when no more tasks are available or target is reached """
+        return Response({
+            "status": "completed", 
+            "completion_url": PROLIFIC_COMPLETION_URL
+        })
 
 class GetConsent(APIView):
     def get(self, request):

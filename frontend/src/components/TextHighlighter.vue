@@ -20,7 +20,6 @@
             </template>
         </div>
 
-        <!-- Popup Modal -->
         <div v-if="showPopup" class="popup-overlay" @click.self="closePopup">
             <div class="popup-content">
                 <p class="popup-message">{{ popupMessage }}</p>
@@ -121,22 +120,32 @@ const handleSelection = () => {
     // 3. Normalize (if the user selected from right to left)
     let realStart = Math.min(start, end);
     let realEnd = Math.max(start, end);
+
+    // 3b. Trim the selection boundaries before expanding
+    // This prevents "jumping" over spaces and including adjacent words if the selection contains whitespace.
+    let tempSegment = props.text.slice(realStart, realEnd);
+    const leadingSpaces = tempSegment.length - tempSegment.trimStart().length;
+    const trailingSpaces = tempSegment.length - tempSegment.trimEnd().length;
+
+    realStart += leadingSpaces;
+    realEnd -= trailingSpaces;
+
+    // 3c. Expand to full-word boundaries: walk left/right past any non-whitespace
+    while (realStart > 0 && !/\s/.test(props.text[realStart - 1])) {
+        realStart--;
+    }
+    while (realEnd < props.text.length && !/\s/.test(props.text[realEnd])) {
+        realEnd++;
+    }
+
     let textSegment = props.text.slice(realStart, realEnd);
 
-    // 4. Whitespace Check and Trimming
-    // CONFIGURATION NOTE: Comment out this block to allow selecting empty spaces.
+    // 4. Whitespace Check
     if (!textSegment.trim()) {
         selection.removeAllRanges();
         return;
     }
 
-    // 4b. Remove leading/trailing whitespace from selection
-    // CONFIGURATION NOTE: Remove these calculations to keep original selection with spaces.
-    const leadingSpaces = textSegment.length - textSegment.trimStart().length;
-    const trailingSpaces = textSegment.length - textSegment.trimEnd().length;
-
-    realStart += leadingSpaces;
-    realEnd -= trailingSpaces;
     textSegment = textSegment.trim();
 
     // 5. Label Check

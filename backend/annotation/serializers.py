@@ -5,7 +5,7 @@ import os
 from django.conf import settings
 
 # Load default config at startup (more efficient)
-CONFIG_PATH = os.path.join(settings.BASE_DIR, 'config', 'default_project_config.json')
+CONFIG_PATH = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_project_config.json')
 try:
     with open(CONFIG_PATH, 'r') as f:
         DEFAULT_CONFIG = json.load(f)
@@ -25,7 +25,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'text', 'external_id', 'project_config', 'metadata']
+        fields = ['id', 'text', 'project_config']
 
     def get_project_config(self, obj):
         # Merge DB config with default config / Merge config DB con default
@@ -49,6 +49,10 @@ class DocumentSerializer(serializers.ModelSerializer):
                 final_config['span_labels'] = []
 
             final_config.update(db_config)
+            
+        # Remove sensitive/internal logic from frontend
+        final_config.pop('gold_injection_frequency', None)
+        final_config.pop('task_type', None)
             
         return final_config
 
