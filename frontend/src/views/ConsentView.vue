@@ -2,15 +2,20 @@
     <div class="page-container">
         <div class="card">
             <h1>Informed Consent</h1>
+            <p class="subtitle">Please read the following information carefully before proceeding.</p>
+
             <div class="scroll-box">
-                <p><strong>Project:</strong> PsyCoMark Study</p>
-                <p><strong>Goal:</strong> We are studying linguistic markers in online text...</p>
-                <p><strong>Data:</strong> Your answers will be anonymous...</p>
-                <p><strong>Rights:</strong> You can withdraw at any time...</p>
+                <p v-if="loading" class="state-text">Loading...</p>
+                <p v-else-if="errorMsg" class="error">{{ errorMsg }}</p>
+                <p v-else class="consent-body">{{ truncatedConsent }}</p>
             </div>
 
+            <a v-if="isLong" class="read-more-link" @click="full_consent_form_url">
+                Read the full consent form →
+            </a>
+
             <div class="actions">
-                <label>
+                <label class="checkbox-label">
                     <input type="checkbox" v-model="accepted">
                     I have read and understood the information above.
                 </label>
@@ -21,13 +26,44 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../axios';
 
 const router = useRouter();
+const route = useRoute();
+
 const accepted = ref(false);
 const pid = localStorage.getItem('prolific_pid');
+const projectId = route.query.project_id ?? localStorage.getItem('project_id');
+const consentText = ref('');
+const loading = ref(true);
+const errorMsg = ref('');
+
+const TRUNCATE_LIMIT = 500;
+const isLong = computed(() => consentText.value.length > TRUNCATE_LIMIT);
+const truncatedConsent = computed(() =>
+    isLong.value ? consentText.value.slice(0, TRUNCATE_LIMIT) + '…' : consentText.value
+);
+
+const getConsent = async () => {
+    try {
+        const res = await api.get('get-consent/', {
+            params: { pid, project_id: projectId }
+        });
+        consentText.value = res.data.consent_text;
+    } catch (err) {
+        errorMsg.value = "Error getting consent. " + (err.response?.data?.error || err.message);
+    } finally {
+        loading.value = false;
+    }
+};
+
+onMounted(getConsent);
+
+const full_consent_form_url = () => {
+    router.push({ path: '/consent-form', query: { project_id: projectId } });
+};
 
 const submitConsent = async () => {
     await api.post('consent/', { pid });
@@ -39,37 +75,116 @@ const submitConsent = async () => {
 .page-container {
     display: flex;
     justify-content: center;
-    padding: 50px;
+    align-items: flex-start;
+    height: 100vh;
+    overflow: hidden;
+    padding: 50px 20px;
+    box-sizing: border-box;
+    background-color: #f0f2f5;
 }
 
 .card {
     background: white;
-    padding: 30px;
-    max-width: 600px;
+    padding: 40px;
+    width: 100%;
+    max-width: 640px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    margin: 0 0 6px;
+    font-size: 1.6rem;
+    color: #1a1a2e;
+}
+
+.subtitle {
+    color: #666;
+    margin: 0 0 20px;
+    font-size: 0.95rem;
 }
 
 .scroll-box {
-    height: 300px;
-    overflow-y: scroll;
-    border: 1px solid #eee;
-    padding: 15px;
-    margin: 20px 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 16px 20px;
     background: #fafafa;
+    min-height: 120px;
+}
+
+.consent-body {
+    margin: 0;
+    line-height: 1.7;
+    color: #333;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+}
+
+.state-text {
+    margin: 0;
+    color: #999;
+    font-style: italic;
+}
+
+.read-more-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.88rem;
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.read-more-link:hover {
+    text-decoration: underline;
+}
+
+.actions {
+    margin-top: 28px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: #444;
+    margin-bottom: 18px;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 button {
-    background: #007bff;
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
     color: white;
-    padding: 10px 20px;
     border: none;
     border-radius: 5px;
+    font-size: 1rem;
     cursor: pointer;
-    margin-top: 20px;
+    transition: background 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #0069d9;
 }
 
 button:disabled {
-    background: #ccc;
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.error {
+    color: #dc3545;
+    margin: 0;
 }
 </style>

@@ -29,7 +29,7 @@ class AnnotationAdmin(ModelAdmin):
         return format_html('<a href="{}">{}</a>', url, str(obj.annotator))
 
     def seconds_to_complete(self, obj):
-        if obj.milliseconds_to_complete < 2000:
+        if obj.milliseconds_to_complete < 5000:
             return format_html('<span style="color: red;">{}ms</span>', obj.milliseconds_to_complete)
         return format_html('<span style="color: green;">{}ms</span>', obj.milliseconds_to_complete)
 

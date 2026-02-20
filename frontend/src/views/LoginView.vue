@@ -32,11 +32,16 @@ const startSession = async () => {
     if (!isValid.value) return;
 
     try {
-        const response = await api.post('session/', { prolific_pid: prolificPid.value });
+        const response = await api.post('session/', {
+            prolific_pid: prolificPid.value,
+            project_id: projectId.value,
+        });
 
         // Salvataggio dati critici
         localStorage.setItem('prolific_pid', response.data.pid);
-        // Nota: project_id è già in localStorage da onMounted
+        if (response.data.project_name) {
+            localStorage.setItem('project_name', response.data.project_name);
+        }
 
         // Routing
         const step = response.data.step;

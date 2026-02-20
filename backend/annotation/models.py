@@ -32,7 +32,18 @@ def get_default_configuration_for_screening():
     }
 
 def get_default_configuration_for_informed_consent():
-    return "general text"
+    return """
+    [EXAMPLE SCRIPT]
+    Welcome to the study!
+    
+    Your task: You will be asked to [describe the task in half a line, e.g., read and classify 20 sentences]. The estimated time is approximately [X] minutes. The goal is [very brief purpose, e.g., to improve an artificial intelligence system].
+    
+    Your data and privacy: This task is anonymous. We do not collect any personally identifiable information. We will only save your responses and your Prolific ID, which we need exclusively to confirm your completion of the task and authorize your payment on the platform.
+    
+    Your rights: Participation is voluntary. You may stop participating at any time. If you decide not to finish, simply close this page and click on "Return submission" on Prolific. In this case, your partial data will not be used, but we will not be able to process your payment.
+    
+    By clicking the button below, you confirm that you are at least 18 years old, that you have read this information, and that you consent to participate.
+    """
 
 class Project(models.Model):
     """
@@ -119,12 +130,8 @@ class Project(models.Model):
 
     dataset_file = models.FileField(
         upload_to='datasets/', 
-        blank=True, 
-        null=True, 
         help_text="Upload a .jsonl file to automatically populate documents."
     )
-    
-
     
     created_at = models.DateTimeField(auto_now_add=True)
 

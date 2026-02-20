@@ -12,7 +12,7 @@ from .utils import process_task_config, process_screening_config, process_upload
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Aggiungi i nuovi campi a list_display se vuoi vederli subito
-    list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button')
+    list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button', 'link_prolific')
     
     readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
     
@@ -213,6 +213,32 @@ class ProjectAdmin(ModelAdmin):
             ''',
             url, bg_class, count
         )
+    
+    @admin.display(description="Link (Prolific)")
+    def link_prolific(self, obj):
+        display_url = f"http://localhost:5173/?PROLIFIC_PID=&project_id={obj.id}"
+        test_url = f"http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id={obj.id}"
+        return format_html(
+            '''
+            <div style="display:flex; align-items:center; gap:8px; min-width:400px;">
+                <code style="
+                    background:#1e1e1e; color:#60a5fa;
+                    padding:4px 8px; border-radius:4px;
+                    font-size:12px; word-break:break-all;
+                    border:1px solid #333; flex:1;
+                ">{}</code>
+                <a href="{}" target="_blank"
+                   style="flex-shrink:0; background:#2563eb; color:white; padding:3px 8px;
+                          border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;"
+                   title="Open with TEST_USER_001">
+                   ↗ Test
+                </a>
+            </div>
+            ''',
+            display_url,
+            test_url,
+        )
+
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

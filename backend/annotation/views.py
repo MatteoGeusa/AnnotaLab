@@ -31,10 +31,12 @@ class InitializeSession(APIView):
     """
     def post(self, request):
         pid = request.data.get('prolific_pid')
+        project_id = request.data.get('project_id')
         if not pid:
             return Response({"error": "Missing PID"}, status=400)
         
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
+        project = get_object_or_404(Project, id=project_id) if project_id else None
         
         # Calculate current state
         current_step = 'CONSENT'
@@ -53,6 +55,7 @@ class InitializeSession(APIView):
             "pid": annotator.prolific_pid,
             "step": current_step,
             "done_count": done_count,
+            "project_name": project.name if project else None,
             "completion_url": PROLIFIC_COMPLETION_URL if current_step == 'COMPLETED' else None
         })
 
@@ -376,3 +379,20 @@ class GetNextTask(APIView):
                 "status": "completed", 
                 "completion_url": PROLIFIC_COMPLETION_URL
             })
+
+class GetConsent(APIView):
+    def get(self, request):
+        pid = request.query_params.get('pid')
+        project_id = request.query_params.get('project_id')
+        if not pid or not project_id:
+            return Response({"error": "Missing PID or Project ID"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        project = get_object_or_404(Project, id=project_id)
+        
+        if annotator.consent_accepted:
+            return Response({"error": "Already consented"}, status=400)
+
+        return Response({
+            "consent_text": project.informed_consent_config
+        })
