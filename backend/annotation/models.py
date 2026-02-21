@@ -106,12 +106,12 @@ class Project(models.Model):
         help_text="The JSON key for the ID. If empty or not found, it will use the row number."
     )
     
+    # CONFIGURATION
+    
     informed_consent_config = models.TextField(
         default=get_default_configuration_for_informed_consent, 
         help_text="Informed Consent Configuration: accept a string can be showed to the annotator before starting the task"
     )
-
-    # CONFIGURATION
     
     task_type_config = models.JSONField(
         default=get_default_configuration_for_task_type, 
@@ -127,9 +127,9 @@ class Project(models.Model):
     # --- DISTRIBUTION CONSTRAINTS ---
 
     STRATEGY_CHOICES = [
-        ('STANDARD', 'Standard (Public Pool)'),
-        ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy)'),
-        ('METADATA_MATCH', 'Group Assignment (Metadata Based)'),
+        ('STANDARD', 'Standard (Public Pool) - Randomly assign documents to annotators'),
+        ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy) - All annotators see all documents'),
+        ('METADATA_MATCH', 'Group Assignment (Metadata Based) - Assign documents to annotators based on metadata'),
     ]
     
     distribution_strategy = models.CharField(

@@ -182,7 +182,10 @@ class ProjectAdmin(ModelAdmin):
         filename = f"{project.name.replace(' ', '_').lower()}_annotations.jsonl"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-        annotations = Annotation.objects.filter(document__project=project).select_related('document', 'annotator')
+        annotations = Annotation.objects.filter(
+            document__project=project,
+            document__is_gold_unit=False  # Exclude training/screening gold units
+        ).select_related('document', 'annotator')
 
         for ann in annotations:
             raw_result = ann.result
@@ -318,7 +321,9 @@ class ProjectAdmin(ModelAdmin):
         # --- Process uploaded Dataset JSONL ---
         if 'dataset_file' in form.changed_data and obj.dataset_file:
             try:
-                count = process_uploaded_dataset(obj, obj.dataset_file)
+                count, import_warnings = process_uploaded_dataset(obj, obj.dataset_file)
                 messages.success(request, f"Import successful! Created {count} documents.")
+                for warn in import_warnings:
+                    messages.warning(request, f"⚠️ {warn}")
             except Exception as e:
                 messages.error(request, f"Import error: {str(e)}")

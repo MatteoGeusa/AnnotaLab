@@ -5,8 +5,19 @@ def process_uploaded_dataset(project, file_obj):
     """
     DATASET IMPORT LOGIC (Dynamic Keys Version)
     Reads a JSONL file using the keys configured in the Project.
+    Returns a tuple: (created_count, warnings_list)
     """
     count = 0
+    warnings = []
+
+    # Extract valid classification values from the project's task config
+    task_config = project.task_type_config or {}
+    valid_class_values = {
+        label.get('value') 
+        for label in task_config.get('class_labels', []) 
+        if label.get('value')
+    }
+
     # Use context manager to ensure file is closed properly (Fix for Windows file locking)
     with file_obj.open() as f:
         # Get the user-configured keys
@@ -26,6 +37,7 @@ def process_uploaded_dataset(project, file_obj):
                 try:
                     data = json.loads(line_str)
                 except json.JSONDecodeError:
+                    warnings.append(f"Row {idx}: Invalid JSON, skipped.")
                     continue
                 
                 # 1. FIND THE TEXT (Required)
@@ -51,6 +63,33 @@ def process_uploaded_dataset(project, file_obj):
                 is_gold = data.get('is_gold_unit', False)
                 gold_sol = data.get('gold_solution', None)
 
+                # VALIDATE GOLD UNIT CONSISTENCY
+                if is_gold:
+                    if not gold_sol or not isinstance(gold_sol, dict):
+                        warnings.append(
+                            f"Row {idx}: Gold unit is missing 'gold_solution' or it's not a dict. "
+                            f"Imported as regular document."
+                        )
+                        is_gold = False
+                        gold_sol = None
+                    elif valid_class_values:
+                        gold_class = gold_sol.get('classification')
+                        if gold_class and gold_class not in valid_class_values:
+                            warnings.append(
+                                f"Row {idx}: Gold solution classification '{gold_class}' "
+                                f"is not in project's class_labels {sorted(valid_class_values)}. "
+                                f"Imported as regular document."
+                            )
+                            is_gold = False
+                            gold_sol = None
+                        elif not gold_class:
+                            warnings.append(
+                                f"Row {idx}: Gold solution is missing 'classification' key. "
+                                f"Imported as regular document."
+                            )
+                            is_gold = False
+                            gold_sol = None
+
                 # Create Document
                 obj, created = Document.objects.get_or_create(
                     project=project,
@@ -68,7 +107,7 @@ def process_uploaded_dataset(project, file_obj):
         except Exception as e:
             raise e
     
-    return count
+    return count, warnings
 
 def parse_json_upload(file_obj):
     """
