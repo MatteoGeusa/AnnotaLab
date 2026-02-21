@@ -31,6 +31,9 @@ const errorMessage = ref('');
 const startSession = async () => {
     if (!isValid.value) return;
 
+    isLoading.value = true;
+    errorMessage.value = '';
+
     try {
         const response = await api.post('session/', {
             prolific_pid: prolificPid.value,
@@ -51,8 +54,16 @@ const startSession = async () => {
         else if (step === 'COMPLETED') router.push('/annotate');
 
     } catch (err) {
-        alert("Login failed. Check console.");
-        console.error(err);
+        if (err.response && err.response.status === 404) {
+            errorMessage.value = "Project not found or inactive. Please contact the administrator.";
+        } else if (err.response && err.response.data && err.response.data.error) {
+            errorMessage.value = err.response.data.error;
+        } else {
+            errorMessage.value = "Connection error. Please check your internet or retry later.";
+        }
+        console.error("Login Error:", err);
+    } finally {
+        isLoading.value = false;
     }
 };
 

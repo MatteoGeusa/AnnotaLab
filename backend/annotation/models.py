@@ -52,6 +52,7 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
+    is_active = models.BooleanField(default=True, help_text="If False, the project will not accept new annotations.")
 
     dataset_text_key = models.CharField(
         max_length=100, 

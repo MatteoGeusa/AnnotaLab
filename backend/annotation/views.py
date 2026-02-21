@@ -35,8 +35,15 @@ class InitializeSession(APIView):
         if not pid:
             return Response({"error": "Missing PID"}, status=400)
         
+        # Check Project existence and status
+        if not project_id:
+            return Response({"error": "Missing Project ID"}, status=400)
+            
+        project = get_object_or_404(Project, id=project_id)
+        if not project.is_active:
+            return Response({"error": "Project is not active"}, status=404)
+
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
-        project = get_object_or_404(Project, id=project_id) if project_id else None
         
         # Calculate current state
         current_step = 'CONSENT'
@@ -55,7 +62,7 @@ class InitializeSession(APIView):
             "pid": annotator.prolific_pid,
             "step": current_step,
             "done_count": done_count,
-            "project_name": project.name if project else None,
+            "project_name": project.name,
             "completion_url": PROLIFIC_COMPLETION_URL if current_step == 'COMPLETED' else None
         })
 
@@ -218,6 +225,9 @@ class GetNextTask(APIView):
         project = get_object_or_404(Project, id=project_id)
 
         # 2. BASIC STATUS CHECKS
+        if not project.is_active:
+            return Response({"status": "stopped", "message": "This project is currently not accepting annotations."})
+
         if annotator.exclude_from_distribution:
             return Response({"status": "stopped"})
 
@@ -355,6 +365,9 @@ class GetConsent(APIView):
         
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         project = get_object_or_404(Project, id=project_id)
+        
+        if not project.is_active:
+            return Response({"error": "Project is not active"}, status=404)
         
         if annotator.consent_accepted:
             return Response({"error": "Already consented"}, status=400)
