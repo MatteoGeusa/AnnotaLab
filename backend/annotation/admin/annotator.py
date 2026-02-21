@@ -12,7 +12,7 @@ class AnnotatorAdmin(ModelAdmin):
     list_display = ('prolific_pid', 'created_at', 'view_work_link')
     search_fields = ('prolific_pid',)
     
-    # Metti created_at in readonly per evitare l'errore precedente
+    # created_at is read-only to prevent editing
     readonly_fields = ('created_at', 'formatted_metadata')
 
     fieldsets = (
@@ -33,7 +33,7 @@ class AnnotatorAdmin(ModelAdmin):
         }),
     )
     
-    # Configurazione CSS/JS per Highlight.js
+    # CSS/JS for Highlight.js syntax highlighting
     Media = HighlightMedia
 
     @admin.display(description="Metadata (JSON)")
@@ -56,7 +56,7 @@ class AnnotatorAdmin(ModelAdmin):
 
     @admin.display(description="History")
     def view_work_link(self, obj):
-        # Controllo di sicurezza: se obj non ha ID (es. in creazione), non mostrare link
+        # Safety check: don't show link if the object has no ID yet (e.g. during creation)
         if not obj or not obj.id:
             return "-"
             

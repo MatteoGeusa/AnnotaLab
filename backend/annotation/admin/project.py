@@ -1,19 +1,43 @@
 from django.contrib import admin
+from django import forms
 from unfold.admin import ModelAdmin
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.urls import reverse, path
 from django.utils.http import urlencode
 from django.http import HttpResponse
 from django.contrib import messages
 import json
+import re
 from ..models import Project, Annotation
-from .utils import process_task_config, process_screening_config, process_uploaded_dataset
+from .utils import parse_json_upload, process_uploaded_dataset
+
+
+class ProjectAdminForm(forms.ModelForm):
+    """
+    Custom form that adds non-model file inputs for uploading JSON configs.
+    The uploaded file is parsed and stored directly into the JSONField on save.
+    """
+    upload_task_config = forms.FileField(
+        required=False,
+        label="Upload Task Config (JSON)",
+        help_text="Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
+    )
+    upload_screening_config = forms.FileField(
+        required=False,
+        label="Upload Screening Config (JSON)",
+        help_text="Upload a JSON file to overwrite the Screening configuration."
+    )
+
+    class Meta:
+        model = Project
+        fields = '__all__'
 
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
-    # Aggiungi i nuovi campi a list_display se vuoi vederli subito
+    # Columns visible in the project list view
     list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button', 'link_prolific')
     
+    form = ProjectAdminForm
     readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
     
     fieldsets = (
@@ -23,35 +47,22 @@ class ProjectAdmin(ModelAdmin):
 
         ("Configuration", {
             "fields": (
-                
-                ("configuration_task_type_file", "configuration_screening_file"),
                 ("formatted_task_type_config", "formatted_screening_config"),
-               
+                ("upload_task_config", "upload_screening_config"),
             ),
             "description": """
-               Upload specific JSON files to overwrite the project configuration.<br><br>
-               <b>1. Task Configuration File:</b>
-               <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 5px;">
-                   <li><b>Purpose:</b> Defines the task interface and logic.</li>
-                   <li><b>Keys:</b> <code>task_type</code>, <code>class_labels</code>, <code>span_labels</code>, <code>gold_injection_frequency</code>.</li>
-               </ul>
-               <b>2. Screening Configuration File:</b>
-               <ul style="margin-left: 20px; list-style-type: disc;">
-                   <li><b>Purpose:</b> Defines the screening/training logic.</li>
-                   <li><b>Keys:</b> <code>min_accuracy_required</code>, <code>training_tasks_required</code>.</li>
-               </ul>
-               <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
+                Live JSON configuration for this project. Upload a JSON file below to overwrite.<br>
+                <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd; margin-top: 8px;">
                 <b>💡 Golden Units injection frequency:</b><br>
-                The frequency of golden units injection is determined by the <code>gold_injection_frequency</code> key in the task configuration file.<br>
-                The value of this key is the number of regular units to be annotated between two golden units.<br>
-                For example, if the value is 5, a golden unit will be injected every 5 regular units.
+                Determined by <code>gold_injection_frequency</code> in the task config.
+                E.g. a value of 5 means one gold unit is injected every 5 regular units.
                 </div>
             """
         }),
   
         ("Input Data Mapping", {
             "fields": (
-                ("dataset_text_key", "dataset_id_key"), # Sulla stessa riga
+                ("dataset_text_key", "dataset_id_key"),
                 "dataset_file", 
             ),
             "description": """
@@ -82,35 +93,76 @@ class ProjectAdmin(ModelAdmin):
     )
 
 
-    @admin.display(description="Current Task Config (JSON)")
-    def formatted_task_type_config(self, obj):
-        # Se il campo è vuoto, mostra un trattino
-        if not obj.task_type_config:
-            return "-"
-        
-        json_str = json.dumps(obj.task_type_config, indent=4, sort_keys=True)
-        
+    class Media:
+        css = {
+            'all': ('css/admin_project.css',)
+        }
+        js = ('js/admin_project.js',)
+
+    def _colorize_json(self, json_str):
+        """Apply simple syntax highlighting to a JSON string for HTML display."""
+        # Escape HTML first
+        from django.utils.html import escape
+        escaped = escape(json_str)
+        # Highlight keys ("key":)
+        escaped = re.sub(
+            r'&quot;([^&]+?)&quot;(?=\s*:)',
+            r'<span class="json-key">&quot;\1&quot;</span>',
+            escaped
+        )
+        # Highlight string values (: "value")
+        escaped = re.sub(
+            r':\s*&quot;([^&]*?)&quot;',
+            r': <span class="json-string">&quot;\1&quot;</span>',
+            escaped
+        )
+        # Highlight numbers
+        escaped = re.sub(
+            r':\s*(\d+\.?\d*)',
+            r': <span class="json-number">\1</span>',
+            escaped
+        )
+        # Highlight booleans
+        escaped = re.sub(
+            r'\b(true|false|null)\b',
+            r'<span class="json-bool">\1</span>',
+            escaped
+        )
+        return escaped
+
+    def _render_config_block(self, config_data, title, icon):
+        """Render a JSON config as a styled HTML block."""
+        if not config_data:
+            return format_html(
+                '<div class="config-empty">'
+                '<span class="empty-icon">{}</span>'
+                '<span>No {} configured yet. Upload a JSON file above.</span>'
+                '</div>',
+                icon, title.lower()
+            )
+
+        json_str = json.dumps(config_data, indent=4, sort_keys=True)
+        colorized = self._colorize_json(json_str)
+
         return format_html(
-            '''
-            <pre style="background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto; max-height: 500px; border: 1px solid #333;"><code>{}</code></pre>
-            ''',
-            json_str
+            '<div class="json-config-display">'
+            '  <div class="config-header">'
+            '    <span class="config-icon">{icon}</span> {title}'
+            '  </div>'
+            '  <pre>{code}</pre>'
+            '</div>',
+            icon=icon,
+            title=title,
+            code=mark_safe(colorized)
         )
 
-    @admin.display(description="Current Screening Config (JSON)")
+    @admin.display(description="Task Config")
+    def formatted_task_type_config(self, obj):
+        return self._render_config_block(obj.task_type_config, 'Task Configuration', '⚙️')
+
+    @admin.display(description="Screening Config")
     def formatted_screening_config(self, obj):
-        # Se il campo è vuoto, mostra un trattino
-        if not obj.screening_config:
-            return "-"
-        
-        json_str = json.dumps(obj.screening_config, indent=4, sort_keys=True)
-        
-        return format_html(
-            '''
-            <pre style="background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto; max-height: 500px; border: 1px solid #333;"><code>{}</code></pre>
-            ''',
-            json_str
-        )
+        return self._render_config_block(obj.screening_config, 'Screening Configuration', '🛡️')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -242,19 +294,28 @@ class ProjectAdmin(ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if 'configuration_task_type_file' in form.changed_data and obj.configuration_task_type_file:
+
+        # --- Process uploaded Task Config JSON ---
+        task_config_file = form.cleaned_data.get('upload_task_config')
+        if task_config_file:
             try:
-                process_task_config(obj, obj.configuration_task_type_file)
+                obj.task_type_config = parse_json_upload(task_config_file)
+                obj.save(update_fields=['task_type_config'])
                 messages.success(request, "Task Configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Task Config Error: {str(e)}")
-        
-        if 'configuration_screening_file' in form.changed_data and obj.configuration_screening_file:
+
+        # --- Process uploaded Screening Config JSON ---
+        screening_config_file = form.cleaned_data.get('upload_screening_config')
+        if screening_config_file:
             try:
-                process_screening_config(obj, obj.configuration_screening_file)
+                obj.screening_config = parse_json_upload(screening_config_file)
+                obj.save(update_fields=['screening_config'])
                 messages.success(request, "Screening Configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
+
+        # --- Process uploaded Dataset JSONL ---
         if 'dataset_file' in form.changed_data and obj.dataset_file:
             try:
                 count = process_uploaded_dataset(obj, obj.dataset_file)

@@ -4,17 +4,17 @@ from ..models import Document
 def process_uploaded_dataset(project, file_obj):
     """
     DATASET IMPORT LOGIC (Dynamic Keys Version)
-    Legge un file JSONL usando le chiavi configurate nel Progetto.
+    Reads a JSONL file using the keys configured in the Project.
     """
     count = 0
     # Use context manager to ensure file is closed properly (Fix for Windows file locking)
     with file_obj.open() as f:
-        # Recuperiamo le chiavi configurate dall'utente
+        # Get the user-configured keys
         text_key = project.dataset_text_key
         id_key = project.dataset_id_key
 
         try:
-            # Usiamo enumerate per avere il numero di riga (idx) che parte da 1
+            # Use enumerate to track the row number (idx) starting at 1
             for idx, line in enumerate(f, start=1):
                 try:
                     line_str = line.decode('utf-8').strip()
@@ -28,30 +28,30 @@ def process_uploaded_dataset(project, file_obj):
                 except json.JSONDecodeError:
                     continue
                 
-                # 1. CERCA IL TESTO (Necessario)
+                # 1. FIND THE TEXT (Required)
                 text = data.get(text_key)
 
-                # 2. CERCA L'ID (Opzionale / Configurabile)
-                # Se la chiave c'è nel config E c'è nel JSON -> Usa quella
+                # 2. FIND THE ID (Optional / Configurable)
+                # If the key exists in the config AND in the JSON -> Use it
                 if id_key and id_key in data:
                     external_id = str(data.get(id_key))
                 else:
-                    # Altrimenti -> Usa il seriale (numero di riga)
-                    # Aggiungiamo un prefisso per evitare collisioni banali
+                    # Otherwise -> Use row number as a serial ID
+                    # Add a prefix to avoid trivial collisions
                     external_id = f"row_{idx}"
 
-                # Fallback testo (se la chiave esiste ma il valore è vuoto)
+                # Fallback text (if the key exists but the value is empty)
                 if not text:
                     text = f"[CONTENT REDACTED]\nID: {external_id}"
                 
-                # Opzionale: Prova a recuperare metadati extra se esistono
+                # Optional: try to retrieve extra metadata if it exists
                 subreddit = data.get('subreddit', 'unknown')
                 
                 # GOLD UNIT + SOLUTION
                 is_gold = data.get('is_gold_unit', False)
                 gold_sol = data.get('gold_solution', None)
 
-                # Creazione Documento
+                # Create Document
                 obj, created = Document.objects.get_or_create(
                     project=project,
                     external_id=external_id,
@@ -70,37 +70,22 @@ def process_uploaded_dataset(project, file_obj):
     
     return count
 
-def process_task_config(project, file_obj):
-    with file_obj.open() as f:
-        try:
-            content = f.read()
-            try:
-                json_content = content.decode('utf-8')
-            except AttributeError:
-                json_content = content
-                
-            config_data = json.loads(json_content)
-            project.task_type_config = config_data
-            project.save()
-            return True
-        except Exception as e:
-            raise e
-
-def process_screening_config(project, file_obj):
-    with file_obj.open() as f:
-        try:
-            content = f.read()
-            try:
-                json_content = content.decode('utf-8')
-            except AttributeError:
-                json_content = content
-                
-            config_data = json.loads(json_content)
-            project.screening_config = config_data
-            project.save()
-            return True
-        except Exception as e:
-            raise e
+def parse_json_upload(file_obj):
+    """
+    Reads a Django UploadedFile (or InMemoryUploadedFile) and returns
+    the parsed JSON content as a Python dict/list.
+    Raises ValueError on invalid JSON.
+    """
+    content = file_obj.read()
+    try:
+        text = content.decode('utf-8')
+    except AttributeError:
+        text = content
+    
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON: {e}")
 
 class HighlightMedia:
     css = {

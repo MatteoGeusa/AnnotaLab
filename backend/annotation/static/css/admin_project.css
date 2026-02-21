@@ -1,0 +1,179 @@
+/* =============================================================
+   Custom Admin Styles for Project Configuration Section
+   ============================================================= */
+
+/* --- JSON Config Display (readonly) --- */
+.json-config-display {
+    background: #1a1a2e;
+    border: 1px solid #2d2d44;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.json-config-display .config-header {
+    background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #2d2d44;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.json-config-display .config-header .config-icon {
+    font-size: 14px;
+}
+
+.json-config-display pre {
+    margin: 0;
+    padding: 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #e2e8f0;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    background: transparent;
+}
+
+.json-config-display pre::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.json-config-display pre::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+.json-config-display pre::-webkit-scrollbar-thumb {
+    background: #3b3b5c;
+    border-radius: 3px;
+}
+
+.json-config-display pre::-webkit-scrollbar-thumb:hover {
+    background: #4f4f7a;
+}
+
+/* Syntax-like coloring for JSON */
+.json-config-display .json-key {
+    color: #7dd3fc;
+}
+
+.json-config-display .json-string {
+    color: #86efac;
+}
+
+.json-config-display .json-number {
+    color: #fbbf24;
+}
+
+.json-config-display .json-bool {
+    color: #c084fc;
+}
+
+/* --- Empty config placeholder --- */
+.config-empty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: #1a1a2e;
+    border: 1px dashed #2d2d44;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.config-empty .empty-icon {
+    font-size: 18px;
+    opacity: 0.6;
+}
+
+/* --- Upload File Widget Enhancement --- */
+.file-upload-wrapper {
+    position: relative;
+    margin-top: 4px;
+}
+
+.file-upload-wrapper .upload-zone {
+    border: 2px dashed #3b3b5c;
+    border-radius: 8px;
+    padding: 16px 16px;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: #12121f;
+    cursor: pointer;
+}
+
+.file-upload-wrapper .upload-zone:hover {
+    border-color: #60a5fa;
+    background: #161630;
+}
+
+.file-upload-wrapper .upload-zone.dragover {
+    border-color: #3b82f6;
+    background: #1e1e3f;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+.file-upload-wrapper .upload-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+    opacity: 0.7;
+}
+
+.file-upload-wrapper .upload-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.file-upload-wrapper .upload-hint {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.file-upload-wrapper .upload-hint code {
+    background: #2d2d44;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #93c5fd;
+}
+
+.file-upload-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-upload-wrapper .file-selected {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #1e3a5f;
+    border: 1px solid #2563eb;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #93c5fd;
+    align-items: center;
+    gap: 6px;
+}
+
+.file-upload-wrapper .file-selected.visible {
+    display: flex;
+}

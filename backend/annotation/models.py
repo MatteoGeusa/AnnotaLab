@@ -20,15 +20,54 @@ def get_default_configuration_for_task_type():
             
     return {
         "task_type": "hybrid",
-        "span_labels": [{"name": "Evidence", "color": "#FFA500"}],
-        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}],
-        "gold_injection_frequency": 5
+        "gold_injection_frequency": 5,
+        "span_labels": [
+                {
+                "name": "Actor",
+                "color": "#FF5733",
+                "hover_hint": "Who is allegedly responsible for a malicious action or agenda?"
+                },
+                {
+                "name": "Action",
+                "color": "#33FF57",
+                "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
+                },
+                {
+                "name": "Victim",
+                "color": "#3357FF",
+                "hover_hint": "Who is negatively affected by the actor's agenda?"
+                },
+                {
+                "name": "Threat",
+                "color": "#FF33F6",
+                "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
+                },
+                {
+                "name": "Evidence",
+                "color": "#FFA500",
+                "hover_hint": "Which arguments or expressions does the writer of the text use to support his claims?"
+                }
+            ],
+            "class_labels": [
+                { "label": "Conspiracy", "value": "Yes" },
+                { "label": "Not Conspiracy", "value": "No" },
+                { "label": "Ambiguous", "value": "Can't tell" }
+            ]
     }
 
 def get_default_configuration_for_screening():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_screening_config.json')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"training_tasks_required": 3, "min_accuracy_required": 0.6}
+            
     return {
-        "training_tasks_required": 0,
-        "min_accuracy_required": 0.0
+        "training_tasks_required": 3,
+        "min_accuracy_required": 0.6
     }
 
 def get_default_configuration_for_informed_consent():
@@ -66,13 +105,13 @@ class Project(models.Model):
         blank=True,
         help_text="The JSON key for the ID. If empty or not found, it will use the row number."
     )
-
-    # CONFIGURATION
-
+    
     informed_consent_config = models.TextField(
         default=get_default_configuration_for_informed_consent, 
         help_text="Informed Consent Configuration: accept a string can be showed to the annotator before starting the task"
     )
+
+    # CONFIGURATION
     
     task_type_config = models.JSONField(
         default=get_default_configuration_for_task_type, 
@@ -85,19 +124,7 @@ class Project(models.Model):
         help_text="Configuration for screening: { 'training_tasks_required': int, 'min_accuracy_required': float }"
     )
 
-    configuration_task_type_file = models.FileField(
-        upload_to='config_uploads/', 
-        blank=True, 
-        null=True,
-        help_text="Optional: Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
-    )
-    
-    configuration_screening_file = models.FileField(
-        upload_to='config_uploads/', 
-        blank=True, 
-        null=True,
-        help_text="Optional: Upload a JSON file to overwrite the Screening configuration (Survey, Training)."
-    )
+    # --- DISTRIBUTION CONSTRAINTS ---
 
     STRATEGY_CHOICES = [
         ('STANDARD', 'Standard (Public Pool)'),
@@ -112,7 +139,6 @@ class Project(models.Model):
         help_text="Defines how documents are assigned to annotators."
     )
 
-    # --- VINCOLI DI RIDONDANZA ---
     min_annotations_per_doc = models.IntegerField(
         default=3, 
         help_text="Target: How many people must annotate each document."
@@ -123,7 +149,7 @@ class Project(models.Model):
         help_text="Hard Cap: Stop serving the document if it reaches this number (prevents waste)."
     )
 
-    # Serve per dire: "Se un documento ha 2 annotazioni e gli altri 0, dai priorità a quelli con 0?"
+    # If a document has 2 annotations and others have 0, should unannotated ones be prioritized?
     prioritize_unannotated = models.BooleanField(
         default=True,
         help_text="If True, the system will try to finish unannotated documents first."
