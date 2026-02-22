@@ -59,10 +59,7 @@ class InitializeSession(APIView):
 
         return Response({
             "status": "ok",
-            "pid": annotator.prolific_pid,
             "step": current_step,
-            "done_count": done_count,
-            "project_name": project.name,
             "completion_url": PROLIFIC_COMPLETION_URL if current_step == 'COMPLETED' else None
         })
 

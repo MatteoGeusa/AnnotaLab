@@ -41,10 +41,7 @@ const startSession = async () => {
         });
 
         // Salvataggio dati critici
-        localStorage.setItem('prolific_pid', response.data.pid);
-        if (response.data.project_name) {
-            localStorage.setItem('project_name', response.data.project_name);
-        }
+        localStorage.setItem('prolific_pid', prolificPid.value);
 
         // Routing
         const step = response.data.step;
