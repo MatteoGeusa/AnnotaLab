@@ -56,12 +56,6 @@ UNFOLD = {
     # Link quando clicchi sul logo/titolo (di solito la homepage del sito o la dashboard)
     "SITE_URL": "/",
 
-    # (Opzionale) Puoi anche mettere un logo personalizzato se hai il file statico
-    # "SITE_ICON": {
-    #     "light": lambda request: static("images/logo-light.svg"),  # Icona tema chiaro
-    #     "dark": lambda request: static("images/logo-dark.svg"),    # Icona tema scuro
-    # },
-    
     # Colori della sidebar (opzionale)
     "COLORS": {
         "primary": {
@@ -76,6 +70,54 @@ UNFOLD = {
             "800": "30 64 175",
             "900": "30 58 138",
         },
+    },
+
+    # Sidebar configuration
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Annotation",
+                "items": [
+                    {
+                        "title": "Projects",
+                        "link": "/admin/annotation/project/",
+                        "icon": "folder",
+                    },
+                    {
+                        "title": "Documents",
+                        "link": "/admin/annotation/document/",
+                        "icon": "description",
+                    },
+                    {
+                        "title": "Annotations",
+                        "link": "/admin/annotation/annotation/",
+                        "icon": "edit_note",
+                    },
+                    {
+                        "title": "Screening & Assignments",
+                        "link": "/admin/annotation/projectenrollment/",
+                        "icon": "assignment_turned_in",
+                    },
+                    {
+                        "title": "Annotators",
+                        "link": "/admin/annotation/annotator/",
+                        "icon": "group",
+                    },
+                ],
+            },
+            {
+                "title": "Auth",
+                "items": [
+                    {
+                        "title": "Users",
+                        "link": "/admin/auth/user/",
+                        "icon": "person",
+                    },
+                ],
+            },
+        ],
     },
 }
 

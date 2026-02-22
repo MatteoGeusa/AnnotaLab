@@ -201,6 +201,7 @@ class ProjectEnrollment(models.Model):
         ('PASSED', 'Passed'),   # Completed screening successfully
         ('FAILED', 'Failed'),   # Failed screening
     ]
+
     screening_status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
@@ -221,6 +222,8 @@ class ProjectEnrollment(models.Model):
     
     class Meta:
         unique_together = ('project', 'annotator')
+        verbose_name = "Screening & Assignment"
+        verbose_name_plural = "Screening & Assignments"
 
     def __str__(self):
         return f"{self.annotator} -> {self.project} ({self.screening_status})"

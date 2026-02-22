@@ -1,25 +1,12 @@
 from rest_framework import serializers
 from .models import Project, Document, Annotation, Annotator
 import json
-import os
-from django.conf import settings
 
-# Load default config at startup (more efficient)
-CONFIG_PATH = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_project_config.json')
-try:
-    with open(CONFIG_PATH, 'r') as f:
-        DEFAULT_CONFIG = json.load(f)
-except Exception as e:
-    print(f"Error loading default config: {e}")
-    DEFAULT_CONFIG = {
-        "task_type": "hybrid",
-        "span_labels": [{"name": "Evidence", "color": "#FFA500"}],
-        "class_labels": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
-    }
 
 class DocumentSerializer(serializers.ModelSerializer):
     """
-    The document serializer sends the text and the project configuration to the frontend
+    The document serializer sends the text and the project configuration to the frontend.
+    The default config is already set in models.py at project creation time (single source of truth).
     """
     project_config = serializers.SerializerMethodField()
 
@@ -28,33 +15,23 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields = ['id', 'text', 'project_config']
 
     def get_project_config(self, obj):
-        # Merge DB config with default config / Merge config DB con default
-        db_config = obj.project.task_type_config
-        
-        # Handle string case (bug fix for some DBs) / Gestione caso stringa
-        if isinstance(db_config, str):
+        config = obj.project.task_type_config or {}
+
+        # Handle string case (bug fix for some DBs)
+        if isinstance(config, str):
             try:
-                db_config = json.loads(db_config)
+                config = json.loads(config)
             except json.JSONDecodeError:
-                db_config = {}
+                config = {}
 
-        # Safe merge: start with default, overlay DB config
-        final_config = DEFAULT_CONFIG.copy()
-        
-        if isinstance(db_config, dict):
-            # If the custom config changes the task_type, do NOT inherit labels from default
-            # Se la configurazione personalizzata cambia il task_type, NON ereditare le etichette di default
-            if 'task_type' in db_config and db_config['task_type'] != final_config.get('task_type'):
-                final_config['class_labels'] = []
-                final_config['span_labels'] = []
+        if not isinstance(config, dict):
+            config = {}
 
-            final_config.update(db_config)
-            
-        # Remove sensitive/internal logic from frontend
-        final_config.pop('gold_injection_frequency', None)
-        final_config.pop('task_type', None)
-            
-        return final_config
+        # Remove internal/sensitive fields before sending to frontend
+        config.pop('gold_injection_frequency', None)
+        config.pop('task_type', None)
+
+        return config
 
 class AnnotationSerializer(serializers.ModelSerializer):
     """ 
