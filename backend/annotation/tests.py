@@ -20,11 +20,11 @@ class TaskAssignmentTests(TestCase):
         # Setting the ground: 1 Project
         self.project = Project.objects.create(
             name="Unit Test Batch",
-            task_type_config={"gold_injection_frequency": 3} # Every 3rd task is gold
         )
         self.project.screening_config = {
             "training_tasks_required": 2,
-            "min_accuracy_required": 1.0
+            "min_accuracy_required": 1.0,
+            "gold_injection_frequency": 3  # Every 3rd task is gold
         }
         self.project.save()
 
@@ -121,8 +121,7 @@ class ConfigurationRobustnessTests(TestCase):
         self.assertIn('span_labels', data['project_config'])
 
     def test_zero_frequency_injection(self):
-        self.project.task_type_config = {"gold_injection_frequency": 0}
-        self.project.screening_config = {"training_tasks_required": 0}
+        self.project.screening_config = {"training_tasks_required": 0, "gold_injection_frequency": 0}
         self.project.save()
         ProjectEnrollment.objects.create(project=self.project, annotator=self.user, screening_status='PASSED')
         for i in range(10):

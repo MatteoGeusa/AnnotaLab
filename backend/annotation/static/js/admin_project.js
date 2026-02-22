@@ -2,9 +2,12 @@
  * admin_project.js
  * Enhances the file upload fields with drag-and-drop zones
  * and displays the selected filename after choosing a file.
+ * Also handles FULL_OVERLAP strategy field disabling.
  */
 document.addEventListener("DOMContentLoaded", function () {
-  // Target all raw file inputs that correspond to our upload fields
+  // ============================================
+  // 1. FILE UPLOAD DRAG & DROP
+  // ============================================
   const fileInputs = document.querySelectorAll(
     'input[type="file"][name="upload_task_config"], input[type="file"][name="upload_screening_config"]',
   );
@@ -77,4 +80,53 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  // ============================================
+  // 2. FULL_OVERLAP STRATEGY: DISABLE MIN/MAX
+  // ============================================
+  const strategySelect = document.querySelector('#id_distribution_strategy');
+  const minField = document.querySelector('#id_min_annotations_per_doc');
+  const maxField = document.querySelector('#id_max_annotations_per_doc');
+
+  if (strategySelect && minField && maxField) {
+    // Create warning banner
+    const banner = document.createElement('div');
+    banner.className = 'full-overlap-warning';
+    banner.innerHTML = '⚠️ <strong>FULL_OVERLAP mode:</strong> Min and Max annotation limits are ignored. Every annotator will see every document.';
+    
+    // Insert banner before the Distribution Strategy fieldset
+    const strategyFieldWrapper = strategySelect.closest('.form-row, .flex-col, fieldset');
+    if (strategyFieldWrapper) {
+      strategyFieldWrapper.parentNode.insertBefore(banner, strategyFieldWrapper);
+    }
+
+    function toggleFields() {
+      const isFullOverlap = strategySelect.value === 'FULL_OVERLAP';
+      
+      // We use readOnly and pointer-events instead of disabled
+      // because disabled fields are NOT sent in the POST request,
+      // which causes validation errors in Django for mandatory fields.
+      minField.readOnly = isFullOverlap;
+      maxField.readOnly = isFullOverlap;
+      
+      if (isFullOverlap) {
+        minField.style.opacity = '0.5';
+        maxField.style.opacity = '0.5';
+        minField.style.pointerEvents = 'none';
+        maxField.style.pointerEvents = 'none';
+        banner.style.display = 'block';
+      } else {
+        minField.style.opacity = '1';
+        maxField.style.opacity = '1';
+        minField.style.pointerEvents = 'auto';
+        maxField.style.pointerEvents = 'auto';
+        banner.style.display = 'none';
+      }
+    }
+
+    // Run on load + on change
+    toggleFields();
+    strategySelect.addEventListener('change', toggleFields);
+  }
 });
+

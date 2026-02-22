@@ -11,7 +11,7 @@
                     color: selectedLabel === label.name ? 'white' : '#4f566b',
                     borderColor: selectedLabel === label.name ? 'transparent' : '#e3e8ee'
                 }" class="label-chip" @click="selectedLabel = label.name"
-                    :class="{ active: selectedLabel === label.name }">
+                    :class="{ active: selectedLabel === label.name }" :title="label.hover_hint">
                     <span class="chip-name">{{ label.name }}</span>
                     <span class="chip-key">{{ idx + 1 }}</span>
                 </button>

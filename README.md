@@ -57,6 +57,14 @@ Per simulare un utente Prolific sul Progetto #1:
 
 ---
 
+### Accesso all'interfaccia di amministrazione
+
+`http://localhost:8000`
+oppure
+`http://localhost:8000/admin/`
+
+---
+
 ## 1. Introduzione e Obiettivi
 
 Il progetto consiste nello sviluppo di una piattaforma web fullstack per la raccolta di annotazioni testuali (es. sentiment analysis, NER, classificazione di teorie del complotto). L’obiettivo è fornire un’interfaccia intuitiva per gli annotatori (reclutati ad esempio via Prolific) e un pannello di controllo potente per i ricercatori.

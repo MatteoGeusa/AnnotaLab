@@ -8,11 +8,13 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.views.generic import RedirectView
 
 def healthcheck(request):
     return JsonResponse({"message": "OK"})
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='/admin/', permanent=False)),
     path('admin/', admin.site.urls),
     path('api/v1/healthcheck', healthcheck),
     path('api/v1/', include('annotation.urls')),

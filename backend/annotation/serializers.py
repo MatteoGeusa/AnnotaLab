@@ -28,7 +28,6 @@ class DocumentSerializer(serializers.ModelSerializer):
             config = {}
 
         # Remove internal/sensitive fields before sending to frontend
-        config.pop('gold_injection_frequency', None)
         config.pop('task_type', None)
 
         return config

@@ -285,8 +285,8 @@ class GetNextTask(APIView):
 
     def _should_inject_gold(self, project, done_count):
         """ Determines if a Gold Unit should be injected based on frequency settings """
-        task_config = project.task_type_config or {}
-        injection_freq = task_config.get('gold_injection_frequency', 0)
+        screening_config = project.screening_config or {}
+        injection_freq = screening_config.get('gold_injection_frequency', 0)
         return injection_freq > 0 and (done_count + 1) % injection_freq == 0
 
     def _find_gold_candidate(self, project, annotator):

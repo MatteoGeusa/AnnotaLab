@@ -49,8 +49,7 @@ def process_uploaded_dataset(project, file_obj):
                     external_id = str(data.get(id_key))
                 else:
                     # Otherwise -> Use row number as a serial ID
-                    # Add a prefix to avoid trivial collisions
-                    external_id = f"row_{idx}"
+                    external_id = str(idx)
 
                 # Fallback text (if the key exists but the value is empty)
                 if not text:

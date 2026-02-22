@@ -177,3 +177,26 @@
 .file-upload-wrapper .file-selected.visible {
     display: flex;
 }
+
+/* --- FULL_OVERLAP Warning Banner --- */
+.full-overlap-warning {
+    display: none;
+    background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+    color: #fef3c7;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.full-overlap-warning strong {
+    color: #fde68a;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}

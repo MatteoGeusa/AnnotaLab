@@ -54,7 +54,7 @@ class ProjectAdmin(ModelAdmin):
                 Live JSON configuration for this project. Upload a JSON file below to overwrite.<br>
                 <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd; margin-top: 8px;">
                 <b>💡 Golden Units injection frequency:</b><br>
-                Determined by <code>gold_injection_frequency</code> in the task config.
+                Determined by <code>gold_injection_frequency</code> in the <b>screening config</b>.
                 E.g. a value of 5 means one gold unit is injected every 5 regular units.
                 </div>
             """

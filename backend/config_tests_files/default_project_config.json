@@ -1,6 +1,5 @@
 {
   "task_type": "hybrid",
-  "gold_injection_frequency": 20,
   "span_labels": [
     {
       "name": "Actor",

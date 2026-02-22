@@ -1,13 +1,5 @@
 <template>
     <div class="main-container">
-        <header class="app-header">
-            <div class="user-info">
-                <!-- temporarily disabled logout button -->
-                <!-- <span class="pid">Worker: {{ pid }}</span> -->
-                <!-- <button @click="logout" class="logout-btn">Logout</button> -->
-            </div>
-        </header>
-
         <div v-if="loading" class="loading-container">
             <div class="loader"></div>
             <p>Loading next task...</p>
@@ -64,7 +56,7 @@
 
         <div v-else class="task-card">
             <div v-if="isTraining" class="training-banner">
-                🎓 TRAINING MODE (Feedback Enabled)
+                TRAINING TASK (only debug mode, in production you will not see this banner)
             </div>
 
             <div class="card-header highlight-header">
@@ -90,7 +82,7 @@
 
                     <div class="options-grid">
                         <label v-for="opt in classOptions" :key="opt.value" class="option-label"
-                            :class="{ active: isSelected(opt.value) }">
+                            :class="{ active: isSelected(opt.value) }" :title="opt.hover_hint">
                             <input v-if="config.multi_select" type="checkbox" :value="opt.value"
                                 v-model="classification">
                             <input v-else type="radio" :value="opt.value" v-model="classification">
@@ -303,11 +295,9 @@ const logout = () => {
 
 .main-container {
     max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
+    margin: 0px auto;
+    padding: 37px;
     font-family: 'Outfit', sans-serif;
-    min-height: 100vh;
-    background-color: #f6f8fa;
     color: #1a1f36;
 }
 
@@ -377,7 +367,6 @@ const logout = () => {
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-    margin-bottom: 30px;
     animation: slideUp 0.5s ease-out;
 }
 
