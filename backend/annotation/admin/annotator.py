@@ -1,8 +1,9 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.http import urlencode
+from django.db.models import ProtectedError
 import json
 from ..models import Annotator
 from .utils import HighlightMedia
@@ -68,3 +69,19 @@ class AnnotatorAdmin(ModelAdmin):
         full_url = f"{base_url}?{query_string}"
         
         return format_html('<a href="{}" style="font-weight:bold;">View {} Tasks</a>', full_url, count)
+
+    def delete_model(self, request, obj):
+        try:
+            obj.delete()
+        except ProtectedError:
+            count = obj.annotations.count()
+            messages.error(
+                request,
+                f'Cannot delete "{obj.prolific_pid}": '
+                f'this annotator has {count} annotation(s). '
+                f'Delete the annotations first, then retry.'
+            )
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self.delete_model(request, obj)

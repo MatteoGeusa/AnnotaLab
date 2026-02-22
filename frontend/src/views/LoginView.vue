@@ -8,6 +8,8 @@
             <p v-if="!projectId || !prolificPid" class="error-text">⚠️ Warning: Missing Parameters in URL</p>
             <p v-if="!projectId" class="error-text small">No Project ID found</p>
             <p v-if="!prolificPid" class="error-text small">No Prolific ID found</p>
+            <p v-if="prolificPid && prolificPid.length <= 3" class="error-text small">⚠️ Prolific ID is too short
+                (minimum 4 characters)</p>
 
             <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         </div>
