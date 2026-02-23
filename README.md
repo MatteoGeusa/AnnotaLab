@@ -106,7 +106,7 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
      - Verifica esistenza di `prolific_pid` e `project_id`.
      - **Check Ban/Esclusione:** Se l'annotatore ha il flag `exclude_from_distribution` attivo (es. bannato per scarsa qualità), il sistema restituisce immediatmente lo status `stopped`.
      - **Check Quota Personale:** Verifica se l'utente ha già raggiunto il suo `target_tasks` (es. 20 documenti). Se sì, restituisce lo status `completed` con il link di completamento per Prolific.
-       Il sistema supporta diverse modalità (`STANDARD`, `FULL_OVERLAP`, `METADATA_MATCH`) per assegnare i documenti agli utenti.
+       Il sistema supporta diverse modalità (`STANDARD`, `FULL_OVERLAP`) per assegnare i documenti agli utenti.
        **1. `STANDARD` (Pool Pubblico - Default)**
        Questa è la modalità classica di crowdsourcing
      - **Obiettivo:** Raggiungere un target di annotazioni per ogni documento (es. 3 persone diverse).
@@ -122,25 +122,6 @@ Il cuore del sistema è un’applicazione Django che espone API RESTful.
        1. Il sistema considera **tutti** i documenti del progetto.
        2. L'unico filtro applicato è escludere quelli che l'utente corrente ha già annotato (per non fargli rifare lo stesso lavoro).
        3. Sceglie un documento a caso tra quelli rimanenti.
-          **3. `METADATA_MATCH` (Assegnazione per Gruppi)**
-          Questa è la modalità più avanzata e permette di segmentare la forza lavoro in base a caratteristiche specifiche.
-     - **Obiettivo:** Assegnare specifici sotto-insiemi di documenti a specifici gruppi di utenti.
-     - **Funzionamento:**
-       1. Il sistema legge i metadati dell'annotatore, passati _si presuppone_ da prolific stesso, oppure un nostro appunto per premiare qualificatori bravi.
-
-          ```json
-          { "group": "expert" }
-          ```
-
-       2. Filtra i documenti che hanno lo stesso tag nei loro metadati (es. ).
-
-          ```python
-          metadata__group="expert"
-          ```
-
-       3. Tra questi, applica la logica standard (rispettando i limiti di annotazioni massime).
-
-     - **Uso Tipico:** riservare documenti difficili solo ad annotatori esperti/qualificati.
 
      ***
 

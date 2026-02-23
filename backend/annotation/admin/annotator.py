@@ -24,10 +24,6 @@ class AnnotatorAdmin(ModelAdmin):
             "fields": ("consent_accepted", "onboarding_completed"),
             "description": "Manage annotator's progression status."
         }),
-        ("Workload", {
-            "fields": ("target_tasks", "exclude_from_distribution"),
-            "description": "Manage annotator's workload."
-        }),
         ("Metadata", {
             "fields": ("formatted_metadata",),
             "description": "JSON metadata associated with this worker (e.g. Group, Demographics)."

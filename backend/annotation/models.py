@@ -92,19 +92,6 @@ class Project(models.Model):
     name = models.CharField(max_length=200, help_text="Project name")
     description = models.TextField(blank=True, help_text="Project description")
     is_active = models.BooleanField(default=True, help_text="If False, the project will not accept new annotations.")
-
-    dataset_text_key = models.CharField(
-        max_length=100, 
-        default='text',
-        help_text="The JSON key containing the text to be annotated (e.g., 'text', 'body', 'content')."
-    )
-    
-    dataset_id_key = models.CharField(
-        max_length=100, 
-        default='_id',
-        blank=True,
-        help_text="The JSON key for the ID. If empty or not found, it will use the row number."
-    )
     
     # CONFIGURATION
     
@@ -129,7 +116,6 @@ class Project(models.Model):
     STRATEGY_CHOICES = [
         ('STANDARD', 'Standard (Public Pool) - Randomly assign documents to annotators'),
         ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy) - All annotators see all documents'),
-        ('METADATA_MATCH', 'Group Assignment (Metadata Based) - Assign documents to annotators based on metadata'),
     ]
     
     distribution_strategy = models.CharField(
@@ -155,6 +141,25 @@ class Project(models.Model):
         help_text="If True, the system will try to finish unannotated documents first."
     )
 
+    dataset_text_key = models.CharField(
+        max_length=100, 
+        default='text',
+        help_text="The JSON key containing the text to be annotated (e.g., 'text', 'body', 'content')."
+    )
+    
+    dataset_id_key = models.CharField(
+        max_length=100, 
+        default='_id',
+        blank=True,
+        help_text="The JSON key for the ID. If empty or not found, it will use the row number."
+    )
+
+    # DEFAULT TARGET FOR NEW ENROLLMENTS
+    target_tasks_per_annotator = models.IntegerField(
+        default=10,
+        help_text="How many tasks each annotator should complete for this project."
+    )
+
     dataset_file = models.FileField(
         upload_to='datasets/', 
         help_text="Upload a .jsonl file to automatically populate documents."
@@ -167,7 +172,6 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-
 class Annotator(models.Model):
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -175,14 +179,6 @@ class Annotator(models.Model):
     consent_accepted = models.BooleanField(default=False)
     onboarding_completed = models.BooleanField(default=False) # Instructions + Training
     
-    # BUSINESS LOGIC: WORKLOAD
-    # ---------------------------------------------------------
-    # Defines how many tasks an annotator must complete before finishing the session.
-    # Default is 10. Increase this for longer sessions, decrease for shorter pilots.
-    target_tasks = models.IntegerField(default=10)
-
-    exclude_from_distribution = models.BooleanField(default=False)
-
     objects = models.Manager()
 
     def __str__(self):
@@ -215,6 +211,11 @@ class ProjectEnrollment(models.Model):
     training_tasks_completed = models.IntegerField(default=0)
     training_accuracy = models.FloatField(null=True, blank=True)
     
+    # Target tasks for this specific relationship
+    target_tasks = models.IntegerField(default=10)
+    
+    exclude_from_distribution = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -241,7 +242,6 @@ class Document(models.Model):
     
     # The actual text content.
     # Since the source dataset is redacted, this field might need to be populated 
-    # via Reddit API using the external_id.
     text = models.TextField()
     
     # External ID (e.g. ID from the original dataset)

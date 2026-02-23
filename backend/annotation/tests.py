@@ -140,8 +140,8 @@ class PerformanceTests(TestCase):
         self.client = APIClient()
         self.project = Project.objects.create(name="Load Test Batch", distribution_strategy="STANDARD", max_annotations_per_doc=3, screening_config={"training_tasks_required": 0})
         self.user_pid = "LOAD_USER"
-        self.user = Annotator.objects.create(prolific_pid=self.user_pid, consent_accepted=True, onboarding_completed=True, target_tasks=2000)
-        ProjectEnrollment.objects.create(project=self.project, annotator=self.user, screening_status='PASSED')
+        self.user = Annotator.objects.create(prolific_pid=self.user_pid, consent_accepted=True, onboarding_completed=True)
+        ProjectEnrollment.objects.create(project=self.project, annotator=self.user, screening_status='PASSED', target_tasks=2000)
         self.url = reverse('next_task')
 
     def test_high_volume_task_retrieval(self):
@@ -162,12 +162,11 @@ class EdgeCaseTests(TestCase):
         self.user = Annotator.objects.create(
             prolific_pid=self.user_pid, 
             consent_accepted=True, 
-            onboarding_completed=True,
-            target_tasks=5 # Small target for testing limit
+            onboarding_completed=True
         )
         self.url = reverse('next_task')
         self.submit_url = reverse('submit')
-        ProjectEnrollment.objects.create(project=self.project, annotator=self.user, screening_status='PASSED')
+        ProjectEnrollment.objects.create(project=self.project, annotator=self.user, screening_status='PASSED', target_tasks=5)
         
     def test_no_tasks_available(self):
         """

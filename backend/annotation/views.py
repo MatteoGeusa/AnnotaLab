@@ -43,8 +43,23 @@ class InitializeSession(APIView):
         if not project.is_active:
             return Response({"error": "Project is not active"}, status=404)
 
+        # Metadata extraction (e.g. STUDY_ID, SESSION_ID from Prolific)
+        metadata = request.data.get('metadata', {})
+        
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
+        # Always update metadata to capture the latest session info if provided
+        if metadata:
+            annotator.metadata.update(metadata)
+            annotator.save()
+
+        # Get or create enrollment to check project-specific progress
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(
+            project=project, 
+            annotator=annotator,
+            defaults={'target_tasks': project.target_tasks_per_annotator}
+        )
+
         # Calculate current state
         current_step = 'CONSENT'
         if annotator.consent_accepted:
@@ -52,9 +67,9 @@ class InitializeSession(APIView):
         if annotator.onboarding_completed:
             current_step = 'ANNOTATION'
             
-        # Check if already completed
-        done_count = annotator.annotations.count()
-        if done_count >= annotator.target_tasks:
+        # Check if already completed FOR THIS PROJECT
+        done_count = Annotation.objects.filter(document__project=project, annotator=annotator).count()
+        if done_count >= enrollment.target_tasks:
             current_step = 'COMPLETED'
 
         return Response({
@@ -116,57 +131,39 @@ class SubmitAnnotation(APIView):
                         annotator=annotator
                     )
                     
-                    # Check if we are in screening/pending status AND this was a gold unit
-                    if enrollment.screening_status == 'PENDING' and document.is_gold_unit:
-                        # Increment counter
+                    # --- QUALITY CONTROL / SCREENING LOGIC ---
+                    if document.is_gold_unit:
+                        # Increment gold task counter
                         enrollment.training_tasks_completed += 1
                         
-                        # Evaluate correctness (Simple exact match or logic)
-                        # For now: we assume gold_solution structure matches result structure
-                        # Ideally, you'd have a helper function: check_correctness(result, gold)
+                        # Evaluate correctness (Simple exact match logic)
                         is_correct = False
                         if document.gold_solution:
-                            # SIMPLE COMPARISON (Can be improved)
-                            # We compare the 'classification' value
                             user_class = data.get('result', {}).get('classification')
                             gold_class = document.gold_solution.get('classification')
                             if user_class == gold_class:
                                is_correct = True
-                            
-                            # TODO: Add span logic comparison if needed
-                            
-                        # Update accuracy (Rolling average or just count correct)
-                        # Let's verify against requirements
-                        req_accuracy = project.screening_config.get('min_accuracy_required', 0.0)
-                        req_tasks = project.screening_config.get('training_tasks_required', 0)
                         
-                        # If this is the N-th task or later, check if they pass/fail
-                        # But wait, 'training_accuracy' field needs to be updated. 
-                        # Simpler approach: we don't store "training_accuracy" percentage in DB yet, 
-                        # we just need to know if they passed the threshold.
-                        # Let's assume we store the number of correct answers in metadata for now or add a field if needed.
-                        # Since we didn't add 'correct_answers_count' to model, let's use survey_data or metadata hack 
-                        # OR just re-calculate from DB?
-                        # "enrollment.training_accuracy" is a Float. Let's use it as current accuracy.
-                        
+                        # Update cumulative accuracy
                         prev_acc = enrollment.training_accuracy or 0.0
                         total = enrollment.training_tasks_completed
-                        # Recover previous correct count: prev_acc * (total - 1)
                         prev_correct = prev_acc * (total - 1)
                         current_correct = prev_correct + (1 if is_correct else 0)
                         new_acc = current_correct / total
                         
                         enrollment.training_accuracy = new_acc
                         
-                        # Check if training is finished
-                        if total >= req_tasks:
-                            if new_acc >= req_accuracy:
-                                enrollment.screening_status = 'PASSED'
-                            else:
-                                # Allow them to continue? Or Fail immediately?
-                                # Usually Fail immediately if they cross the threshold of "no return"
-                                # But here we just check at the "req_tasks" mark.
-                                enrollment.screening_status = 'FAILED'
+                        # --- STATUS TRANSITION ---
+                        # Only transition from PENDING if we reach the minimum required training tasks
+                        if enrollment.screening_status == 'PENDING':
+                            req_accuracy = project.screening_config.get('min_accuracy_required', 0.0)
+                            req_tasks = project.screening_config.get('training_tasks_required', 0)
+                            
+                            if total >= req_tasks:
+                                if new_acc >= req_accuracy:
+                                    enrollment.screening_status = 'PASSED'
+                                else:
+                                    enrollment.screening_status = 'FAILED'
                                 
                         enrollment.save()
 
@@ -225,16 +222,20 @@ class GetNextTask(APIView):
         if not project.is_active:
             return Response({"status": "stopped", "message": "This project is currently not accepting annotations."})
 
-        if annotator.exclude_from_distribution:
-            return Response({"status": "stopped"})
-
-        # Check user progress
-        done_count = annotator.annotations.filter(document__project=project).count()
-        if done_count >= annotator.target_tasks:
-            return self._completed_response()
-
         # 3. SCREENING / ENROLLMENT LOGIC
-        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(
+            project=project, 
+            annotator=annotator,
+            defaults={'target_tasks': project.target_tasks_per_annotator}
+        )
+
+        if enrollment.exclude_from_distribution:
+            return Response({"status": "stopped", "message": "Access denied for this project."})
+
+        # Check user progress for THIS project
+        done_count = annotator.annotations.filter(document__project=project).count()
+        if done_count >= enrollment.target_tasks:
+            return self._completed_response()
         
         if enrollment.screening_status == 'FAILED':
              return Response({"status": "stopped", "message": "Screening not passed."})
@@ -320,15 +321,6 @@ class GetNextTask(APIView):
         elif project.distribution_strategy == 'FULL_OVERLAP':
             # Everyone sees everything, just random
             candidates = candidates.order_by('?')
-            
-        elif project.distribution_strategy == 'METADATA_MATCH':
-            # Group assignment
-            user_group = annotator.metadata.get('group')
-            if user_group:
-                candidates = candidates.filter(
-                    metadata__group=user_group,
-                    num_anns__lt=project.max_annotations_per_doc
-                )
         
         return candidates.values_list('id', flat=True).first()
 

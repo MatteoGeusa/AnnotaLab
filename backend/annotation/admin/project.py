@@ -9,7 +9,7 @@ from django.contrib import messages
 import json
 import re
 from ..models import Project, Annotation
-from .utils import parse_json_upload, process_uploaded_dataset
+from ..services import parse_json_upload, process_uploaded_dataset
 
 
 class ProjectAdminForm(forms.ModelForm):
@@ -86,6 +86,7 @@ class ProjectAdmin(ModelAdmin):
         ("Distribution Strategy", {
             "fields": (
                 "distribution_strategy",
+                "target_tasks_per_annotator",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
                 "prioritize_unannotated"
             )

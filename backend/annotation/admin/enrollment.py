@@ -14,9 +14,10 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'screening_status_badge',
         'training_tasks_completed',
         'training_accuracy_display',
+        'exclude_from_distribution',
         'created_at',
     )
-    list_filter = ('screening_status', 'project')
+    list_filter = ('screening_status', 'project', 'exclude_from_distribution')
     search_fields = ('annotator__prolific_pid', 'project__name')
     list_select_related = ('annotator', 'project')
 
@@ -30,7 +31,11 @@ class ProjectEnrollmentAdmin(ModelAdmin):
 
     fieldsets = (
         ("Enrollment", {
-            "fields": ("annotator", "project", "screening_status"),
+            "fields": ("annotator", "project", "screening_status", "exclude_from_distribution"),
+        }),
+        ("Workload", {
+            "fields": ("target_tasks",),
+            "description": "How many tasks this specific user must complete for this project.",
         }),
         ("Training Metrics", {
             "fields": ("training_tasks_completed", "training_accuracy"),

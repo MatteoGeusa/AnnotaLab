@@ -37,9 +37,12 @@ const startSession = async () => {
     errorMessage.value = '';
 
     try {
+        const metadata = { ...route.query };
+
         const response = await api.post('session/', {
             prolific_pid: prolificPid.value,
             project_id: projectId.value,
+            metadata: metadata
         });
 
         // Salvataggio dati critici
