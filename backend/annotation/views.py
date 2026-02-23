@@ -185,28 +185,6 @@ class SubmitAnnotation(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SubmitSurvey(APIView):
-    def post(self, request):
-        pid = request.data.get('pid')
-        project_id = request.data.get('project_id')
-        survey_data = request.data.get('survey_data')
-        
-        if not pid or not project_id or not survey_data:
-            return Response({"error": "Missing data"}, status=400)
-            
-        annotator = get_object_or_404(Annotator, prolific_pid=pid)
-        project = get_object_or_404(Project, id=project_id)
-        
-        enrollment, _ = ProjectEnrollment.objects.get_or_create(
-            project=project, 
-            annotator=annotator
-        )
-        
-        enrollment.survey_data = survey_data
-        enrollment.save()
-        
-        return Response({"status": "ok"})
-
 class GetNextTask(APIView):
     """
     DETERMINES THE NEXT TASK FOR THE ANNOTATOR

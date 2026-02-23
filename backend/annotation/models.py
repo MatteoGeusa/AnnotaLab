@@ -205,9 +205,6 @@ class ProjectEnrollment(models.Model):
         default='PENDING'
     )
     
-    # Survey responses
-    survey_data = models.JSONField(default=dict, blank=True) 
-    
     # Training Metrics
     training_tasks_completed = models.IntegerField(default=0)
     training_accuracy = models.FloatField(null=True, blank=True)

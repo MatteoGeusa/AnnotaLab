@@ -86,21 +86,6 @@ UNFOLD = {
                         "icon": "folder",
                     },
                     {
-                        "title": "Documents",
-                        "link": "/admin/annotation/document/",
-                        "icon": "description",
-                    },
-                    {
-                        "title": "Annotations",
-                        "link": "/admin/annotation/annotation/",
-                        "icon": "edit_note",
-                    },
-                    {
-                        "title": "Screening & Assignments",
-                        "link": "/admin/annotation/projectenrollment/",
-                        "icon": "assignment_turned_in",
-                    },
-                    {
                         "title": "Annotators",
                         "link": "/admin/annotation/annotator/",
                         "icon": "group",

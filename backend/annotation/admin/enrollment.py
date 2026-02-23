@@ -1,7 +1,9 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html
-import json
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.contrib import messages
 from ..models import ProjectEnrollment
 from .utils import HighlightMedia
 
@@ -12,7 +14,7 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'annotator',
         'project',
         'screening_status_badge',
-        'training_tasks_completed',
+        'gold_tasks_completed_display',
         'training_accuracy_display',
         'exclude_from_distribution',
         'created_at',
@@ -26,7 +28,7 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'project',
         'created_at',
         'updated_at',
-        'formatted_survey_data',
+        'gold_tasks_completed_display',
     )
 
     fieldsets = (
@@ -37,13 +39,9 @@ class ProjectEnrollmentAdmin(ModelAdmin):
             "fields": ("target_tasks",),
             "description": "How many tasks this specific user must complete for this project.",
         }),
-        ("Training Metrics", {
-            "fields": ("training_tasks_completed", "training_accuracy"),
-            "description": "Screening/training progress for this enrollment.",
-        }),
-        ("Survey", {
-            "fields": ("formatted_survey_data",),
-            "description": "Post-task survey responses.",
+        ("Gold Task Metrics", {
+            "fields": ("gold_tasks_completed_display", "training_accuracy"),
+            "description": "Screening progress based on Gold Units.",
         }),
         ("Timestamps", {
             "fields": ("created_at", "updated_at"),
@@ -67,26 +65,24 @@ class ProjectEnrollmentAdmin(ModelAdmin):
             color, obj.screening_status
         )
 
-    @admin.display(description="Accuracy")
+    @admin.display(description="Gold Tasks Accuracy")
     def training_accuracy_display(self, obj):
         if obj.training_accuracy is None:
             return "-"
         return f"{obj.training_accuracy:.0%}"
 
-    @admin.display(description="Survey Data (JSON)")
-    def formatted_survey_data(self, obj):
-        if not obj.survey_data:
-            return format_html('<em style="color:#999">{}</em>', "No survey data.")
+    @admin.display(description="Gold Tasks Completed")
+    def gold_tasks_completed_display(self, obj):
+        return obj.training_tasks_completed
 
-        try:
-            json_str = json.dumps(obj.survey_data, indent=4, sort_keys=True)
-            return format_html(
-                '''
-                <div style="border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;">
-                    <pre style="margin: 0;"><code class="json" style="padding: 15px; display: block; overflow-x: auto; max-height: 400px;">{}</code></pre>
-                </div>
-                ''',
-                json_str
-            )
-        except Exception:
-            return "-"
+    def changelist_view(self, request, extra_context=None):
+        """Redirect if no project filter is active."""
+        if 'project__id__exact' not in request.GET and 'project__id' not in request.GET:
+            self.message_user(request, "Select a project first to view assignments.", messages.WARNING)
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
+        
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def has_module_permission(self, request):
+        """Hides this model from the sidebar/index."""
+        return False

@@ -35,7 +35,7 @@ class ProjectAdminForm(forms.ModelForm):
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('name', 'created_at', 'documents_link', 'annotations_link', 'export_list_button', 'link_prolific')
+    list_display = ('name', 'created_at', 'documents_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
     
     form = ProjectAdminForm
     readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
@@ -78,7 +78,7 @@ class ProjectAdmin(ModelAdmin):
                 <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
                     <b>💡 Golden Units & Screening:</b><br>
                     <i>Golden Units</i> are the foundation of the Screening system. They are used to measure annotator reliability.
-                    During the training/screening phase, user responses are automatically compared with the full <code>gold_solution</code>.
+                    During the <b>gold task/screening phase</b>, user responses are automatically compared with the full <code>gold_solution</code>.
                 </div>
             """
         }),
@@ -185,7 +185,7 @@ class ProjectAdmin(ModelAdmin):
 
         annotations = Annotation.objects.filter(
             document__project=project,
-            document__is_gold_unit=False  # Exclude training/screening gold units
+            document__is_gold_unit=False  # Exclude gold units
         ).select_related('document', 'annotator')
 
         for ann in annotations:
@@ -235,26 +235,30 @@ class ProjectAdmin(ModelAdmin):
         url = (
             reverse("admin:annotation_document_changelist")
             + "?"
-            + urlencode({"project__id": f"{obj.id}"})
+            + urlencode({"project__id": f"{obj.id}", "o": "1"})
         )
         return format_html(
             '''
             <a href="{}" 
-               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[100px]"
-               title="View Documents">
-               🔗 View {} Documents
+               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[120px]"
+               title="Manage Documents">
+               -> ({}) Manage Documents
             </a>
             ''',
             url, count
         )
 
-    @admin.display(description="Result", ordering='-created_at')
+    @admin.display(description="Annotations", ordering='-created_at')
     def annotations_link(self, obj):
         count = Annotation.objects.filter(document__project=obj).count()
         url = (
             reverse("admin:annotation_annotation_changelist")
             + "?"
-            + urlencode({"document__project__id": f"{obj.id}"})
+            + urlencode({
+                "document__project__id": f"{obj.id}", 
+                "o": "1",
+                "category": "regular"
+            })
         )
         
         bg_class = "bg-green-600 hover:bg-green-700" if count > 0 else "bg-gray-400 hover:bg-gray-500"
@@ -262,12 +266,32 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[100px]"
-               title="View Annotations">
-               🔗 View {} Annotations
+               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px]"
+               title="Manage Annotations">
+               -> ({}) Manage Annotations
             </a>
             ''',
             url, bg_class, count
+        )
+
+    @admin.display(description="Workers")
+    def enrollments_link(self, obj):
+        count = obj.enrollments.count()
+        url = (
+            reverse("admin:annotation_projectenrollment_changelist")
+            + "?"
+            + urlencode({"project__id": f"{obj.id}"})
+        )
+        return format_html(
+            '''
+            <a href="{}" 
+               style="background: #fbbf24; color: #1f2937;"
+               class="px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px]"
+               title="Manage Workers">
+               -> ({}) Manage Workers
+            </a>
+            ''',
+            url, count
         )
     
     @admin.display(description="Link (Prolific)")

@@ -2,6 +2,8 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.utils.html import format_html, mark_safe
 from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.contrib import messages
 import json
 from ..models import Annotation
 
@@ -12,16 +14,9 @@ class HideGoldFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('all', 'Show All (Regular + Gold)'),
-            ('regular', 'Hide Gold Tasks (Only Regular)'),
-            ('gold', 'Only Gold Tasks'),
+            ('regular', 'Regular Tasks'),
+            ('gold', 'Gold Tasks'),
         )
-
-    def value(self):
-        v = super().value()
-        if v is None:
-            return 'regular'
-        return v
 
     def queryset(self, request, queryset):
         val = self.value()
@@ -47,9 +42,9 @@ class AnnotationAdmin(ModelAdmin):
     def annotation_type(self, obj):
         if obj.document and obj.document.is_gold_unit:
             return mark_safe(
-                '<span style="background:#7c3aed; color:white; padding:2px 8px; '
+                '<span style="background:#fbbf24; color:#1f2937; padding:2px 8px; '
                 'border-radius:4px; font-size:11px; font-weight:600;">'
-                '🏋️ Training</span>'
+                '🏆 Gold Task</span>'
             )
         return mark_safe(
             '<span style="background:#059669; color:white; padding:2px 8px; '
@@ -84,3 +79,15 @@ class AnnotationAdmin(ModelAdmin):
             '<span style="color: #22c55e;">{}ms</span>',
             obj.milliseconds_to_complete
         )
+
+    def changelist_view(self, request, extra_context=None):
+        """Redirect if no project filter is active."""
+        if 'document__project__id__exact' not in request.GET and 'document__project__id' not in request.GET:
+            self.message_user(request, "Select a project first to view its annotations.", messages.WARNING)
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
+        
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def has_module_permission(self, request):
+        """Hides this model from the sidebar/index."""
+        return False

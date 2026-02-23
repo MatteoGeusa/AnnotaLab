@@ -22,37 +22,6 @@
             <p>{{ stopMessage || "Thank you for your contribution." }}</p>
         </div>
 
-        <div v-else-if="isSurvey" class="task-card survey-container">
-            <div class="card-header survey-header">
-                <h3>Preliminary Survey</h3>
-                <p>Sondaggio Preliminare</p>
-            </div>
-
-            <div class="card-body">
-                <div v-for="(q, idx) in surveyQuestions" :key="idx" class="survey-item">
-                    <label class="survey-label">{{ q.text }}</label>
-
-                    <!-- Multiple Choice -->
-                    <div v-if="q.options" class="survey-options">
-                        <label v-for="opt in q.options" :key="opt" class="radio-label">
-                            <input type="radio" :name="'q' + idx" :value="opt" v-model="surveyAnswers[idx]">
-                            <span class="radio-custom"></span>
-                            {{ opt }}
-                        </label>
-                    </div>
-
-                    <!-- Free Text -->
-                    <input v-else type="text" class="survey-input" v-model="surveyAnswers[idx]"
-                        placeholder="Your answer...">
-                </div>
-            </div>
-
-            <div class="card-footer">
-                <button class="submit-btn success" @click="submitSurvey" :disabled="!canSubmitSurvey">
-                    Submit Survey
-                </button>
-            </div>
-        </div>
 
         <div v-else class="task-card">
             <div v-if="isGold" class="training-banner">
@@ -124,9 +93,6 @@ const countdown = ref(10);
 let redirectTimer = null;
 const stopped = ref(false);
 const stopMessage = ref('');
-const isSurvey = ref(false);
-const surveyQuestions = ref([]);
-const surveyAnswers = ref({});
 const isTraining = ref(false);
 const isGold = ref(false);
 
@@ -196,7 +162,6 @@ const fetchNextTask = async () => {
 
         isTraining.value = !!res.data.feedback_enabled;
         isGold.value = !!res.data.is_gold;
-        isSurvey.value = false;
 
         currentDoc.value = res.data;
         config.value = res.data.project_config || {};
@@ -260,31 +225,6 @@ const submitTask = async () => {
     }
 };
 
-const canSubmitSurvey = computed(() => {
-    if (surveyQuestions.value.length === 0) return true;
-    for (let i = 0; i < surveyQuestions.value.length; i++) {
-        if (!surveyAnswers.value[i] || surveyAnswers.value[i].trim() === '') return false;
-    }
-    return true;
-});
-
-const submitSurvey = async () => {
-    loading.value = true;
-    const pid = localStorage.getItem('prolific_pid');
-    const projectId = localStorage.getItem('project_id');
-
-    try {
-        await api.post('submit-survey/', {
-            pid: pid,
-            project_id: projectId,
-            survey_data: surveyAnswers.value
-        });
-        fetchNextTask();
-    } catch (err) {
-        errorMsg.value = "Error submitting survey.";
-        loading.value = false;
-    }
-};
 
 const logout = () => {
     localStorage.removeItem('prolific_pid');
@@ -406,46 +346,6 @@ const logout = () => {
     gap: 15px;
 }
 
-/* SURVEY STYLES */
-.survey-header {
-    background: linear-gradient(135deg, #e3effb 0%, #f0f7ff 100%);
-}
-
-.survey-item {
-    margin-bottom: 30px;
-    padding: 20px;
-    border-radius: 12px;
-    background: #f9fafb;
-}
-
-.survey-label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-}
-
-.survey-options {
-    display: grid;
-    gap: 10px;
-}
-
-.radio-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: white;
-    border: 1px solid #e3e8ee;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.radio-label:hover {
-    border-color: #306ee8;
-    background: #f0f7ff;
-}
 
 /* CLASSIFICATION */
 .classification-section {
