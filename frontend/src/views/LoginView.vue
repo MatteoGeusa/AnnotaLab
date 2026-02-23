@@ -37,7 +37,10 @@ const startSession = async () => {
     errorMessage.value = '';
 
     try {
+        // Collect all query parameters as metadata, but exclude internal/redundant keys
         const metadata = { ...route.query };
+        delete metadata.project_id;
+        delete metadata.PROLIFIC_PID;
 
         const response = await api.post('session/', {
             prolific_pid: prolificPid.value,

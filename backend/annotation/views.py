@@ -45,6 +45,10 @@ class InitializeSession(APIView):
 
         # Metadata extraction (e.g. STUDY_ID, SESSION_ID from Prolific)
         metadata = request.data.get('metadata', {})
+        # Remove redundant keys that are already handled by dedicated fields
+        metadata.pop('project_id', None)
+        metadata.pop('prolific_pid', None)
+        metadata.pop('PROLIFIC_PID', None)
         
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
@@ -154,16 +158,23 @@ class SubmitAnnotation(APIView):
                         enrollment.training_accuracy = new_acc
                         
                         # --- STATUS TRANSITION ---
-                        # Only transition from PENDING if we reach the minimum required training tasks
+                        req_accuracy = project.screening_config.get('min_accuracy_required', 0.0)
+                        req_tasks = project.screening_config.get('training_tasks_required', 0)
+
                         if enrollment.screening_status == 'PENDING':
-                            req_accuracy = project.screening_config.get('min_accuracy_required', 0.0)
-                            req_tasks = project.screening_config.get('training_tasks_required', 0)
-                            
+                            # Transition from PENDING once minimum tasks are reached
                             if total >= req_tasks:
                                 if new_acc >= req_accuracy:
                                     enrollment.screening_status = 'PASSED'
                                 else:
                                     enrollment.screening_status = 'FAILED'
+                        
+                        elif project.screening_config.get('continuous_screening', False) and enrollment.screening_status == 'PASSED':
+                            # CONTINUOUS SCREENING:
+                            # If the user is already PASSED but their accuracy falls below threshold,
+                            # move them back to FAILED.
+                            if new_acc < req_accuracy:
+                                enrollment.screening_status = 'FAILED'
                                 
                         enrollment.save()
 
@@ -331,10 +342,12 @@ class GetNextTask(APIView):
         data = serializer.data 
         
         # Add frontend-specific tags
-        if enrollment.screening_status == 'PENDING':
-            data.update({
-                'feedback_enabled': True
-            })
+        data.update({
+            'is_gold': doc.is_gold_unit,
+            # We can keep feedback_enabled if we want to show feedback 
+            # but the user explicitly asked to hide the banner in pending.
+            'feedback_enabled': enrollment.screening_status == 'PENDING'
+        })
             
         return Response(data)
 

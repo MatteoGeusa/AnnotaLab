@@ -55,8 +55,8 @@
         </div>
 
         <div v-else class="task-card">
-            <div v-if="isTraining" class="training-banner">
-                TRAINING TASK (only debug mode, in production you will not see this banner)
+            <div v-if="isGold" class="training-banner">
+                QUALITY CONTROL TASK (This is a gold unit used to verify annotation quality)
             </div>
 
             <div class="card-header highlight-header">
@@ -128,6 +128,7 @@ const isSurvey = ref(false);
 const surveyQuestions = ref([]);
 const surveyAnswers = ref({});
 const isTraining = ref(false);
+const isGold = ref(false);
 
 onUnmounted(() => {
     if (redirectTimer) clearInterval(redirectTimer);
@@ -194,6 +195,7 @@ const fetchNextTask = async () => {
         }
 
         isTraining.value = !!res.data.feedback_enabled;
+        isGold.value = !!res.data.is_gold;
         isSurvey.value = false;
 
         currentDoc.value = res.data;

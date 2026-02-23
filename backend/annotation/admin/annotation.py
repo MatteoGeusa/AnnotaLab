@@ -6,10 +6,36 @@ import json
 from ..models import Annotation
 
 
+class HideGoldFilter(admin.SimpleListFilter):
+    title = 'Task Category'
+    parameter_name = 'category'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('all', 'Show All (Regular + Gold)'),
+            ('regular', 'Hide Gold Tasks (Only Regular)'),
+            ('gold', 'Only Gold Tasks'),
+        )
+
+    def value(self):
+        v = super().value()
+        if v is None:
+            return 'regular'
+        return v
+
+    def queryset(self, request, queryset):
+        val = self.value()
+        if val == 'regular':
+            return queryset.filter(document__is_gold_unit=False)
+        if val == 'gold':
+            return queryset.filter(document__is_gold_unit=True)
+        return queryset
+
+
 @admin.register(Annotation)
 class AnnotationAdmin(ModelAdmin):
     list_display = ('short_id', 'annotation_type', 'document_link', 'annotator_link', 'created_at', 'seconds_to_complete')
-    list_filter = ('document__project', 'document__is_gold_unit', 'created_at', 'annotator')
+    list_filter = (HideGoldFilter, 'document__project', 'created_at', 'annotator')
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
     readonly_fields = ('created_at', 'result')
 
