@@ -156,26 +156,6 @@ class SubmitAnnotation(APIView):
                         new_acc = current_correct / total
                         
                         enrollment.training_accuracy = new_acc
-                        
-                        # --- STATUS TRANSITION ---
-                        req_accuracy = project.screening_config.get('min_accuracy_required', 0.0)
-                        req_tasks = project.screening_config.get('training_tasks_required', 0)
-
-                        if enrollment.screening_status == 'PENDING':
-                            # Transition from PENDING once minimum tasks are reached
-                            if total >= req_tasks:
-                                if new_acc >= req_accuracy:
-                                    enrollment.screening_status = 'PASSED'
-                                else:
-                                    enrollment.screening_status = 'FAILED'
-                        
-                        elif project.screening_config.get('continuous_screening', False) and enrollment.screening_status == 'PASSED':
-                            # CONTINUOUS SCREENING:
-                            # If the user is already PASSED but their accuracy falls below threshold,
-                            # move them back to FAILED.
-                            if new_acc < req_accuracy:
-                                enrollment.screening_status = 'FAILED'
-                                
                         enrollment.save()
 
                 return Response({"status": "saved"}, status=status.HTTP_201_CREATED)
@@ -260,17 +240,13 @@ class GetNextTask(APIView):
     def _get_candidate_id(self, project, annotator, enrollment, done_count):
         """ Internal logic to find the 'next' candidate ID """
         
-        # A. SCREENING PHASE (FORCE GOLD)
-        if enrollment.screening_status == 'PENDING':
-            return self._find_gold_candidate(project, annotator)
-
-        # B. REGULAR PHASE - QUALITY CONTROL (GOLD INJECTION)
+        # A. QUALITY CONTROL (GOLD INJECTION)
         if self._should_inject_gold(project, done_count):
              gold_id = self._find_gold_candidate(project, annotator)
              if gold_id:
                  return gold_id
 
-        # C. REGULAR PHASE - NORMAL DOCUMENTS
+        # B. REGULAR PHASE - NORMAL DOCUMENTS
         return self._find_normal_candidate(project, annotator)
 
     def _should_inject_gold(self, project, done_count):

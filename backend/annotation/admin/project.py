@@ -78,7 +78,7 @@ class ProjectAdmin(ModelAdmin):
                 <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
                     <b>💡 Documents vs Gold Units:</b><br>
                     - <b>Documents File</b>: Upload real data to be annotated. These will be distributed to workers.<br>
-                    - <b>Gold Units File</b>: Upload quality control units. These are used for screening and measuring reliability.
+                    - <b>Gold Units File</b>: Upload quality control units. These are used for measuring reliability.
                 </div>
             """
         }),
@@ -362,20 +362,20 @@ class ProjectAdmin(ModelAdmin):
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
 
-        # --- Process Documents File (is_gold=False) ---
+        # --- Process Documents File ---
         if 'documents_file' in form.changed_data and obj.documents_file:
             try:
-                count, import_warnings = process_uploaded_dataset(obj, obj.documents_file, is_gold_override=False)
+                count, import_warnings = process_uploaded_dataset(obj, obj.documents_file, is_gold=False)
                 messages.success(request, f"Regular documents import successful! Created {count} documents.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")
             except Exception as e:
                 messages.error(request, f"Documents import error: {str(e)}")
 
-        # --- Process Gold Units File (is_gold=True) ---
+        # --- Process Gold Units File ---
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
             try:
-                count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file, is_gold_override=True)
+                count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file, is_gold=True)
                 messages.success(request, f"Gold units import successful! Created {count} units.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")

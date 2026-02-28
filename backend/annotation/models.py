@@ -109,7 +109,7 @@ class Project(models.Model):
     screening_config = models.JSONField(
         default=get_default_configuration_for_screening,
         blank=True,
-        help_text="Configuration for screening: { 'training_tasks_required': int, 'min_accuracy_required': float }"
+        help_text="Configuration for quality control: { 'min_accuracy_required': float, 'gold_injection_frequency': int }"
     )
 
     # --- DISTRIBUTION CONSTRAINTS ---
@@ -172,7 +172,7 @@ class Project(models.Model):
         upload_to='datasets/gold/', 
         null=True,
         blank=True,
-        help_text="Upload a .jsonl file for GOLD units (Screening)."
+        help_text="Upload a .jsonl file for GOLD units (Quality Control Injection)."
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -256,7 +256,7 @@ class Document(models.Model):
     metadata = JSONField(default=dict, blank=True)
     
     # GOLD UNITS MANAGEMENT (Quality Control)
-    # If True, this document has a known correct answer.
+    # If True, this document has a known correct answer and is used for injection.
     is_gold_unit = models.BooleanField(default=False)
     # The correct answer (in JSON format) for automatic comparison
     gold_solution = JSONField(default=dict, blank=True, null=True)
@@ -324,7 +324,7 @@ class DocumentProxy(Document):
         verbose_name_plural = "Annotation Documents"
 
 class GoldUnitProxy(Document):
-    """Proxy model for Quality Control Units (Gold)."""
+    """Proxy model for Quality Control Units (Gold Injection)."""
     class Meta:
         proxy = True
         verbose_name = "Gold Unit"
