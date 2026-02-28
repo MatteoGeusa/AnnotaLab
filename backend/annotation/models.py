@@ -161,9 +161,18 @@ class Project(models.Model):
         help_text="How many tasks each annotator should complete for this project."
     )
 
-    dataset_file = models.FileField(
-        upload_to='datasets/', 
-        help_text="Upload a .jsonl file to automatically populate documents."
+    documents_file = models.FileField(
+        upload_to='datasets/documents/', 
+        null=True,
+        blank=True,
+        help_text="Upload a .jsonl file for REAL documents to be annotated."
+    )
+
+    gold_units_file = models.FileField(
+        upload_to='datasets/gold/', 
+        null=True,
+        blank=True,
+        help_text="Upload a .jsonl file for GOLD units (Screening)."
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -184,7 +193,6 @@ class Annotator(models.Model):
 
     def __str__(self):
         return f"{self.prolific_pid} (Consent: {self.consent_accepted})"
-
 
 class ProjectEnrollment(models.Model):
     """
@@ -226,7 +234,6 @@ class ProjectEnrollment(models.Model):
 
     def __str__(self):
         return f"{self.annotator} -> {self.project} ({self.screening_status})"
-
 
 class Document(models.Model):
     """
@@ -273,7 +280,6 @@ class Document(models.Model):
     def __str__(self):
         return f"Doc {self.id} ({self.current_annotations_count}/{self.min_annotations_required})"
 
-
 class Annotation(models.Model):
     """
     Links an Annotator to a Document.
@@ -309,3 +315,17 @@ class Annotation(models.Model):
 
     def __str__(self):
         return f"Annotation {self.id} by {self.annotator}"
+
+class DocumentProxy(Document):
+    """Proxy model for standard Documents."""
+    class Meta:
+        proxy = True
+        verbose_name = "Annotation Document"
+        verbose_name_plural = "Annotation Documents"
+
+class GoldUnitProxy(Document):
+    """Proxy model for Quality Control Units (Gold)."""
+    class Meta:
+        proxy = True
+        verbose_name = "Gold Unit"
+        verbose_name_plural = "Gold Units"

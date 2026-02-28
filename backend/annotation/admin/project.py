@@ -35,7 +35,7 @@ class ProjectAdminForm(forms.ModelForm):
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('name', 'created_at', 'documents_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
+    list_display = ('name', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
     
     form = ProjectAdminForm
     readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
@@ -63,22 +63,22 @@ class ProjectAdmin(ModelAdmin):
         ("Input Data Mapping", {
             "fields": (
                 ("dataset_text_key", "dataset_id_key"),
-                "dataset_file", 
+                "documents_file",
+                "gold_units_file",
             ),
             "description": """
-                Upload a <b>.jsonl</b> file where each line is a JSON object.<br><br>
+                Upload <b>.jsonl</b> files where each line is a JSON object.<br><br>
                 <b>Supported Fields:</b>
                 <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 10px;">
                     <li><b>Text</b>: Key corresponding to 'Dataset text key' (default: <code>text</code>).</li>
                     <li><b>ID</b>: Key corresponding to 'Dataset id key' (default: <code>_id</code>).</li>
-                    <li><b>is_gold_unit</b> (bool): If <code>true</code>, the document is a <b>Golden Unit</b>.</li>
-                    <li><b>gold_solution</b> (json): The correct solution for quality control.</li>
-                    <li><b>metadata</b> (json): Optional metadata. e.g. <code>{'subreddit': 'r/AskReddit',other_metadata: 'value'}</code></li>
+                    <li><b>gold_solution</b> (json): [Required for Gold Units] The correct solution for quality control.</li>
+                    <li><b>metadata</b> (json): Optional metadata. e.g. <code>{'subreddit': 'r/AskReddit', 'other_metadata': 'value'}</code></li>
                 </ul>
                 <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
-                    <b>💡 Golden Units & Screening:</b><br>
-                    <i>Golden Units</i> are the foundation of the Screening system. They are used to measure annotator reliability.
-                    During the <b>gold task/screening phase</b>, user responses are automatically compared with the full <code>gold_solution</code>.
+                    <b>💡 Documents vs Gold Units:</b><br>
+                    - <b>Documents File</b>: Upload real data to be annotated. These will be distributed to workers.<br>
+                    - <b>Gold Units File</b>: Upload quality control units. These are used for screening and measuring reliability.
                 </div>
             """
         }),
@@ -231,9 +231,9 @@ class ProjectAdmin(ModelAdmin):
 
     @admin.display(description="Documents")
     def documents_link(self, obj):
-        count = obj.documents.count()
+        count = obj.documents.filter(is_gold_unit=False).count()
         url = (
-            reverse("admin:annotation_document_changelist")
+            reverse("admin:annotation_documentproxy_changelist")
             + "?"
             + urlencode({"project__id": f"{obj.id}", "o": "1"})
         )
@@ -241,8 +241,27 @@ class ProjectAdmin(ModelAdmin):
             '''
             <a href="{}" 
                class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[120px]"
-               title="Manage Documents">
-               -> ({}) Manage Documents
+               title="Manage Real Documents">
+               -> ({}) Manage Docs
+            </a>
+            ''',
+            url, count
+        )
+
+    @admin.display(description="Gold Units")
+    def gold_units_link(self, obj):
+        count = obj.documents.filter(is_gold_unit=True).count()
+        url = (
+            reverse("admin:annotation_goldunitproxy_changelist")
+            + "?"
+            + urlencode({"project__id": f"{obj.id}", "o": "1"})
+        )
+        return format_html(
+            '''
+            <a href="{}" 
+               class="bg-amber-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-amber-600 transition inline-block text-center min-w-[120px]"
+               title="Manage Gold Units">
+               -> ({}) Manage Gold
             </a>
             ''',
             url, count
@@ -343,12 +362,22 @@ class ProjectAdmin(ModelAdmin):
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
 
-        # --- Process uploaded Dataset JSONL ---
-        if 'dataset_file' in form.changed_data and obj.dataset_file:
+        # --- Process Documents File (is_gold=False) ---
+        if 'documents_file' in form.changed_data and obj.documents_file:
             try:
-                count, import_warnings = process_uploaded_dataset(obj, obj.dataset_file)
-                messages.success(request, f"Import successful! Created {count} documents.")
+                count, import_warnings = process_uploaded_dataset(obj, obj.documents_file, is_gold_override=False)
+                messages.success(request, f"Regular documents import successful! Created {count} documents.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")
             except Exception as e:
-                messages.error(request, f"Import error: {str(e)}")
+                messages.error(request, f"Documents import error: {str(e)}")
+
+        # --- Process Gold Units File (is_gold=True) ---
+        if 'gold_units_file' in form.changed_data and obj.gold_units_file:
+            try:
+                count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file, is_gold_override=True)
+                messages.success(request, f"Gold units import successful! Created {count} units.")
+                for warn in import_warnings:
+                    messages.warning(request, f"⚠️ {warn}")
+            except Exception as e:
+                messages.error(request, f"Gold units import error: {str(e)}")

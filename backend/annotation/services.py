@@ -1,11 +1,15 @@
 import json
 from .models import Document
 
-def process_uploaded_dataset(project, file_obj):
+def process_uploaded_dataset(project, file_obj, is_gold_override=None):
     """
     DATASET IMPORT LOGIC (Dynamic Keys Version)
     Reads a JSONL file using the keys configured in the Project.
     Returns a tuple: (created_count, warnings_list)
+
+    :param is_gold_override: If True, all documents in this file are treated as gold units.
+                             If False, all documents are treated as regular units.
+                             If None, it respects the 'is_gold_unit' key in the JSON.
     """
     count = 0
     warnings = []
@@ -50,7 +54,11 @@ def process_uploaded_dataset(project, file_obj):
                     external_id = str(idx)
 
                 # 3. IDENTIFY GOLD UNIT + SOLUTION
-                is_gold = data.get('is_gold_unit', False)
+                if is_gold_override is not None:
+                    is_gold = is_gold_override
+                else:
+                    is_gold = data.get('is_gold_unit', False)
+                
                 gold_sol = data.get('gold_solution', None)
 
                 # 4. DYNAMIC METADATA
@@ -93,11 +101,13 @@ def process_uploaded_dataset(project, file_obj):
                 obj, created = Document.objects.get_or_create(
                     project=project,
                     external_id=external_id,
+                    is_gold_unit=is_gold, # Include in get_or_create to allow same ID if type is different? 
+                    # Actually external_id + project should be unique? 
+                    # Let's check models again. It doesn't have unique constraint on external_id, but get_or_create uses it.
                     defaults={
                         'text': text,
                         'metadata': metadata,
                         'min_annotations_required': project.min_annotations_per_doc,
-                        'is_gold_unit': is_gold,
                         'gold_solution': gold_sol
                     }
                 )

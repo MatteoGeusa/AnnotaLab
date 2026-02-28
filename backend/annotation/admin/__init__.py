@@ -1,5 +1,5 @@
 from .project import ProjectAdmin
-from .document import DocumentAdmin
+from .document import DocumentProxyAdmin, GoldUnitProxyAdmin
 from .annotator import AnnotatorAdmin
 from .annotation import AnnotationAdmin
 from .enrollment import ProjectEnrollmentAdmin
