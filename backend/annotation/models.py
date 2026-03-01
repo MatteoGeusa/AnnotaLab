@@ -62,10 +62,9 @@ def get_default_configuration_for_screening():
             with open(config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
-            return {"training_tasks_required": 3, "min_accuracy_required": 0.6, "gold_injection_frequency": 5, "continuous_screening": False}
+            return {"min_accuracy_required": 0.6, "gold_injection_frequency": 5, "continuous_screening": False}
             
     return {
-        "training_tasks_required": 3,
         "min_accuracy_required": 0.6,
         "gold_injection_frequency": 5,
         "continuous_screening": False

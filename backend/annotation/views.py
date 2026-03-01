@@ -210,13 +210,8 @@ class GetNextTask(APIView):
              return Response({"status": "stopped", "message": "Screening not passed."})
             
         if enrollment.screening_status == 'PENDING':
-            # Check if they have met the training requirements but status hasn't updated
-            screening_config = project.screening_config or {}
-            req_training = screening_config.get('training_tasks_required', 0)
-            
-            if enrollment.training_tasks_completed >= req_training:
-                enrollment.screening_status = 'PASSED'
-                enrollment.save()
+            # Handle PENDING logic if needed in the future
+            pass
 
         # 4. TASK SELECTION (Concurrency Safe)
         with transaction.atomic():
