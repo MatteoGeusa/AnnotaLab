@@ -28,6 +28,7 @@ const prolificPid = ref('');
 const projectId = ref(null);
 
 const isLoading = ref(false);
+const projectSlug = ref(null);
 const errorMessage = ref('');
 
 const startSession = async () => {
@@ -40,23 +41,29 @@ const startSession = async () => {
         // Collect all query parameters as metadata, but exclude internal/redundant keys
         const metadata = { ...route.query };
         delete metadata.project_id;
+        delete metadata.project_slug;
         delete metadata.PROLIFIC_PID;
 
         const response = await api.post('session/', {
             prolific_pid: prolificPid.value,
             project_id: projectId.value,
+            project_slug: projectSlug.value,
             metadata: metadata
         });
 
         // Salvataggio dati critici
         localStorage.setItem('prolific_pid', prolificPid.value);
+        if (projectId.value) localStorage.setItem('project_id', projectId.value);
+        if (projectSlug.value) localStorage.setItem('project_slug', projectSlug.value);
 
         // Routing
         const step = response.data.step;
-        if (step === 'CONSENT') router.push('/consent');
-        else if (step === 'INSTRUCTIONS') router.push('/instructions');
-        else if (step === 'ANNOTATION') router.push('/annotate');
-        else if (step === 'COMPLETED') router.push('/annotate');
+        const slug = projectSlug.value || projectId.value; // Fallback if no slug
+        
+        if (step === 'CONSENT') router.push(`/${slug}/consent`);
+        else if (step === 'INSTRUCTIONS') router.push(`/${slug}/instructions`);
+        else if (step === 'ANNOTATION') router.push(`/${slug}/annotate`);
+        else if (step === 'COMPLETED') router.push(`/${slug}/annotate`);
 
     } catch (err) {
         if (err.response && err.response.status === 404) {
@@ -73,14 +80,21 @@ const startSession = async () => {
 };
 
 onMounted(() => {
-    // 1. Cerca il project_id nella query string (es. ?project_id=1)
-    if (route.query.project_id) {
+    // 1. Cerca il projectSlug nei parametri del percorso (es. /nome-studio)
+    if (route.params.projectSlug) {
+        projectSlug.value = route.params.projectSlug;
+        localStorage.setItem('project_slug', projectSlug.value);
+    } else if (route.query.project_id) {
+        // Fallback: cerca il project_id nella query string (es. ?project_id=1)
         projectId.value = route.query.project_id;
         localStorage.setItem('project_id', projectId.value);
     } else {
-        // Fallback: prova a vedere se era salvato in precedenza
-        const saved = localStorage.getItem('project_id');
-        if (saved) projectId.value = saved;
+        // Fallback: prova a vedere se erano salvati in precedenza
+        const savedSlug = localStorage.getItem('project_slug');
+        if (savedSlug) projectSlug.value = savedSlug;
+        
+        const savedId = localStorage.getItem('project_id');
+        if (savedId) projectId.value = savedId;
     }
 
     // Auto-fill PID se presente nell'URL (comodo per Prolific)
@@ -95,7 +109,7 @@ onMounted(() => {
 });
 
 const isValid = computed(() => {
-    return prolificPid.value.length > 3 && projectId.value;
+    return prolificPid.value.length > 3 && (projectId.value || projectSlug.value);
 });
 
 </script>

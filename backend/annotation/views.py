@@ -32,14 +32,20 @@ class InitializeSession(APIView):
     def post(self, request):
         pid = request.data.get('prolific_pid')
         project_id = request.data.get('project_id')
+        project_slug = request.data.get('project_slug')
+
         if not pid:
             return Response({"error": "Missing PID"}, status=400)
         
         # Check Project existence and status
-        if not project_id:
-            return Response({"error": "Missing Project ID"}, status=400)
+        if not project_id and not project_slug:
+            return Response({"error": "Missing Project ID or Slug"}, status=400)
             
-        project = get_object_or_404(Project, id=project_id)
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
+
         if not project.is_active:
             return Response({"error": "Project is not active"}, status=404)
 
@@ -180,12 +186,17 @@ class GetNextTask(APIView):
         # 1. RETRIEVE PARAMETERS
         pid = request.query_params.get('pid')
         project_id = request.query_params.get('project_id')
+        project_slug = request.query_params.get('project_slug')
 
-        if not pid or not project_id:
-            return Response({"error": "Missing 'pid' or 'project_id'"}, status=400)
+        if not pid or (not project_id and not project_slug):
+            return Response({"error": "Missing 'pid' or 'project' identification"}, status=400)
 
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
-        project = get_object_or_404(Project, id=project_id)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
 
         # 2. BASIC STATUS CHECKS
         if not project.is_active:
@@ -311,11 +322,17 @@ class GetConsent(APIView):
     def get(self, request):
         pid = request.query_params.get('pid')
         project_id = request.query_params.get('project_id')
-        if not pid or not project_id:
-            return Response({"error": "Missing PID or Project ID"}, status=400)
+        project_slug = request.query_params.get('project_slug')
+
+        if not pid or (not project_id and not project_slug):
+            return Response({"error": "Missing PID or Project identification"}, status=400)
         
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
-        project = get_object_or_404(Project, id=project_id)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
         
         if not project.is_active:
             return Response({"error": "Project is not active"}, status=404)

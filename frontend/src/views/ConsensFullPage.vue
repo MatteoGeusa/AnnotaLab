@@ -25,6 +25,7 @@ const router = useRouter();
 
 const pid = localStorage.getItem('prolific_pid');
 const projectId = route.query.project_id ?? localStorage.getItem('project_id');
+const projectSlug = route.query.project_slug ?? localStorage.getItem('project_slug');
 
 const consentText = ref('');
 const loading = ref(true);
@@ -33,7 +34,7 @@ const errorMsg = ref('');
 const getConsent = async () => {
     try {
         const res = await api.get('get-consent/', {
-            params: { pid, project_id: projectId }
+            params: { pid, project_id: projectId, project_slug: projectSlug }
         });
         consentText.value = res.data.consent_text;
     } catch (err) {

@@ -63,8 +63,7 @@ class ProjectAdmin(ModelAdmin):
         ("Input Data Mapping", {
             "fields": (
                 ("dataset_text_key", "dataset_id_key"),
-                "documents_file",
-                "gold_units_file",
+                ("documents_file","gold_units_file")
             ),
             "description": """
                 Upload <b>.jsonl</b> files where each line is a JSON object.<br><br>
@@ -315,11 +314,12 @@ class ProjectAdmin(ModelAdmin):
     
     @admin.display(description="Link (Prolific)")
     def link_prolific(self, obj):
-        display_url = f"http://localhost:5173/?PROLIFIC_PID=&project_id={obj.id}"
-        test_url = f"http://localhost:5173/?PROLIFIC_PID=TEST_USER_001&project_id={obj.id}"
+        # Format: http://localhost:5173/nome-studio?PROLIFIC_PID=
+        display_url = f"http://localhost:5173/{obj.slug}?PROLIFIC_PID="
+        test_url = f"http://localhost:5173/{obj.slug}?PROLIFIC_PID=TEST_USER_001"
         return format_html(
             '''
-            <div style="display:flex; align-items:center; gap:8px; min-width:400px;">
+            <div style="display:flex; align-items:center; gap:8px; min-width:350px;">
                 <code style="
                     background:#1e1e1e; color:#60a5fa;
                     padding:4px 8px; border-radius:4px;
@@ -365,7 +365,7 @@ class ProjectAdmin(ModelAdmin):
         # --- Process Documents File ---
         if 'documents_file' in form.changed_data and obj.documents_file:
             try:
-                count, import_warnings = process_uploaded_dataset(obj, obj.documents_file, is_gold=False)
+                count, import_warnings = process_uploaded_dataset(obj, obj.documents_file)
                 messages.success(request, f"Regular documents import successful! Created {count} documents.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")
@@ -375,7 +375,7 @@ class ProjectAdmin(ModelAdmin):
         # --- Process Gold Units File ---
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
             try:
-                count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file, is_gold=True)
+                count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file)
                 messages.success(request, f"Gold units import successful! Created {count} units.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")

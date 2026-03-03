@@ -36,6 +36,8 @@ const route = useRoute();
 const accepted = ref(false);
 const pid = localStorage.getItem('prolific_pid');
 const projectId = route.query.project_id ?? localStorage.getItem('project_id');
+const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_slug');
+
 const consentText = ref('');
 const loading = ref(true);
 const errorMsg = ref('');
@@ -49,7 +51,7 @@ const truncatedConsent = computed(() =>
 const getConsent = async () => {
     try {
         const res = await api.get('get-consent/', {
-            params: { pid, project_id: projectId }
+            params: { pid, project_id: projectId, project_slug: projectSlug }
         });
         consentText.value = res.data.consent_text;
     } catch (err) {
@@ -62,12 +64,13 @@ const getConsent = async () => {
 onMounted(getConsent);
 
 const full_consent_form_url = () => {
-    router.push({ path: '/consent-form', query: { project_id: projectId } });
+    router.push({ path: '/consent-form', query: { project_id: projectId, project_slug: projectSlug } });
 };
 
 const submitConsent = async () => {
     await api.post('consent/', { pid });
-    router.push('/instructions');
+    const slug = projectSlug || projectId;
+    router.push(`/${slug}/instructions`);
 };
 </script>
 

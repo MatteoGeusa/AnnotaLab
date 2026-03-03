@@ -23,15 +23,8 @@ class BaseDocumentAdmin(ModelAdmin, ImportExportModelAdmin):
     def short_text(self, obj):
         return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text
 
-    def get_queryset(self, request):
-        """Annotate the queryset with a numeric version of external_id for sorting."""
-        qs = super().get_queryset(request)
-        return qs.annotate(
-            external_id_num=Cast('external_id', output_field=IntegerField())
-        )
-
-    @admin.display(description="External ID", ordering="external_id_num")
-    def external_id_numeric(self, obj):
+    @admin.display(description="External ID", ordering="external_id")
+    def external_id_display(self, obj):
         return obj.external_id
 
     def changelist_view(self, request, extra_context=None):
@@ -46,7 +39,7 @@ class BaseDocumentAdmin(ModelAdmin, ImportExportModelAdmin):
 
 @admin.register(DocumentProxy)
 class DocumentProxyAdmin(BaseDocumentAdmin):
-    list_display = ('external_id_numeric', 'short_text', 'project', 'current_annotations_count', 'is_completed')
+    list_display = ('external_id_display', 'short_text', 'project', 'current_annotations_count', 'is_completed')
     list_filter = ('project',)
     
     def get_queryset(self, request):
@@ -64,7 +57,7 @@ class DocumentProxyAdmin(BaseDocumentAdmin):
 
 @admin.register(GoldUnitProxy)
 class GoldUnitProxyAdmin(BaseDocumentAdmin):
-    list_display = ('external_id_numeric', 'short_text', 'project', 'gold_preview')
+    list_display = ('external_id_display', 'short_text', 'project', 'gold_preview')
     list_filter = ('project',)
     
     def get_queryset(self, request):

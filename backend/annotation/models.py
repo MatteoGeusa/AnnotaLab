@@ -90,8 +90,15 @@ class Project(models.Model):
     Example: 'Sentiment Analysis Batch 1'
     """
     name = models.CharField(max_length=200, help_text="Project name")
+    slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="Unique Identifier for the URL (e.g., 'nome-studio')")
     description = models.TextField(blank=True, help_text="Project description")
     is_active = models.BooleanField(default=True, help_text="If False, the project will not accept new annotations.")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
     
     # CONFIGURATION
     
@@ -116,6 +123,7 @@ class Project(models.Model):
     STRATEGY_CHOICES = [
         ('STANDARD', 'Standard (Public Pool) - Randomly assign documents to annotators'),
         ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy) - All annotators see all documents'),
+        ('SAME_ANNOTATORS', 'Same k annotators view the same document')
     ]
     
     distribution_strategy = models.CharField(

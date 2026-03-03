@@ -43,17 +43,21 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../axios';
 
 const router = useRouter();
+const route = useRoute();
 const pid = localStorage.getItem('prolific_pid');
+const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_slug');
+const projectId = localStorage.getItem('project_id');
 
 const finishInstructions = async () => {
     // Here you could send them to a separate "Training" page if you want a quiz
     // For now, we send them directly to annotation, marking onboarding as complete
     await api.post('onboarding/', { pid });
-    router.push('/annotate');
+    const slug = projectSlug || projectId;
+    router.push(`/${slug}/annotate`);
 };
 </script>
 

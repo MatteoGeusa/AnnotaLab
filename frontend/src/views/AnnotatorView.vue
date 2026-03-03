@@ -76,12 +76,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../axios';
 import TextHighlighter from '../components/TextHighlighter.vue';
 
 const router = useRouter();
+const route = useRoute();
 const pid = localStorage.getItem('prolific_pid');
+const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_slug');
 
 // STATO
 const loading = ref(true);
@@ -134,14 +136,16 @@ const fetchNextTask = async () => {
     const pid = localStorage.getItem('prolific_pid');
     const projectId = localStorage.getItem('project_id');
 
-    if (!projectId) {
-        errorMsg.value = "Fatal Error: No Project ID found.";
+    if (!projectId && !projectSlug) {
+        errorMsg.value = "Fatal Error: No Project ID/Slug found.";
         loading.value = false;
         return;
     }
 
     try {
-        const res = await api.get(`next-task/?pid=${pid}&project_id=${projectId}`);
+        const res = await api.get('next-task/', {
+            params: { pid, project_id: projectId, project_slug: projectSlug }
+        });
 
         if (res.data.status === 'completed') {
             loading.value = false;
