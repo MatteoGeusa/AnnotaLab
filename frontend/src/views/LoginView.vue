@@ -59,9 +59,10 @@ const startSession = async () => {
         // Routing
         const step = response.data.step;
         const slug = projectSlug.value || projectId.value; // Fallback if no slug
-        
+
         if (step === 'CONSENT') router.push(`/${slug}/consent`);
-        else if (step === 'INSTRUCTIONS') router.push(`/${slug}/instructions`);
+        else if (step === 'SCREENING') router.push(`/${slug}/screening`);
+        else if (step === 'ONBOARDING') router.push(`/${slug}/instructions`);
         else if (step === 'ANNOTATION') router.push(`/${slug}/annotate`);
         else if (step === 'COMPLETED') router.push(`/${slug}/annotate`);
 
@@ -92,7 +93,7 @@ onMounted(() => {
         // Fallback: prova a vedere se erano salvati in precedenza
         const savedSlug = localStorage.getItem('project_slug');
         if (savedSlug) projectSlug.value = savedSlug;
-        
+
         const savedId = localStorage.getItem('project_id');
         if (savedId) projectId.value = savedId;
     }

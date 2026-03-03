@@ -1,0 +1,5 @@
+{
+  "min_accuracy_required": 0.6,
+  "gold_injection_frequency": 5,
+  "continuous_exclusion": false
+}

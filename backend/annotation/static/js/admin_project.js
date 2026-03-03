@@ -9,12 +9,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // 1. FILE UPLOAD DRAG & DROP
   // ============================================
   const fileInputs = document.querySelectorAll(
-    'input[type="file"][name="upload_task_config"], input[type="file"][name="upload_screening_config"]',
+    'input[type="file"][name="upload_task_config"], input[type="file"][name="upload_gold_config"], input[type="file"][name="upload_screening_config"]',
   );
 
   fileInputs.forEach(function (input) {
     const fieldWrapper = input.closest(
-      ".flex-col, .field-upload_task_config, .field-upload_screening_config, div",
+      ".flex-col, .field-upload_task_config, .field-upload_gold_config, .field-upload_screening_config, div",
     );
     if (!fieldWrapper) return;
 
@@ -24,9 +24,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const label =
       input.name === "upload_task_config"
         ? "Task Configuration"
-        : "Screening Configuration";
+        : input.name === "upload_gold_config"
+          ? "Gold Units Configuration"
+          : "Screening Configuration";
 
-    const icon = input.name === "upload_task_config" ? "⚙️" : "🛡️";
+    const icon =
+      input.name === "upload_task_config"
+        ? "⚙️"
+        : input.name === "upload_gold_config"
+          ? "🛡️"
+          : "📋";
 
     // Create the styled wrapper
     const wrapper = document.createElement("div");

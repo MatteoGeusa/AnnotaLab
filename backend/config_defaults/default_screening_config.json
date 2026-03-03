@@ -1,5 +1,23 @@
-{
-  "min_accuracy_required": 0.6,
-  "gold_injection_frequency": 5,
-  "continuous_screening": false
-}
+[
+  {
+    "id": "age",
+    "type": "number",
+    "label": "How old are you?",
+    "required": true,
+    "min": 18,
+    "max": 99
+  },
+  {
+    "id": "gender",
+    "type": "select",
+    "label": "Gender?",
+    "required": true,
+    "options": ["Male", "Female", "Non-binary", "Prefer not to say"]
+  },
+  {
+    "id": "native_language",
+    "type": "text",
+    "label": "Native language?",
+    "required": true
+  }
+]

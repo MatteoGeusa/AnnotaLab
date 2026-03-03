@@ -53,9 +53,11 @@ const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_sl
 const projectId = localStorage.getItem('project_id');
 
 const finishInstructions = async () => {
-    // Here you could send them to a separate "Training" page if you want a quiz
-    // For now, we send them directly to annotation, marking onboarding as complete
-    await api.post('onboarding/', { pid });
+    await api.post('onboarding/', {
+        pid,
+        project_slug: projectSlug,
+        project_id: projectId
+    });
     const slug = projectSlug || projectId;
     router.push(`/${slug}/annotate`);
 };

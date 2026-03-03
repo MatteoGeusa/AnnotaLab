@@ -22,10 +22,15 @@ class ProjectAdminForm(forms.ModelForm):
         label="Upload Task Config (JSON)",
         help_text="Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
     )
+    upload_gold_config = forms.FileField(
+        required=False,
+        label="Upload Gold Config (JSON)",
+        help_text="Upload a JSON file to overwrite the Gold Units QC configuration."
+    )
     upload_screening_config = forms.FileField(
         required=False,
         label="Upload Screening Config (JSON)",
-        help_text="Upload a JSON file to overwrite the Screening configuration."
+        help_text="Upload a JSON file to configure the screening questionnaire (demographics, etc.)."
     )
 
     class Meta:
@@ -38,7 +43,7 @@ class ProjectAdmin(ModelAdmin):
     list_display = ('name', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
     
     form = ProjectAdminForm
-    readonly_fields = ('formatted_task_type_config', 'formatted_screening_config',)
+    readonly_fields = ('formatted_task_type_config', 'formatted_gold_config', 'formatted_screening_config',)
     
     fieldsets = (
         ("General Information", {
@@ -47,15 +52,21 @@ class ProjectAdmin(ModelAdmin):
 
         ("Configuration", {
             "fields": (
-                ("formatted_task_type_config", "formatted_screening_config"),
-                ("upload_task_config", "upload_screening_config"),
+                ("formatted_screening_config", "formatted_gold_config", "formatted_task_type_config"),
+                ("upload_screening_config", "upload_gold_config", "upload_task_config"),
             ),
             "description": """
-                Live JSON configuration for this project. Upload a JSON file below to overwrite.<br>
-                <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd; margin-top: 8px;">
-                <b>💡 Screening Configuration:</b><br>
-                - <code>gold_injection_frequency</code>: Injects a gold unit every X regular units (e.g. 5).<br>
-                - <code>continuous_screening</code> (bool): If true, users can be excluded if accuracy drops after screening.
+                Live JSON configuration for this project. Upload JSON files below to overwrite.<br>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #10B981; color: #ddd;">
+                        <b>📋 Screening:</b><br>Pre-task metadata questionnaire (JSON array).
+                    </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
+                        <b>🛡️ Gold Units:</b><br>QC injection frequency and accuracy thresholds.
+                    </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #3B82F6; color: #ddd;">
+                        <b>⚙️ Task:</b><br>Labels, questions, and task type.
+                    </div>
                 </div>
             """
         }),
@@ -141,7 +152,16 @@ class ProjectAdmin(ModelAdmin):
                 icon, title.lower()
             )
 
-        json_str = json.dumps(config_data, indent=4, sort_keys=True)
+        # Ensure important keys are on top if it's a dictionary
+        if isinstance(config_data, dict):
+            priority_keys = ["task_type", "min_accuracy_required", "gold_injection_frequency", "continuous_exclusion"]
+            ordered_data = {k: config_data[k] for k in priority_keys if k in config_data}
+            for k, v in config_data.items():
+                if k not in ordered_data:
+                    ordered_data[k] = v
+            config_data = ordered_data
+
+        json_str = json.dumps(config_data, indent=4)
         colorized = self._colorize_json(json_str)
 
         return format_html(
@@ -160,9 +180,13 @@ class ProjectAdmin(ModelAdmin):
     def formatted_task_type_config(self, obj):
         return self._render_config_block(obj.task_type_config, 'Task Configuration', '⚙️')
 
+    @admin.display(description="Gold Config")
+    def formatted_gold_config(self, obj):
+        return self._render_config_block(obj.gold_config, 'Gold Units Configuration', '🛡️')
+
     @admin.display(description="Screening Config")
     def formatted_screening_config(self, obj):
-        return self._render_config_block(obj.screening_config, 'Screening Configuration', '🛡️')
+        return self._render_config_block(obj.screening_config, 'Screening Configuration', '📋')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -352,13 +376,26 @@ class ProjectAdmin(ModelAdmin):
             except Exception as e:
                 messages.error(request, f"Task Config Error: {str(e)}")
 
+        # --- Process uploaded Gold Config JSON ---
+        gold_config_file = form.cleaned_data.get('upload_gold_config')
+        if gold_config_file:
+            try:
+                obj.gold_config = parse_json_upload(gold_config_file)
+                obj.save(update_fields=['gold_config'])
+                messages.success(request, "Gold Units Configuration updated from JSON file!")
+            except Exception as e:
+                messages.error(request, f"Gold Config Error: {str(e)}")
+
         # --- Process uploaded Screening Config JSON ---
         screening_config_file = form.cleaned_data.get('upload_screening_config')
         if screening_config_file:
             try:
-                obj.screening_config = parse_json_upload(screening_config_file)
+                parsed = parse_json_upload(screening_config_file)
+                if not isinstance(parsed, list):
+                    raise ValueError("Screening config must be a JSON array of questions.")
+                obj.screening_config = parsed
                 obj.save(update_fields=['screening_config'])
-                messages.success(request, "Screening Configuration updated from JSON file!")
+                messages.success(request, f"Screening Configuration updated! {len(parsed)} question(s) loaded.")
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
 

@@ -54,7 +54,23 @@ def get_default_configuration_for_task_type():
             ]
     }
 
-def get_default_configuration_for_screening():
+def get_default_gold_config():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_gold_config.json')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"min_accuracy_required": 0.6, "gold_injection_frequency": 5, "continuous_exclusion": False}
+            
+    return {
+        "min_accuracy_required": 0.6,
+        "gold_injection_frequency": 5,
+        "continuous_exclusion": False
+    }
+
+def get_default_screening_config():
     config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_screening_config.json')
     
     if os.path.exists(config_path):
@@ -62,13 +78,12 @@ def get_default_configuration_for_screening():
             with open(config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
-            return {"min_accuracy_required": 0.6, "gold_injection_frequency": 5, "continuous_screening": False}
-            
-    return {
-        "min_accuracy_required": 0.6,
-        "gold_injection_frequency": 5,
-        "continuous_screening": False
-    }
+            return []
+    return [
+        {"id": "age", "type": "number", "label": "How old are you?", "required": True, "min": 18, "max": 99},
+        {"id": "gender", "type": "select", "label": "Gender?", "required": True, "options": ["Male", "Female", "Non-binary", "Prefer not to say"]},
+        {"id": "native_language", "type": "text", "label": "Native language?", "required": True}
+    ]
 
 def get_default_configuration_for_informed_consent():
     return """
@@ -112,10 +127,16 @@ class Project(models.Model):
         help_text="Task Configuration (labels, colors, questions)"
     )
 
-    screening_config = models.JSONField(
-        default=get_default_configuration_for_screening,
+    gold_config = models.JSONField(
+        default=get_default_gold_config,
         blank=True,
-        help_text="Configuration for quality control: { 'min_accuracy_required': float, 'gold_injection_frequency': int }"
+        help_text="Gold Units QC config: { 'min_accuracy_required': float, 'gold_injection_frequency': int, 'continuous_exclusion': bool }"
+    )
+
+    screening_config = models.JSONField(
+        default=get_default_screening_config,
+        blank=True,
+        help_text="Screening questionnaire: JSON list of questions shown to annotators before the task. Empty list = skip screening."
     )
 
     # --- DISTRIBUTION CONSTRAINTS ---
@@ -194,7 +215,8 @@ class Annotator(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     metadata = JSONField(default=dict, blank=True)
     consent_accepted = models.BooleanField(default=False)
-    onboarding_completed = models.BooleanField(default=False) # Instructions + Training
+    screening_completed = models.BooleanField(default=False)
+    onboarding_completed = models.BooleanField(default=False)
     
     objects = models.Manager()
 
@@ -209,20 +231,22 @@ class ProjectEnrollment(models.Model):
     annotator = models.ForeignKey(Annotator, on_delete=models.CASCADE, related_name='enrollments')
     
     STATUS_CHOICES = [
-        ('PENDING', 'Pending'), # Not started or in progress
-        ('PASSED', 'Passed'),   # Completed screening successfully
-        ('FAILED', 'Failed'),   # Failed screening
+        ('PENDING', 'Pending'),       # Pre-annotation phases not completed
+        ('ACTIVE', 'Active'),         # Annotating documents
+        ('EXCLUDED', 'Excluded'),     # Removed for low quality
+        ('COMPLETED', 'Completed'),   # Target tasks reached
     ]
 
-    screening_status = models.CharField(
+    status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
-        default='PENDING'
+        default='PENDING',
+        help_text="PENDING = pre-task phases incomplete. ACTIVE = annotating. EXCLUDED = low quality. COMPLETED = done."
     )
     
-    # Training Metrics
-    training_tasks_completed = models.IntegerField(default=0)
-    training_accuracy = models.FloatField(null=True, blank=True)
+    # Gold Unit Quality Metrics
+    gold_tasks_completed = models.IntegerField(default=0)
+    gold_accuracy = models.FloatField(null=True, blank=True)
     
     # Target tasks for this specific relationship
     target_tasks = models.IntegerField(default=10)
@@ -236,11 +260,11 @@ class ProjectEnrollment(models.Model):
     
     class Meta:
         unique_together = ('project', 'annotator')
-        verbose_name = "Screening & Assignment"
-        verbose_name_plural = "Screening & Assignments"
+        verbose_name = "Enrollment & Assignment"
+        verbose_name_plural = "Enrollments & Assignments"
 
     def __str__(self):
-        return f"{self.annotator} -> {self.project} ({self.screening_status})"
+        return f"{self.annotator} -> {self.project} ({self.status})"
 
 class Document(models.Model):
     """

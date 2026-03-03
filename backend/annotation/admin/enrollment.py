@@ -13,13 +13,13 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     list_display = (
         'annotator',
         'project',
-        'screening_status_badge',
+        'status_badge',
         'gold_tasks_completed_display',
-        'training_accuracy_display',
+        'gold_accuracy_display',
         'exclude_from_distribution',
         'created_at',
     )
-    list_filter = ('screening_status', 'project', 'exclude_from_distribution')
+    list_filter = ('status', 'project', 'exclude_from_distribution')
     search_fields = ('annotator__prolific_pid', 'project__name')
     list_select_related = ('annotator', 'project')
 
@@ -33,15 +33,15 @@ class ProjectEnrollmentAdmin(ModelAdmin):
 
     fieldsets = (
         ("Enrollment", {
-            "fields": ("annotator", "project", "screening_status", "exclude_from_distribution"),
+            "fields": ("annotator", "project", "status", "exclude_from_distribution"),
         }),
         ("Workload", {
             "fields": ("target_tasks",),
             "description": "How many tasks this specific user must complete for this project.",
         }),
         ("Gold Task Metrics", {
-            "fields": ("gold_tasks_completed_display", "training_accuracy"),
-            "description": "Screening progress based on Gold Units.",
+            "fields": ("gold_tasks_completed_display", "gold_accuracy"),
+            "description": "Quality metrics based on Gold Units.",
         }),
         ("Timestamps", {
             "fields": ("created_at", "updated_at"),
@@ -52,28 +52,29 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     Media = HighlightMedia
 
     @admin.display(description="Status")
-    def screening_status_badge(self, obj):
+    def status_badge(self, obj):
         colors = {
-            'PENDING': '#f0ad4e',  # amber
-            'PASSED': '#5cb85c',   # green
-            'FAILED': '#d9534f',   # red
+            'PENDING': '#f0ad4e',   # amber
+            'ACTIVE': '#5cb85c',    # green
+            'EXCLUDED': '#d9534f',  # red
+            'COMPLETED': '#5bc0de', # blue
         }
-        color = colors.get(obj.screening_status, '#999')
+        color = colors.get(obj.status, '#999')
         return format_html(
             '<span style="background:{}; color:#fff; padding:3px 8px; '
             'border-radius:4px; font-size:11px; font-weight:bold;">{}</span>',
-            color, obj.screening_status
+            color, obj.status
         )
 
-    @admin.display(description="Gold Tasks Accuracy")
-    def training_accuracy_display(self, obj):
-        if obj.training_accuracy is None:
+    @admin.display(description="Gold Accuracy")
+    def gold_accuracy_display(self, obj):
+        if obj.gold_accuracy is None:
             return "-"
-        return f"{obj.training_accuracy:.0%}"
+        return f"{obj.gold_accuracy:.0%}"
 
     @admin.display(description="Gold Tasks Completed")
     def gold_tasks_completed_display(self, obj):
-        return obj.training_tasks_completed
+        return obj.gold_tasks_completed
 
     def changelist_view(self, request, extra_context=None):
         """Redirect if no project filter is active."""

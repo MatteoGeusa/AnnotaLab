@@ -15,19 +15,8 @@ class InitializeSession(APIView):
     """
     RETURNS USER STATE / RESTITUISCE STATO UTENTE
     ---------------------------------------------------------
-    EN: Determines which page the frontend should display based on the user's progress.
-        Logic:
-        1. If consent not accepted -> Show Consent Page.
-        2. If consent accepted but onboarding incomplete -> Show Instructions.
-        3. If onboarding complete -> Show Annotation Interface.
-        4. If targets met -> Show Completion/Payment Code.
-
-    IT: Determina quale pagina mostrare nel frontend in base al progresso dell'utente.
-        Logica:
-        1. Se consenso non accettato -> Mostra Pagina Consenso.
-        2. Se consenso accettato ma onboarding incompleto -> Mostra Istruzioni.
-        3. Se onboarding completo -> Mostra Interfaccia Annotazione.
-        4. Se target raggiunti -> Mostra Completamento/Codice Pagamento.
+    Determines which page the frontend should display based on the user's progress.
+    Pipeline: CONSENT -> SCREENING -> ONBOARDING -> ANNOTATION -> COMPLETED
     """
     def post(self, request):
         pid = request.data.get('prolific_pid')
@@ -37,7 +26,6 @@ class InitializeSession(APIView):
         if not pid:
             return Response({"error": "Missing PID"}, status=400)
         
-        # Check Project existence and status
         if not project_id and not project_slug:
             return Response({"error": "Missing Project ID or Slug"}, status=400)
             
@@ -51,29 +39,30 @@ class InitializeSession(APIView):
 
         # Metadata extraction (e.g. STUDY_ID, SESSION_ID from Prolific)
         metadata = request.data.get('metadata', {})
-        # Remove redundant keys that are already handled by dedicated fields
         metadata.pop('project_id', None)
         metadata.pop('prolific_pid', None)
         metadata.pop('PROLIFIC_PID', None)
         
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
-        # Always update metadata to capture the latest session info if provided
         if metadata:
             annotator.metadata.update(metadata)
             annotator.save()
 
-        # Get or create enrollment to check project-specific progress
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project, 
             annotator=annotator,
             defaults={'target_tasks': project.target_tasks_per_annotator}
         )
 
-        # Calculate current state
+        # Determine current step based on pipeline progression
         current_step = 'CONSENT'
         if annotator.consent_accepted:
-            current_step = 'INSTRUCTIONS'
+            # Check if project has a survey and annotator hasn't completed it
+            if project.screening_config and len(project.screening_config) > 0 and not annotator.screening_completed:
+                current_step = 'SCREENING'
+            else:
+                current_step = 'ONBOARDING'
         if annotator.onboarding_completed:
             current_step = 'ANNOTATION'
             
@@ -95,15 +84,129 @@ class AcceptConsent(APIView):
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         annotator.consent_accepted = True
         annotator.save()
-        return Response({"status": "ok", "next_step": "INSTRUCTIONS"})
+        return Response({"status": "ok", "next_step": "SCREENING"})
 
-class CompleteOnboarding(APIView):
-    """ Saves that the user completed instructions/training """
+class GetScreening(APIView):
+    """
+    Returns the screening questionnaire configuration for a project.
+    GET /api/v1/get-screening/?pid=XX&project_slug=XX
+    """
+    def get(self, request):
+        pid = request.query_params.get('pid')
+        project_id = request.query_params.get('project_id')
+        project_slug = request.query_params.get('project_slug')
+
+        if not pid or (not project_id and not project_slug):
+            return Response({"error": "Missing PID or Project identification"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
+        
+        if not project.is_active:
+            return Response({"error": "Project is not active"}, status=404)
+        
+        if annotator.screening_completed:
+            return Response({"error": "Screening already completed"}, status=400)
+
+        screening_config = project.screening_config or []
+        
+        if not screening_config:
+            return Response({"questions": [], "skip": True})
+
+        return Response({
+            "questions": screening_config,
+            "skip": False
+        })
+
+class SubmitScreening(APIView):
+    """
+    Saves screening responses from an annotator.
+    POST /api/v1/screening/
+    Body: { pid, project_slug, responses: { question_id: answer, ... } }
+    """
     def post(self, request):
         pid = request.data.get('pid')
+        project_slug = request.data.get('project_slug')
+        project_id = request.data.get('project_id')
+        responses = request.data.get('responses', {})
+
+        if not pid:
+            return Response({"error": "Missing PID"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        
+        # Get project to validate required fields
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        elif project_id:
+            project = get_object_or_404(Project, id=project_id)
+        else:
+            return Response({"error": "Missing Project identification"}, status=400)
+
+        # Validate required fields
+        screening_config = project.screening_config or []
+        for question in screening_config:
+            if question.get('required', False):
+                q_id = question.get('id')
+                if q_id not in responses or responses[q_id] is None or responses[q_id] == '':
+                    return Response(
+                        {"error": f"Required field '{question.get('label', q_id)}' is missing."},
+                        status=400
+                    )
+
+        # Save responses into annotator metadata
+        annotator.metadata['screening_responses'] = responses
+        annotator.screening_completed = True
+        annotator.save()
+
+        return Response({"status": "ok", "next_step": "ONBOARDING"})
+
+class CompleteOnboarding(APIView):
+    """ 
+    Saves that the user completed instructions/training.
+    Also transitions enrollment to ACTIVE if all pre-task phases are complete.
+    """
+    def post(self, request):
+        pid = request.data.get('pid')
+        project_slug = request.data.get('project_slug')
+        project_id = request.data.get('project_id')
+        
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         annotator.onboarding_completed = True
         annotator.save()
+        
+        # Transition enrollment PENDING -> ACTIVE if all phases complete
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        elif project_id:
+            project = get_object_or_404(Project, id=project_id)
+        else:
+            # Fallback: try to find any pending enrollment
+            project = None
+
+        if project:
+            enrollment, _ = ProjectEnrollment.objects.get_or_create(
+                project=project,
+                annotator=annotator,
+                defaults={'target_tasks': project.target_tasks_per_annotator}
+            )
+            
+            # Check all pre-task phases
+            screening_ok = annotator.screening_completed or not project.screening_config or len(project.screening_config) == 0
+            all_phases_complete = (
+                annotator.consent_accepted and 
+                screening_ok and 
+                annotator.onboarding_completed
+            )
+            
+            if all_phases_complete and enrollment.status == 'PENDING':
+                enrollment.status = 'ACTIVE'
+                enrollment.save()
+
         return Response({"status": "ok", "next_step": "ANNOTATION"})
 
 class SubmitAnnotation(APIView):
@@ -118,21 +221,15 @@ class SubmitAnnotation(APIView):
             
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
         
-        # Copy data and manually add the annotator
         data = request.data.copy()
-        
-        # The frontend sends only 'document', 'result', etc.
-        # We retrieve the annotator from the PID for security.
         serializer = AnnotationSerializer(data=data)
         
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    # SAVE THE ANNOTATION
                     annotation = serializer.save(annotator=annotator)
                     
-                    # --- SCREENING / TRAINING LOGIC ---
-                    # Retrieve enrollment to check the status
+                    # --- QUALITY CONTROL / GOLD UNIT LOGIC ---
                     document = annotation.document
                     project = document.project
                     
@@ -141,12 +238,10 @@ class SubmitAnnotation(APIView):
                         annotator=annotator
                     )
                     
-                    # --- QUALITY CONTROL / SCREENING LOGIC ---
                     if document.is_gold_unit:
-                        # Increment gold task counter
-                        enrollment.training_tasks_completed += 1
+                        enrollment.gold_tasks_completed += 1
                         
-                        # Evaluate correctness (Simple exact match logic)
+                        # Evaluate correctness
                         is_correct = False
                         if document.gold_solution:
                             user_class = data.get('result', {}).get('classification')
@@ -155,18 +250,26 @@ class SubmitAnnotation(APIView):
                                is_correct = True
                         
                         # Update cumulative accuracy
-                        prev_acc = enrollment.training_accuracy or 0.0
-                        total = enrollment.training_tasks_completed
+                        prev_acc = enrollment.gold_accuracy or 0.0
+                        total = enrollment.gold_tasks_completed
                         prev_correct = prev_acc * (total - 1)
                         current_correct = prev_correct + (1 if is_correct else 0)
                         new_acc = current_correct / total
                         
-                        enrollment.training_accuracy = new_acc
+                        enrollment.gold_accuracy = new_acc
+                        
+                        # Check continuous exclusion: exclude if accuracy drops below threshold
+                        gold_cfg = project.gold_config or {}
+                        if gold_cfg.get('continuous_exclusion', False):
+                            min_accuracy = gold_cfg.get('min_accuracy_required', 0.6)
+                            # Only evaluate after a minimum number of gold tasks
+                            if total >= 3 and new_acc < min_accuracy:
+                                enrollment.status = 'EXCLUDED'
+                        
                         enrollment.save()
 
                 return Response({"status": "saved"}, status=status.HTTP_201_CREATED)
             except Exception as e:
-                # Handles the case where the user tries to save the same document twice (UniqueConstraint)
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -176,14 +279,12 @@ class GetNextTask(APIView):
     DETERMINES THE NEXT TASK FOR THE ANNOTATOR
     ---------------------------------------------------------
     Logic:
-    1. Check for exclusion or already meeting target tasks.
-    2. Check screening status (Training phase or Passed phase).
-    3. If training -> Force a Gold Unit.
-    4. If passed -> Gold Injection logic OR Normal document selection based on project strategy.
-    5. Concurrent safe selection using SKIP LOCKED.
+    1. Check enrollment status (must be ACTIVE).
+    2. Check if target tasks reached.
+    3. Gold Injection logic OR Normal document selection.
+    4. Concurrent safe selection using SKIP LOCKED.
     """
     def get(self, request):
-        # 1. RETRIEVE PARAMETERS
         pid = request.query_params.get('pid')
         project_id = request.query_params.get('project_id')
         project_slug = request.query_params.get('project_slug')
@@ -198,11 +299,9 @@ class GetNextTask(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
 
-        # 2. BASIC STATUS CHECKS
         if not project.is_active:
             return Response({"status": "stopped", "message": "This project is currently not accepting annotations."})
 
-        # 3. SCREENING / ENROLLMENT LOGIC
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project, 
             annotator=annotator,
@@ -212,32 +311,33 @@ class GetNextTask(APIView):
         if enrollment.exclude_from_distribution:
             return Response({"status": "stopped", "message": "Access denied for this project."})
 
+        # Check enrollment status
+        if enrollment.status == 'EXCLUDED':
+            return Response({"status": "stopped", "message": "You have been excluded from this project due to quality issues."})
+        
+        if enrollment.status == 'COMPLETED':
+            return self._completed_response()
+
         # Check user progress for THIS project
         done_count = annotator.annotations.filter(document__project=project).count()
         if done_count >= enrollment.target_tasks:
+            enrollment.status = 'COMPLETED'
+            enrollment.save()
             return self._completed_response()
         
-        if enrollment.screening_status == 'FAILED':
-             return Response({"status": "stopped", "message": "Screening not passed."})
-            
-        if enrollment.screening_status == 'PENDING':
-            # Handle PENDING logic if needed in the future
-            pass
+        if enrollment.status == 'PENDING':
+            # User hasn't completed pre-task phases yet
+            return Response({"status": "stopped", "message": "Please complete all pre-task steps first."})
 
-        # 4. TASK SELECTION (Concurrency Safe)
+        # TASK SELECTION (Concurrency Safe)
         with transaction.atomic():
             target_id = self._get_candidate_id(project, annotator, enrollment, done_count)
             
             if not target_id:
-                # If we are in training and no gold units are left, or no docs left
-                if enrollment.screening_status == 'PENDING':
-                    return Response({"status": "no_training_data"})
                 return self._completed_response()
 
-            # select_for_update allows us to lock the row and avoid double assignment in Race Conditions
             final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
 
-        # 5. RESPONSE ASSEMBLY
         if final_doc:
             return self._task_response(final_doc, enrollment)
         
@@ -257,8 +357,8 @@ class GetNextTask(APIView):
 
     def _should_inject_gold(self, project, done_count):
         """ Determines if a Gold Unit should be injected based on frequency settings """
-        screening_config = project.screening_config or {}
-        injection_freq = screening_config.get('gold_injection_frequency', 0)
+        gold_cfg = project.gold_config or {}
+        injection_freq = gold_cfg.get('gold_injection_frequency', 0)
         return injection_freq > 0 and (done_count + 1) % injection_freq == 0
 
     def _find_gold_candidate(self, project, annotator):
@@ -284,29 +384,23 @@ class GetNextTask(APIView):
         candidates = base_qs
         
         if project.distribution_strategy == 'STANDARD':
-            # Respect max capacity and prioritize based on setup
             candidates = candidates.filter(num_anns__lt=project.max_annotations_per_doc)
             order = 'num_anns' if project.prioritize_unannotated else '?'
             candidates = candidates.order_by(order)
             
         elif project.distribution_strategy == 'FULL_OVERLAP':
-            # Everyone sees everything, just random
             candidates = candidates.order_by('?')
         
         return candidates.values_list('id', flat=True).first()
 
     def _task_response(self, doc, enrollment):
-        """ Prepares the final Response JSON, filtering out sensitive data """
-        # The Serializer already excludes 'metadata' and 'external_id' for privacy
+        """ Prepares the final Response JSON """
         serializer = DocumentSerializer(doc)
         data = serializer.data 
         
-        # Add frontend-specific tags
         data.update({
             'is_gold': doc.is_gold_unit,
-            # We can keep feedback_enabled if we want to show feedback 
-            # but the user explicitly asked to hide the banner in pending.
-            'feedback_enabled': enrollment.screening_status == 'PENDING'
+            'feedback_enabled': False  # Gold feedback can be enabled per-project if needed
         })
             
         return Response(data)

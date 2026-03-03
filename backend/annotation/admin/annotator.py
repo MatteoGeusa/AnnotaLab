@@ -21,7 +21,7 @@ class AnnotatorAdmin(ModelAdmin):
             "fields": ("prolific_pid", "created_at")
         }),
         ("Onboarding Status", {
-            "fields": ("consent_accepted", "onboarding_completed"),
+            "fields": ("consent_accepted", "screening_completed", "onboarding_completed"),
             "description": "Manage annotator's progression status."
         }),
         ("Metadata", {
