@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 1. FILE UPLOAD DRAG & DROP
   // ============================================
   const fileInputs = document.querySelectorAll(
-    'input[type="file"][name="upload_task_config"], input[type="file"][name="upload_gold_config"], input[type="file"][name="upload_screening_config"]',
+    'input[type="file"][name="upload_task_config"], input[type="file"][name="upload_gold_config"], input[type="file"][name="upload_screening_config"], input[type="file"][name="upload_codebook_content"]',
   );
 
   fileInputs.forEach(function (input) {
@@ -26,14 +26,18 @@ document.addEventListener("DOMContentLoaded", function () {
         ? "Task Configuration"
         : input.name === "upload_gold_config"
           ? "Gold Units Configuration"
-          : "Screening Configuration";
+          : input.name === "upload_screening_config"
+            ? "Screening Configuration"
+            : "Codebook Materials";
 
     const icon =
       input.name === "upload_task_config"
         ? "⚙️"
         : input.name === "upload_gold_config"
           ? "🛡️"
-          : "📋";
+          : input.name === "upload_screening_config"
+            ? "📋"
+            : "📖";
 
     // Create the styled wrapper
     const wrapper = document.createElement("div");
@@ -100,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const banner = document.createElement('div');
     banner.className = 'full-overlap-warning';
     banner.innerHTML = '⚠️ <strong>FULL_OVERLAP mode:</strong> Min and Max annotation limits are ignored. Every annotator will see every document.';
-    
+
     // Insert banner before the Distribution Strategy fieldset
     const strategyFieldWrapper = strategySelect.closest('.form-row, .flex-col, fieldset');
     if (strategyFieldWrapper) {
@@ -109,13 +113,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function toggleFields() {
       const isFullOverlap = strategySelect.value === 'FULL_OVERLAP';
-      
+
       // We use readOnly and pointer-events instead of disabled
       // because disabled fields are NOT sent in the POST request,
       // which causes validation errors in Django for mandatory fields.
       minField.readOnly = isFullOverlap;
       maxField.readOnly = isFullOverlap;
-      
+
       if (isFullOverlap) {
         minField.style.opacity = '0.5';
         maxField.style.opacity = '0.5';

@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view
 from django.conf import settings
 from .models import Document, Annotator, Annotation, Project, ProjectEnrollment
 from .serializers import DocumentSerializer, AnnotationSerializer
+from .gold_strategies import get_strategy, check_gold_correctness
 from django.db.models import Count
 
 PROLIFIC_COMPLETION_URL = "https://app.prolific.co/submissions/complete?cc=TUO_CODICE_PROLIFIC"
@@ -56,11 +57,15 @@ class InitializeSession(APIView):
         )
 
         # Determine current step based on pipeline progression
+        # Pipeline: CONSENT -> SCREENING -> CODEBOOK -> ONBOARDING -> ANNOTATION -> COMPLETED
         current_step = 'CONSENT'
         if annotator.consent_accepted:
             # Check if project has a survey and annotator hasn't completed it
-            if project.screening_config and len(project.screening_config) > 0 and not annotator.screening_completed:
+            has_screening = project.screening_config and len(project.screening_config) > 0
+            if has_screening and not annotator.screening_completed:
                 current_step = 'SCREENING'
+            elif project.enable_codebook and not enrollment.codebook_completed:
+                current_step = 'CODEBOOK'
             else:
                 current_step = 'ONBOARDING'
         if annotator.onboarding_completed:
@@ -85,6 +90,71 @@ class AcceptConsent(APIView):
         annotator.consent_accepted = True
         annotator.save()
         return Response({"status": "ok", "next_step": "SCREENING"})
+
+class GetCodebook(APIView):
+    """
+    Returns the codebook content for a project.
+    GET /api/v1/get-codebook/?pid=XX&project_slug=XX
+    """
+    def get(self, request):
+        pid = request.query_params.get('pid')
+        project_slug = request.query_params.get('project_slug')
+        project_id = request.query_params.get('project_id')
+
+        if not pid or (not project_id and not project_slug):
+            return Response({"error": "Missing PID or Project identification"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
+        
+        if not project.is_active:
+            return Response({"error": "Project is not active"}, status=404)
+        
+        if not project.enable_codebook:
+            return Response({"content": "", "skip": True})
+
+        return Response({
+            "content": project.codebook_content or "",
+            "skip": False
+        })
+
+class CompleteCodebook(APIView):
+    """
+    Marks the codebook as completed for this annotator+project.
+    POST /api/v1/codebook/
+    Body: { pid, project_slug }
+    """
+    def post(self, request):
+        pid = request.data.get('pid')
+        project_slug = request.data.get('project_slug')
+        project_id = request.data.get('project_id')
+
+        if not pid:
+            return Response({"error": "Missing PID"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        elif project_id:
+            project = get_object_or_404(Project, id=project_id)
+        else:
+            return Response({"error": "Missing Project identification"}, status=400)
+        
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(
+            project=project,
+            annotator=annotator,
+            defaults={'target_tasks': project.target_tasks_per_annotator}
+        )
+        
+        enrollment.codebook_completed = True
+        enrollment.save()
+        
+        return Response({"status": "ok", "next_step": "ONBOARDING"})
 
 class GetScreening(APIView):
     """
@@ -241,30 +311,20 @@ class SubmitAnnotation(APIView):
                     if document.is_gold_unit:
                         enrollment.gold_tasks_completed += 1
                         
-                        # Evaluate correctness
-                        is_correct = False
-                        if document.gold_solution:
-                            user_class = data.get('result', {}).get('classification')
-                            gold_class = document.gold_solution.get('classification')
-                            if user_class == gold_class:
-                               is_correct = True
+                        # Evaluate correctness using strategy pattern
+                        annotation_result = data.get('result', {})
+                        is_correct = check_gold_correctness(annotation_result, document.gold_solution)
                         
-                        # Update cumulative accuracy
-                        prev_acc = enrollment.gold_accuracy or 0.0
-                        total = enrollment.gold_tasks_completed
-                        prev_correct = prev_acc * (total - 1)
-                        current_correct = prev_correct + (1 if is_correct else 0)
-                        new_acc = current_correct / total
-                        
-                        enrollment.gold_accuracy = new_acc
-                        
-                        # Check continuous exclusion: exclude if accuracy drops below threshold
+                        # Get the configured evaluation strategy
                         gold_cfg = project.gold_config or {}
-                        if gold_cfg.get('continuous_exclusion', False):
-                            min_accuracy = gold_cfg.get('min_accuracy_required', 0.6)
-                            # Only evaluate after a minimum number of gold tasks
-                            if total >= 3 and new_acc < min_accuracy:
-                                enrollment.status = 'EXCLUDED'
+                        strategy_name = gold_cfg.get('evaluation_strategy', 'percentage')
+                        strategy = get_strategy(strategy_name)
+                        
+                        # Execute strategy — updates enrollment fields internally
+                        should_exclude, reason = strategy(enrollment, gold_cfg, is_correct)
+                        
+                        if should_exclude:
+                            enrollment.status = 'EXCLUDED'
                         
                         enrollment.save()
 

@@ -11,6 +11,13 @@
     margin-top: 4px;
 }
 
+/* Force parent container (Django/Unfold readonly wrapper) to be full width */
+div:has(> .json-config-display) {
+    min-width: stretch !important;
+    max-width: none !important;
+    width: 100% !important;
+}
+
 .json-config-display .config-header {
     background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
     padding: 10px 16px;
@@ -197,6 +204,64 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Style Step Indicators in Tabs --- */
+/* Target all buttons in the tablist within the unfold admin */
+.unfold [role="tablist"] button {
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    background: transparent !important;
+    position: relative;
+}
+
+.unfold [role="tablist"] {
+    background: #f1f5f9 !important;
+    /* Slightly darker background to make active tab pop more */
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 8px;
+    border: 1px solid #e2e8f0;
+    width: fit-content;
+    /* Make it look more like a navbar */
+}
+
+.unfold [role="tablist"] button:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #1e293b !important;
+}
+
+.unfold [role="tablist"] button[aria-selected="true"] {
+    background: #3b82f6 !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+    transform: translateY(-1px);
+}
+
+/* Subtle indicator dot below active tab */
+.unfold [role="tablist"] button[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
 }

@@ -32,10 +32,36 @@ class ProjectAdminForm(forms.ModelForm):
         label="Upload Screening Config (JSON)",
         help_text="Upload a JSON file to configure the screening questionnaire (demographics, etc.)."
     )
+    upload_codebook_content = forms.FileField(
+        required=False,
+        label="Upload Codebook (Markdown)",
+        help_text="Upload a .md file to overwrite the theoretical/practical background."
+    )
 
     class Meta:
         model = Project
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_active = cleaned_data.get('is_active')
+        documents_file = cleaned_data.get('documents_file')
+        
+        # We need to know if the project ALREADY has documents in the database
+        has_existing_docs = False
+        if self.instance.pk:
+            has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists()
+
+        # If the user tries to activate the project
+        if is_active:
+            # It's valid ONLY if:
+            # 1. It already has documents in the DB
+            # 2. OR it's being provided a new document file right now
+            if not has_existing_docs and not documents_file:
+                # We raise the error on the 'is_active' field so it shows up in Step 4
+                self.add_error('is_active', "❌ Cannot Activate: No dataset found. Please upload a .jsonl file in 'Step 3' before setting the project to Active.")
+        
+        return cleaned_data
 
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
@@ -43,35 +69,62 @@ class ProjectAdmin(ModelAdmin):
     list_display = ('name', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
     
     form = ProjectAdminForm
-    readonly_fields = ('formatted_task_type_config', 'formatted_gold_config', 'formatted_screening_config',)
+    readonly_fields = (
+        'formatted_task_type_config', 
+        'formatted_gold_config', 
+        'formatted_screening_config',
+        'formatted_codebook_content',
+    )
     
     fieldsets = (
-        ("General Information", {
-            "fields": ("name", "description", "informed_consent_config",)
+        ("Project Details", {
+            "fields": (("name", "slug"), "description", "informed_consent_config",),
+            "classes": ("tab",),
         }),
 
-        ("Configuration", {
+        ("Step 1: Participant Training", {
+            "classes": ("tab",),
             "fields": (
-                ("formatted_screening_config", "formatted_gold_config", "formatted_task_type_config"),
-                ("upload_screening_config", "upload_gold_config", "upload_task_config"),
+                "formatted_screening_config",
+                "upload_screening_config",
+                "enable_codebook",
+                "formatted_codebook_content",
+                "upload_codebook_content",
             ),
             "description": """
-                Live JSON configuration for this project. Upload JSON files below to overwrite.<br>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #10B981; color: #ddd;">
-                        <b>📋 Screening:</b><br>Pre-task metadata questionnaire (JSON array).
+                        <b>📋 Screening:</b><br>Initial questionnaire for demographics and metadata.
                     </div>
-                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
-                        <b>🛡️ Gold Units:</b><br>QC injection frequency and accuracy thresholds.
-                    </div>
-                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #3B82F6; color: #ddd;">
-                        <b>⚙️ Task:</b><br>Labels, questions, and task type.
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #A78BFA; color: #ddd;">
+                        <b>📖 Codebook:</b><br>Theoretical/practical background instructions (Markdown).
                     </div>
                 </div>
             """
         }),
-  
-        ("Input Data Mapping", {
+
+        ("Step 2: Task Design", {
+            "classes": ("tab",),
+            "fields": (
+                "formatted_task_type_config",
+                "upload_task_config",
+                "formatted_gold_config",
+                "upload_gold_config",
+            ),
+            "description": """
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #3B82F6; color: #ddd;">
+                        <b>⚙️ Task:</b><br>The actual labeling configuration (labels, questions).
+                    </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
+                        <b>🛡️ Gold Units:</b><br>Quality control strategy and injection frequency.
+                    </div>
+                </div>
+            """
+        }),
+
+        ("Step 3: Data Import", {
+            "classes": ("tab",),
             "fields": (
                 ("dataset_text_key", "dataset_id_key"),
                 ("documents_file","gold_units_file")
@@ -83,18 +136,20 @@ class ProjectAdmin(ModelAdmin):
                     <li><b>Text</b>: Key corresponding to 'Dataset text key' (default: <code>text</code>).</li>
                     <li><b>ID</b>: Key corresponding to 'Dataset id key' (default: <code>_id</code>).</li>
                     <li><b>gold_solution</b> (json): [Required for Gold Units] The correct solution for quality control.</li>
-                    <li><b>metadata</b> (json): Optional metadata. e.g. <code>{'subreddit': 'r/AskReddit', 'other_metadata': 'value'}</code></li>
+                    <li><b>metadata</b> (json): Optional metadata context.</li>
                 </ul>
                 <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
                     <b>💡 Documents vs Gold Units:</b><br>
-                    - <b>Documents File</b>: Upload real data to be annotated. These will be distributed to workers.<br>
-                    - <b>Gold Units File</b>: Upload quality control units. These are used for measuring reliability.
+                    - <b>Documents File</b>: Upload real data to be annotated.<br>
+                    - <b>Gold Units File</b>: Upload quality control units with solutions.
                 </div>
             """
         }),
 
-        ("Distribution Strategy", {
+        ("Step 4: Distribution & Launch", {
+            "classes": ("tab",),
             "fields": (
+                "is_active",
                 "distribution_strategy",
                 "target_tasks_per_annotator",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
@@ -165,11 +220,11 @@ class ProjectAdmin(ModelAdmin):
         colorized = self._colorize_json(json_str)
 
         return format_html(
-            '<div class="json-config-display">'
-            '  <div class="config-header">'
-            '    <span class="config-icon">{icon}</span> {title}'
+            '<div class="json-config-display break-words max-w-none py-3 text-sm bg-base-50 border border-base-200 font-medium px-4 rounded-default shadow-xs dark:border-base-700 dark:bg-base-800">'
+            '  <div class="config-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); color: #64748b;">'
+            '    <span class="config-icon">{icon}</span> <strong>{title}</strong>'
             '  </div>'
-            '  <pre>{code}</pre>'
+            '  <pre style="margin: 0; background: transparent; border: none; padding: 0; font-family: \'JetBrains Mono\', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: inherit;">{code}</pre>'
             '</div>',
             icon=icon,
             title=title,
@@ -187,6 +242,11 @@ class ProjectAdmin(ModelAdmin):
     @admin.display(description="Screening Config")
     def formatted_screening_config(self, obj):
         return self._render_config_block(obj.screening_config, 'Screening Configuration', '📋')
+
+    @admin.display(description="Codebook Content")
+    def formatted_codebook_content(self, obj):
+        # Even though it's markdown, we render it in the same code-style block
+        return self._render_config_block(obj.codebook_content, 'Codebook Materials', '📖')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -398,6 +458,18 @@ class ProjectAdmin(ModelAdmin):
                 messages.success(request, f"Screening Configuration updated! {len(parsed)} question(s) loaded.")
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
+
+        # --- Process uploaded Codebook Markdown ---
+        codebook_file = form.cleaned_data.get('upload_codebook_content')
+        if codebook_file:
+            try:
+                # Read as text
+                content = codebook_file.read().decode('utf-8')
+                obj.codebook_content = content
+                obj.save(update_fields=['codebook_content'])
+                messages.success(request, "Codebook content updated from file!")
+            except Exception as e:
+                messages.error(request, f"Codebook Upload Error: {str(e)}")
 
         # --- Process Documents File ---
         if 'documents_file' in form.changed_data and obj.documents_file:

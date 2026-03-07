@@ -62,6 +62,7 @@ const startSession = async () => {
 
         if (step === 'CONSENT') router.push(`/${slug}/consent`);
         else if (step === 'SCREENING') router.push(`/${slug}/screening`);
+        else if (step === 'CODEBOOK') router.push(`/${slug}/codebook`);
         else if (step === 'ONBOARDING') router.push(`/${slug}/instructions`);
         else if (step === 'ANNOTATION') router.push(`/${slug}/annotate`);
         else if (step === 'COMPLETED') router.push(`/${slug}/annotate`);

@@ -1,5 +1,8 @@
 {
   "min_accuracy_required": 0.6,
   "gold_injection_frequency": 5,
-  "continuous_exclusion": false
+  "continuous_exclusion": false,
+  "evaluation_strategy": "percentage",
+  "max_strikes": 3,
+  "min_gold_before_eval": 3
 }

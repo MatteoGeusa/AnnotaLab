@@ -4,7 +4,8 @@ from django.urls import path
 from .views import (
     InitializeSession, GetNextTask, SubmitAnnotation, 
     AcceptConsent, CompleteOnboarding, GetConsent,
-    GetScreening, SubmitScreening
+    GetScreening, SubmitScreening,
+    GetCodebook, CompleteCodebook
 )
 
 urlpatterns = [
@@ -13,6 +14,8 @@ urlpatterns = [
     path('get-consent/', GetConsent.as_view(), name='get_consent'),
     path('screening/', SubmitScreening.as_view(), name='screening'),
     path('get-screening/', GetScreening.as_view(), name='get_screening'),
+    path('get-codebook/', GetCodebook.as_view(), name='get_codebook'),
+    path('codebook/', CompleteCodebook.as_view(), name='codebook'),
     path('onboarding/', CompleteOnboarding.as_view(), name='onboarding'),
     path('next-task/', GetNextTask.as_view(), name='next_task'),
     path('submit/', SubmitAnnotation.as_view(), name='submit'),

@@ -125,7 +125,7 @@ const fetchScreening = async () => {
     } catch (err) {
         if (err.response?.status === 400 && err.response?.data?.error === 'Screening already completed') {
             const slug = projectSlug || projectId;
-            router.push(`/${slug}/instructions`);
+            router.push(`/${slug}/codebook`);
             return;
         }
         errorMsg.value = "Error loading screening. " + (err.response?.data?.error || err.message);
@@ -171,7 +171,7 @@ const submitScreening = async () => {
         });
 
         const slug = projectSlug || projectId;
-        router.push(`/${slug}/instructions`);
+        router.push(`/${slug}/codebook`);
     } catch (err) {
         validationError.value = err.response?.data?.error || "Error saving screening. Please try again.";
     } finally {
