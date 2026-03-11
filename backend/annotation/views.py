@@ -61,7 +61,7 @@ class InitializeSession(APIView):
         current_step = 'CONSENT'
         if annotator.consent_accepted:
             # Check if project has a survey and annotator hasn't completed it
-            has_screening = project.screening_config and len(project.screening_config) > 0
+            has_screening = project.enable_screening and project.screening_config and len(project.screening_config) > 0
             if has_screening and not annotator.screening_completed:
                 current_step = 'SCREENING'
             elif project.enable_codebook and not enrollment.codebook_completed:
@@ -182,6 +182,9 @@ class GetScreening(APIView):
         if annotator.screening_completed:
             return Response({"error": "Screening already completed"}, status=400)
 
+        if not project.enable_screening:
+            return Response({"questions": [], "skip": True})
+
         screening_config = project.screening_config or []
         
         if not screening_config:
@@ -266,7 +269,7 @@ class CompleteOnboarding(APIView):
             )
             
             # Check all pre-task phases
-            screening_ok = annotator.screening_completed or not project.screening_config or len(project.screening_config) == 0
+            screening_ok = annotator.screening_completed or not project.enable_screening or not project.screening_config or len(project.screening_config) == 0
             all_phases_complete = (
                 annotator.consent_accepted and 
                 screening_ok and 
@@ -419,6 +422,8 @@ class GetNextTask(APIView):
         """ Determines if a Gold Unit should be injected based on frequency settings """
         gold_cfg = project.gold_config or {}
         injection_freq = gold_cfg.get('gold_injection_frequency', 0)
+        if not project.enable_gold_units:
+            return False
         return injection_freq > 0 and (done_count + 1) % injection_freq == 0
 
     def _find_gold_candidate(self, project, annotator):

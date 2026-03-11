@@ -154,6 +154,12 @@ class Project(models.Model):
         help_text="Gold Units QC config: { 'min_accuracy_required': float, 'gold_injection_frequency': int, 'continuous_exclusion': bool }"
     )
 
+    # --- TOGGLE SWITCHES ---
+    enable_screening = models.BooleanField(
+        default=True,
+        help_text="If True, annotators will see the screening questionnaire before the task."
+    )
+
     screening_config = models.JSONField(
         default=get_default_screening_config,
         blank=True,
@@ -225,6 +231,11 @@ class Project(models.Model):
     documents_file = models.FileField(
         upload_to='datasets/documents/', 
         help_text="Upload a .jsonl file for REAL documents to be annotated."
+    )
+
+    enable_gold_units = models.BooleanField(
+        default=True,
+        help_text="If True, gold units will be injected for quality control during annotation."
     )
 
     gold_units_file = models.FileField(

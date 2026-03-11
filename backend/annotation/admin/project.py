@@ -85,6 +85,7 @@ class ProjectAdmin(ModelAdmin):
         ("Step 1: Participant Training", {
             "classes": ("tab",),
             "fields": (
+                "enable_screening",
                 "formatted_screening_config",
                 "upload_screening_config",
                 "enable_codebook",
@@ -108,6 +109,7 @@ class ProjectAdmin(ModelAdmin):
             "fields": (
                 "formatted_task_type_config",
                 "upload_task_config",
+                "enable_gold_units",
                 "formatted_gold_config",
                 "upload_gold_config",
             ),
