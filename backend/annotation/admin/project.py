@@ -202,8 +202,8 @@ class ProjectAdmin(ModelAdmin):
             "fields": (
                 "is_active",
                 "distribution_strategy",
-                "target_tasks_per_annotator",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
+                ("block_size", "annotators_per_block"),
                 "prioritize_unannotated"
             )
         })

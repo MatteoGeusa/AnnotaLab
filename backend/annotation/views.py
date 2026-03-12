@@ -52,8 +52,7 @@ class InitializeSession(APIView):
 
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project, 
-            annotator=annotator,
-            defaults={'target_tasks': project.target_tasks_per_annotator}
+            annotator=annotator
         )
 
         # Determine current step based on pipeline progression
@@ -73,9 +72,12 @@ class InitializeSession(APIView):
         if annotator.onboarding_completed:
             current_step = 'ANNOTATION'
             
-        # Check if already completed FOR THIS PROJECT
-        done_count = Annotation.objects.filter(document__project=project, annotator=annotator).count()
-        if done_count >= enrollment.target_tasks:
+        # To check completion universally, rely on GetNextTask logic when it actually loads
+        # Here we just assume they are annotating if in ANNOTATION phase, 
+        # actual completion is detected when `GetNextTask` returns no more valid docs.
+        # However, to avoid showing the 'ANNOTATION' loop indefinitely on refresh if there are literally 0 items,
+        # we still flag 'COMPLETED' if `status` was set to completed by `GetNextTask`
+        if enrollment.status == 'COMPLETED':
             current_step = 'COMPLETED'
 
         return Response({
@@ -149,8 +151,7 @@ class CompleteCodebook(APIView):
         
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project,
-            annotator=annotator,
-            defaults={'target_tasks': project.target_tasks_per_annotator}
+            annotator=annotator
         )
         
         enrollment.codebook_completed = True
@@ -303,8 +304,7 @@ class CompleteOnboarding(APIView):
         if project:
             enrollment, _ = ProjectEnrollment.objects.get_or_create(
                 project=project,
-                annotator=annotator,
-                defaults={'target_tasks': project.target_tasks_per_annotator}
+                annotator=annotator
             )
             
             # Check all pre-task phases
@@ -406,8 +406,7 @@ class GetNextTask(APIView):
 
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project, 
-            annotator=annotator,
-            defaults={'target_tasks': project.target_tasks_per_annotator}
+            annotator=annotator
         )
 
         if enrollment.exclude_from_distribution:
@@ -420,12 +419,8 @@ class GetNextTask(APIView):
         if enrollment.status == 'COMPLETED':
             return self._completed_response()
 
-        # Check user progress for THIS project
+        # Current count is still useful for gold injection frequency calculation
         done_count = annotator.annotations.filter(document__project=project).count()
-        if done_count >= enrollment.target_tasks:
-            enrollment.status = 'COMPLETED'
-            enrollment.save()
-            return self._completed_response()
         
         if enrollment.status == 'PENDING':
             # User hasn't completed pre-task phases yet
@@ -436,6 +431,10 @@ class GetNextTask(APIView):
             target_id = self._get_candidate_id(project, annotator, enrollment, done_count)
             
             if not target_id:
+                # No more candidates found meaning they actually completed everything
+                if enrollment.status != 'COMPLETED':
+                    enrollment.status = 'COMPLETED'
+                    enrollment.save()
                 return self._completed_response()
 
             final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
@@ -455,7 +454,7 @@ class GetNextTask(APIView):
                  return gold_id
 
         # B. REGULAR PHASE - NORMAL DOCUMENTS
-        return self._find_normal_candidate(project, annotator)
+        return self._find_normal_candidate(project, annotator, enrollment)
 
     def _should_inject_gold(self, project, done_count):
         """ Determines if a Gold Unit should be injected based on frequency settings """
@@ -474,12 +473,43 @@ class GetNextTask(APIView):
             annotations__annotator=annotator
         ).values_list('id', flat=True).first()
 
-    def _find_normal_candidate(self, project, annotator):
+    def _find_normal_candidate(self, project, annotator, enrollment):
         """ Finds a regular document based on the distribution strategy """
         base_qs = Document.objects.filter(
             project=project,
             is_gold_unit=False
-        ).exclude(
+        )
+        
+        if project.distribution_strategy == 'SAME_ANNOTATORS':
+            if enrollment.assigned_block_id is None:
+                # Find the first available block with less than <max_capacity> active users
+                max_capacity = project.annotators_per_block
+                existing_blocks = Document.objects.filter(
+                    project=project, 
+                    is_gold_unit=False, 
+                    block_id__isnull=False
+                ).values_list('block_id', flat=True).distinct().order_by('block_id')
+                
+                assigned = False
+                for block in existing_blocks:
+                    enrolled_in_block = ProjectEnrollment.objects.filter(
+                        project=project, 
+                        assigned_block_id=block
+                    ).count()
+                    
+                    if enrolled_in_block < max_capacity:
+                        enrollment.assigned_block_id = block
+                        enrollment.save(update_fields=['assigned_block_id'])
+                        assigned = True
+                        break
+                
+                if not assigned:
+                     # No available blocks with space left -> return None
+                     return None
+
+            base_qs = base_qs.filter(block_id=enrollment.assigned_block_id)
+
+        base_qs = base_qs.exclude(
             annotations__annotator=annotator
         ).annotate(
             num_anns=Count('annotations')
@@ -487,7 +517,7 @@ class GetNextTask(APIView):
 
         candidates = base_qs
         
-        if project.distribution_strategy == 'STANDARD':
+        if project.distribution_strategy in ['STANDARD', 'SAME_ANNOTATORS']:
             candidates = candidates.filter(num_anns__lt=project.max_annotations_per_doc)
             order = 'num_anns' if project.prioritize_unannotated else '?'
             candidates = candidates.order_by(order)

@@ -8,10 +8,10 @@
 
 **Esempi:**
 
-- _"Mi sento felice"_ e _"Sono molto contento"_
-- _"Prendo una decisione"_ e _"Faccio una scelta"_
-- _"Sono triste"_ e _"Sono giù di morale"_
-- _"Sto bene con i miei colleghi"_ e _"Mi sento a mio agio con le persone con cui lavoro"_
+- "Mi sento felice" e "Sono molto contento"
+- "Prendo una decisione" e "Faccio una scelta"
+- "Sono triste" e "Sono giù di morale"
+- "Sto bene con i miei colleghi" e "Mi sento a mio agio con le persone con cui lavoro"
 
 ### Antonimia
 
@@ -19,10 +19,10 @@
 
 **Esempi:**
 
-- _"Sono una persona di successo"_ e _"Sono un fallito"_
-- _"Tendo a dormire bene"_ e _"Spesso ho difficoltà a riposarmi la notte"_
-- _"Sono una persona allegra"_ e _"Sono una persona che tende a deprimersi"_
-- _"Amo profondamente la musica classica"_ e _"Non sopporto la musica classica"_
+- "Sono una persona di successo" e "Sono un fallito"
+- "Tendo a dormire bene" e "Spesso ho difficoltà a riposarmi la notte"
+- "Sono una persona allegra" e "Sono una persona che tende a deprimersi"
+- "Amo profondamente la musica classica" e "Non sopporto la musica classica"
 
 ### Codificatore
 
@@ -46,11 +46,11 @@ Due cose possono avere lo stesso (o quasi lo stesso) significato o un significat
 
 **Esempi:**
 
-- _"Mi piace fare jogging nel parco"_ (specifico, sottoinsieme) e _"fare attività fisica"_ (generale, insieme)
-- _"Sono una persona emotiva"_ e _"Sono spesso ansioso"_
-- _"Fare degli esercizi di matematica"_ e _"Studiare"_
-- _"Sono depresso"_ e _"Sto male"_
-- _"Gioco a calcio per diventare ricco e famoso"_ e _"Pratico uno sport"_
+- "Mi piace fare jogging nel parco" (specifico, sottoinsieme) e "fare attività fisica" (generale, insieme)
+- "Sono una persona emotiva" e "Sono spesso ansioso"
+- "Fare degli esercizi di matematica" e "Studiare"
+- "Sono depresso" e "Sto male"
+- "Gioco a calcio per diventare ricco e famoso" e "Pratico uno sport"
 
 ### Codificatore
 
@@ -70,10 +70,10 @@ Una cosa, un'attività, un'azione può essere più generale di un'altra e includ
 
 **Esempi:**
 
-- _"Sono arrabbiato"_ e _"Mi sento triste"_ → un sovrainsieme comune è essere di cattivo umore o "provare un'emozione"
-- _"Faccio spesso colazione fuori"_ e _"Spesso ceno fuori"_ → un sovrainsieme comune è "mangiare fuori"
-- _"Mi impegno nello studio perché mi piace"_ e _"Mi impegno nello studio per fare contenti i miei genitori"_ → impegnarsi nello studio
-- _"Abbraccio spesso il mio partner"_ e _"Do spesso una carezza al mio partner"_ → amore, gesti di affetto verso il partner
+- "Sono arrabbiato" e "Mi sento triste" → un sovrainsieme comune è essere di cattivo umore o "provare un'emozione"
+- "Faccio spesso colazione fuori" e "Spesso ceno fuori" → un sovrainsieme comune è "mangiare fuori"
+- "Mi impegno nello studio perché mi piace" e "Mi impegno nello studio per fare contenti i miei genitori" → impegnarsi nello studio
+- "Abbraccio spesso il mio partner" e "Do spesso una carezza al mio partner" → amore, gesti di affetto verso il partner
 
 ### Codificatore
 
@@ -97,10 +97,10 @@ Due cose, due attività, due azioni, possono far parte di una categoria comune. 
 
 **Esempi:**
 
-- _"Ho perso una persona cara recentemente"_ aumenta la probabilità di _"Sono triste"_
-- _"Nell'ultimo periodo ho difficoltà a dormire"_ aumenta la probabilità di _"Mi sento stanco ultimamente"_
-- _"Vado spesso a delle feste"_ aumenta la probabilità di _"Conosco spesso nuove persone"_
-- _"Recentemente ho ricevuto complimenti al lavoro"_ aumenta la probabilità di _"Nell'ultimo periodo mi sento bene quando vado a lavorare"_
+- "Ho perso una persona cara recentemente" aumenta la probabilità di "Sono triste"
+- "Nell'ultimo periodo ho difficoltà a dormire" aumenta la probabilità di "Mi sento stanco ultimamente"
+- "Vado spesso a delle feste" aumenta la probabilità di "Conosco spesso nuove persone"
+- "Recentemente ho ricevuto complimenti al lavoro" aumenta la probabilità di "Nell'ultimo periodo mi sento bene quando vado a lavorare"
 
 ### Codificatore
 

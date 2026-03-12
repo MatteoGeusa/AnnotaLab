@@ -242,9 +242,9 @@ class Project(models.Model):
     # --- DISTRIBUTION CONSTRAINTS ---
 
     STRATEGY_CHOICES = [
-        ('STANDARD', 'Standard (Public Pool) - Randomly assign documents to annotators'),
+        ('STANDARD', 'Standard - Randomly assign documents to annotators'),
         ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy) - All annotators see all documents'),
-        ('SAME_ANNOTATORS', 'Same poll of annotators view the same document')
+        ('SAME_ANNOTATORS', 'Same k annotators view the same document (Low Redundancy) - the annotators are assigned to blocks of documents')
     ]
     
     distribution_strategy = models.CharField(
@@ -270,6 +270,17 @@ class Project(models.Model):
         help_text="If True, the system will try to finish unannotated documents first."
     )
 
+    # BLOCK SETTINGS FOR SAME_ANNOTATORS
+    block_size = models.IntegerField(
+        default=10,
+        help_text="SAME_ANNOTATORS strategy: Number of documents injected into each block."
+    )
+    
+    annotators_per_block = models.IntegerField(
+        default=3,
+        help_text="SAME_ANNOTATORS strategy: Number of distinct annotators assigned to each block."
+    )
+
     dataset_text_key = models.CharField(
         max_length=100, 
         default='text',
@@ -283,10 +294,10 @@ class Project(models.Model):
         help_text="The JSON key for the ID. If empty or not found, it will use the row number."
     )
 
-    # DEFAULT TARGET FOR NEW ENROLLMENTS
-    target_tasks_per_annotator = models.IntegerField(
-        default=10,
-        help_text="How many tasks each annotator should complete for this project."
+    # If a document has 2 annotations and others have 0, should unannotated ones be prioritized?
+    prioritize_unannotated = models.BooleanField(
+        default=True,
+        help_text="If True, the system will try to finish unannotated documents first."
     )
 
     documents_file = models.FileField(
@@ -355,10 +366,9 @@ class ProjectEnrollment(models.Model):
     # Per-project phase tracking
     codebook_completed = models.BooleanField(default=False)
     
-    # Target tasks for this specific relationship
-    target_tasks = models.IntegerField(default=10)
-    
     exclude_from_distribution = models.BooleanField(default=False)
+    
+    assigned_block_id = models.IntegerField(null=True, blank=True, help_text="The document block assigned to this annotator (for SAME_ANNOTATORS).")
     
     # MACE Quality Estimation
     mace_competence_score = models.FloatField(null=True, blank=True, help_text="MACE estimated reliability (0.0 to 1.0)")
@@ -420,6 +430,9 @@ class Document(models.Model):
     # Every time an annotation arrives, we increment this number.
     # Used for very fast queries like: "Get all docs with count < 3"
     current_annotations_count = models.IntegerField(default=0, db_index=True)
+
+    # GROUPING/BLOCK FOR 'SAME_ANNOTATORS' STRATEGY
+    block_id = models.IntegerField(null=True, blank=True, db_index=True, help_text="Used to group documents into blocks for the SAME_ANNOTATORS strategy")
 
     objects = models.Manager()
 

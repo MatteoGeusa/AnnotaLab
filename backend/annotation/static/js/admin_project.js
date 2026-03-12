@@ -98,12 +98,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const strategySelect = document.querySelector('#id_distribution_strategy');
   const minField = document.querySelector('#id_min_annotations_per_doc');
   const maxField = document.querySelector('#id_max_annotations_per_doc');
+  const blockSizeInput = document.querySelector('#id_block_size');
 
-  if (strategySelect && minField && maxField) {
-    // Create warning banner
+  if (strategySelect) {
+    // Create warning banner for FULL_OVERLAP
     const banner = document.createElement('div');
     banner.className = 'full-overlap-warning';
     banner.innerHTML = '⚠️ <strong>FULL_OVERLAP mode:</strong> Min and Max annotation limits are ignored. Every annotator will see every document.';
+    banner.style.display = 'none'; // hidden by default
 
     // Insert banner before the Distribution Strategy fieldset
     const strategyFieldWrapper = strategySelect.closest('.form-row, .flex-col, fieldset');
@@ -113,26 +115,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function toggleFields() {
       const isFullOverlap = strategySelect.value === 'FULL_OVERLAP';
+      const isSameAnnotators = strategySelect.value === 'SAME_ANNOTATORS';
 
-      // We use readOnly and pointer-events instead of disabled
-      // because disabled fields are NOT sent in the POST request,
-      // which causes validation errors in Django for mandatory fields.
-      minField.readOnly = isFullOverlap;
-      maxField.readOnly = isFullOverlap;
-
-      if (isFullOverlap) {
-        minField.style.opacity = '0.5';
-        maxField.style.opacity = '0.5';
-        minField.style.pointerEvents = 'none';
-        maxField.style.pointerEvents = 'none';
-        banner.style.display = 'block';
-      } else {
-        minField.style.opacity = '1';
-        maxField.style.opacity = '1';
-        minField.style.pointerEvents = 'auto';
-        maxField.style.pointerEvents = 'auto';
-        banner.style.display = 'none';
+      // Helper to hide/show a pair of fields and their container row
+      function toggleFieldPair(f1, f2, shouldShow) {
+          if (!f1) return;
+          
+          const cont1 = f1.closest('.fieldBox') || f1.closest(`[class*="field-${f1.name}"]`) || f1.parentElement;
+          const cont2 = f2 ? (f2.closest('.fieldBox') || f2.closest(`[class*="field-${f2.name}"]`) || f2.parentElement) : null;
+          
+          if (cont1) cont1.style.display = shouldShow ? '' : 'none';
+          if (cont2) cont2.style.display = shouldShow ? '' : 'none';
+          
+          // If they share a wrapper, hide the wrapper too (e.g. Django Unfold grouped fields)
+          if (cont1 && cont2 && cont1.parentElement === cont2.parentElement) {
+              cont1.parentElement.style.display = shouldShow ? '' : 'none';
+          } else if (cont1) {
+               const formRow = cont1.closest('.form-row');
+               if (formRow) formRow.style.display = shouldShow ? '' : 'none';
+          }
       }
+
+      // 1. FULL_OVERLAP logic (Hide min/max AND prioritize)
+      // They should be visible ONLY if we are NOT in FULL_OVERLAP
+      const prioritizeField = document.querySelector('#id_prioritize_unannotated');
+      
+      toggleFieldPair(minField, maxField, !isFullOverlap);
+      toggleFieldPair(prioritizeField, null, !isFullOverlap);
+      if (banner) {
+          banner.style.display = isFullOverlap ? 'block' : 'none';
+      }
+
+      // 2. SAME_ANNOTATORS logic (Hide block settings)
+      // They should be visible ONLY if we ARE in SAME_ANNOTATORS
+      const annotatorsField = document.querySelector('#id_annotators_per_block');
+      toggleFieldPair(blockSizeInput, annotatorsField, isSameAnnotators);
     }
 
     // Run on load + on change

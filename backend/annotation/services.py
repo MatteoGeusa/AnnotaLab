@@ -20,6 +20,9 @@ def process_uploaded_dataset(project, file_obj):
     with file_obj.open() as f:
         text_key = project.dataset_text_key
         id_key = project.dataset_id_key
+        
+        current_regular_docs_count = Document.objects.filter(project=project, is_gold_unit=False).count()
+        regular_docs_added_in_this_batch = 0
 
         try:
             for idx, line in enumerate(f, start=1):
@@ -71,6 +74,11 @@ def process_uploaded_dataset(project, file_obj):
                         warnings.append(f"Row {idx}: Gold solution is missing 'classification' key. Skipped.")
                         continue
 
+                # Calculate block_id for SAME_ANNOTATORS strategy
+                block_id = None
+                if not is_gold_final and project.distribution_strategy == 'SAME_ANNOTATORS' and project.block_size > 0:
+                    block_id = (current_regular_docs_count + regular_docs_added_in_this_batch) // project.block_size
+
                 # Upsert Document
                 obj, created = Document.objects.update_or_create(
                     project=project,
@@ -81,8 +89,11 @@ def process_uploaded_dataset(project, file_obj):
                         'is_gold_unit': is_gold_final, 
                         'gold_solution': gold_sol if is_gold_final else None,
                         'min_annotations_required': project.min_annotations_per_doc,
+                        'block_id': block_id,
                     }
                 )
+                if not is_gold_final:
+                    regular_docs_added_in_this_batch += 1
                 count += 1     
         except Exception as e:
             raise e
