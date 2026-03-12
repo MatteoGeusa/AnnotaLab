@@ -5,8 +5,8 @@
             <p class="subtitle">Please join from your Prolific account with ID and project ID in the URL to start the
                 annotation task.
             </p>
-            <p v-if="!projectId || !prolificPid" class="error-text">⚠️ Warning: Missing Parameters in URL</p>
-            <p v-if="!projectId" class="error-text small">No Project ID found</p>
+            <p v-if="(!projectId && !projectSlug) || !prolificPid" class="error-text">⚠️ Warning: Missing Parameters in URL</p>
+            <p v-if="!projectId && !projectSlug" class="error-text small">No Project ID or Slug found</p>
             <p v-if="!prolificPid" class="error-text small">No Prolific ID found</p>
             <p v-if="prolificPid && prolificPid.length <= 3" class="error-text small">⚠️ Prolific ID is too short
                 (minimum 4 characters)</p>
@@ -63,6 +63,7 @@ const startSession = async () => {
         if (step === 'CONSENT') router.push(`/${slug}/consent`);
         else if (step === 'SCREENING') router.push(`/${slug}/screening`);
         else if (step === 'CODEBOOK') router.push(`/${slug}/codebook`);
+        else if (step === 'INSTRUCTIONS') router.push(`/${slug}/instructions`);
         else if (step === 'ONBOARDING') router.push(`/${slug}/instructions`);
         else if (step === 'ANNOTATION') router.push(`/${slug}/annotate`);
         else if (step === 'COMPLETED') router.push(`/${slug}/annotate`);

@@ -10,8 +10,7 @@ import json
 import re
 from ..models import Project, Annotation
 from ..services import parse_json_upload, process_uploaded_dataset
-
-
+from ..mace_service import run_mace_for_project
 class ProjectAdminForm(forms.ModelForm):
     """
     Custom form that adds non-model file inputs for uploading JSON configs.
@@ -36,6 +35,16 @@ class ProjectAdminForm(forms.ModelForm):
         required=False,
         label="Upload Codebook (Markdown)",
         help_text="Upload a .md file to overwrite the theoretical/practical background."
+    )
+    upload_instructions_content = forms.FileField(
+        required=False,
+        label="Upload Instructions (Markdown)",
+        help_text="Upload a .md file for task instructions shown before the practice task."
+    )
+    upload_practice_task_config = forms.FileField(
+        required=False,
+        label="Upload Practice Task (JSON)",
+        help_text="Upload a JSON file with the practice task (text, gold_solution, hints)."
     )
 
     class Meta:
@@ -66,14 +75,30 @@ class ProjectAdminForm(forms.ModelForm):
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('name', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
+    list_display = ('name', 'status_badge', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific','export_list_button')
     
+    actions = ['run_mace_analysis']
+
+    @admin.action(description="Run MACE Reliability Analysis on selected projects")
+    def run_mace_analysis(self, request, queryset):
+        for project in queryset:
+            try:
+                result = run_mace_for_project(project.id)
+                if result.get("status") == "success":
+                    self.message_user(request, f"{project.name}: {result['message']}", messages.SUCCESS)
+                else:
+                    self.message_user(request, f"{project.name}: {result.get('message', 'Error')}", messages.WARNING)
+            except Exception as e:
+                self.message_user(request, f"Error running MACE on {project.name}: {str(e)}", messages.ERROR)
+
     form = ProjectAdminForm
     readonly_fields = (
         'formatted_task_type_config', 
         'formatted_gold_config', 
         'formatted_screening_config',
         'formatted_codebook_content',
+        'formatted_instructions_content',
+        'formatted_practice_task_config',
     )
     
     fieldsets = (
@@ -82,7 +107,7 @@ class ProjectAdmin(ModelAdmin):
             "classes": ("tab",),
         }),
 
-        ("Step 1: Participant Training", {
+        ("Participant Training", {
             "classes": ("tab",),
             "fields": (
                 "enable_screening",
@@ -100,11 +125,35 @@ class ProjectAdmin(ModelAdmin):
                     <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #A78BFA; color: #ddd;">
                         <b>📖 Codebook:</b><br>Theoretical/practical background instructions (Markdown).
                     </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #F59E0B; color: #ddd;">
+                        <b>📝 Instructions:</b><br>Task instructions + optional guided practice task.
+                    </div>
                 </div>
             """
         }),
 
-        ("Step 2: Task Design", {
+        ("Instructions & Practice", {
+            "classes": ("tab",),
+            "fields": (
+                "enable_instructions",
+                "formatted_instructions_content",
+                "upload_instructions_content",
+                "formatted_practice_task_config",
+                "upload_practice_task_config",
+            ),
+            "description": """
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #F59E0B; color: #ddd;">
+                        <b>📝 Instructions:</b><br>Markdown content shown to annotators before the task.
+                    </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #EC4899; color: #ddd;">
+                        <b>🎯 Practice Task:</b><br>Optional guided practice with correct solution and hints.
+                    </div>
+                </div>
+            """
+        }),
+
+        ("Task Design", {
             "classes": ("tab",),
             "fields": (
                 "formatted_task_type_config",
@@ -125,7 +174,7 @@ class ProjectAdmin(ModelAdmin):
             """
         }),
 
-        ("Step 3: Data Import", {
+        ("Data Import", {
             "classes": ("tab",),
             "fields": (
                 ("dataset_text_key", "dataset_id_key"),
@@ -148,7 +197,7 @@ class ProjectAdmin(ModelAdmin):
             """
         }),
 
-        ("Step 4: Distribution & Launch", {
+        ("Distribution & Launch", {
             "classes": ("tab",),
             "fields": (
                 "is_active",
@@ -245,10 +294,95 @@ class ProjectAdmin(ModelAdmin):
     def formatted_screening_config(self, obj):
         return self._render_config_block(obj.screening_config, 'Screening Configuration', '📋')
 
+    def _render_markdown_block(self, md_text, title, icon):
+        """Convert Markdown text to styled HTML for admin display."""
+        from django.utils.html import escape
+        
+        if not md_text or not md_text.strip():
+            return format_html(
+                '<div class="config-empty">'
+                '<span class="empty-icon">{}</span>'
+                '<span>No {} configured yet. Upload a Markdown file above.</span>'
+                '</div>',
+                icon, title.lower()
+            )
+
+        text = escape(md_text)
+
+        # Headers
+        text = re.sub(r'^### (.+)$', r'<h4 style="font-size:14px;font-weight:600;color:#64748b;margin:16px 0 6px;">\1</h4>', text, flags=re.MULTILINE)
+        text = re.sub(r'^## (.+)$', r'<h3 style="font-size:16px;font-weight:600;color:#306ee8;margin:20px 0 8px;">\1</h3>', text, flags=re.MULTILINE)
+        text = re.sub(r'^# (.+)$', r'<h2 style="font-size:18px;font-weight:700;color:inherit;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(128,128,128,0.2);">\1</h2>', text, flags=re.MULTILINE)
+
+        # Bold + italic
+        text = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', text)
+        text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+        # Italic with underscores (_text_) and asterisks (*text*)
+        text = re.sub(r'(?<!\w)_(.+?)_(?!\w)', r'<em>\1</em>', text)
+        text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', text)
+
+        # Inline code
+        text = re.sub(r'`(.+?)`', r'<code style="background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-size:0.9em;">\1</code>', text)
+
+        # Blockquotes
+        text = re.sub(
+            r'^&gt; (.+)$',
+            r'<div style="border-left:3px solid #306ee8;padding:6px 12px;margin:8px 0;background:rgba(48,110,232,0.06);border-radius:0 6px 6px 0;font-size:0.92em;">\1</div>',
+            text, flags=re.MULTILINE
+        )
+
+        # Horizontal rules
+        text = re.sub(r'^---$', r'<hr style="border:none;border-top:1px solid rgba(128,128,128,0.2);margin:20px 0;">', text, flags=re.MULTILINE)
+
+        # Unordered list items (handle nested with 2+ spaces)
+        text = re.sub(
+            r'^  - (.+)$',
+            r'<div style="padding-left:28px;margin:3px 0;"><span style="color:#306ee8;margin-right:6px;">◦</span>\1</div>',
+            text, flags=re.MULTILINE
+        )
+        text = re.sub(
+            r'^- (.+)$',
+            r'<div style="padding-left:8px;margin:4px 0;"><span style="color:#306ee8;margin-right:6px;">•</span>\1</div>',
+            text, flags=re.MULTILINE
+        )
+
+        # Paragraphs — wrap remaining non-tag lines
+        lines = text.split('\n')
+        processed = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith('<'):
+                processed.append(f'<p style="margin:6px 0;line-height:1.7;">{stripped}</p>')
+            else:
+                processed.append(line)
+        text = '\n'.join(processed)
+
+        # Remove empty paragraphs
+        text = re.sub(r'<p[^>]*>\s*</p>', '', text)
+
+        return format_html(
+            '<div class="json-config-display break-words max-w-none py-3 text-sm bg-base-50 border border-base-200 font-medium px-4 rounded-default shadow-xs dark:border-base-700 dark:bg-base-800">'
+            '  <div class="config-header" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); color: #64748b;">'
+            '    <span class="config-icon">{icon}</span> <strong>{title}</strong>'
+            '  </div>'
+            '  <div style="font-family: \'Outfit\', \'Inter\', sans-serif; font-size: 13px; line-height: 1.7; color: inherit;">{content}</div>'
+            '</div>',
+            icon=icon,
+            title=title,
+            content=mark_safe(text)
+        )
+
     @admin.display(description="Codebook Content")
     def formatted_codebook_content(self, obj):
-        # Even though it's markdown, we render it in the same code-style block
-        return self._render_config_block(obj.codebook_content, 'Codebook Materials', '📖')
+        return self._render_markdown_block(obj.codebook_content, 'Codebook Materials', '📖')
+
+    @admin.display(description="Instructions Content")
+    def formatted_instructions_content(self, obj):
+        return self._render_markdown_block(obj.instructions_content, 'Task Instructions', '📝')
+
+    @admin.display(description="Practice Task Config")
+    def formatted_practice_task_config(self, obj):
+        return self._render_config_block(obj.practice_task_config, 'Practice Task', '🎯')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -305,7 +439,7 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="bg-primary-600 text-white px-2 py-1 rounded text-xs font-bold hover:bg-primary-700 transition"
+               class="bg-primary-600 text-white px-2 py-1 rounded text-xs font-bold hover:bg-primary-700 transition inline-block whitespace-nowrap text-center"
                title="Download .jsonl">
                ⬇ JSONL
             </a>
@@ -313,6 +447,21 @@ class ProjectAdmin(ModelAdmin):
             url
         )
 
+
+    @admin.display(description="Status", ordering='is_active')
+    def status_badge(self, obj):
+        if obj.is_active:
+            return mark_safe(
+                '<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
+                'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
+                'background:#065f46;color:#6ee7b7;">● ACTIVE</span>'
+            )
+        else:
+            return mark_safe(
+                '<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
+                'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
+                'background:#7f1d1d;color:#fca5a5;">● INACTIVE</span>'
+            )
 
     @admin.display(description="Documents")
     def documents_link(self, obj):
@@ -325,7 +474,7 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[120px]"
+               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[120px] whitespace-nowrap"
                title="Manage Real Documents">
                -> ({}) Manage Docs
             </a>
@@ -344,7 +493,7 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="bg-amber-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-amber-600 transition inline-block text-center min-w-[120px]"
+               class="bg-amber-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-amber-600 transition inline-block text-center min-w-[120px] whitespace-nowrap"
                title="Manage Gold Units">
                -> ({}) Manage Gold
             </a>
@@ -370,7 +519,7 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px]"
+               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px] whitespace-nowrap"
                title="Manage Annotations">
                -> ({}) Manage Annotations
             </a>
@@ -390,7 +539,7 @@ class ProjectAdmin(ModelAdmin):
             '''
             <a href="{}" 
                style="background: #fbbf24; color: #1f2937;"
-               class="px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px]"
+               class="px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px] whitespace-nowrap"
                title="Manage Workers">
                -> ({}) Manage Workers
             </a>
@@ -405,11 +554,11 @@ class ProjectAdmin(ModelAdmin):
         test_url = f"http://localhost:5173/{obj.slug}?PROLIFIC_PID=TEST_USER_001"
         return format_html(
             '''
-            <div style="display:flex; align-items:center; gap:8px; min-width:350px;">
+            <div style="display:flex; align-items:center; gap:8px; min-width:250px;">
                 <code style="
                     background:#1e1e1e; color:#60a5fa;
                     padding:4px 8px; border-radius:4px;
-                    font-size:12px; word-break:break-all;
+                    font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                     border:1px solid #333; flex:1;
                 ">{}</code>
                 <a href="{}" target="_blank"
@@ -472,6 +621,27 @@ class ProjectAdmin(ModelAdmin):
                 messages.success(request, "Codebook content updated from file!")
             except Exception as e:
                 messages.error(request, f"Codebook Upload Error: {str(e)}")
+
+        # --- Process uploaded Instructions Markdown ---
+        instructions_file = form.cleaned_data.get('upload_instructions_content')
+        if instructions_file:
+            try:
+                content = instructions_file.read().decode('utf-8')
+                obj.instructions_content = content
+                obj.save(update_fields=['instructions_content'])
+                messages.success(request, "Instructions content updated from file!")
+            except Exception as e:
+                messages.error(request, f"Instructions Upload Error: {str(e)}")
+
+        # --- Process uploaded Practice Task JSON ---
+        practice_file = form.cleaned_data.get('upload_practice_task_config')
+        if practice_file:
+            try:
+                obj.practice_task_config = parse_json_upload(practice_file)
+                obj.save(update_fields=['practice_task_config'])
+                messages.success(request, "Practice Task configuration updated from JSON file!")
+            except Exception as e:
+                messages.error(request, f"Practice Task Config Error: {str(e)}")
 
         # --- Process Documents File ---
         if 'documents_file' in form.changed_data and obj.documents_file:

@@ -16,6 +16,7 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'status_badge',
         'gold_tasks_completed_display',
         'gold_accuracy_display',
+        'mace_competence_display',
         'exclude_from_distribution',
         'created_at',
     )
@@ -29,6 +30,8 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'created_at',
         'updated_at',
         'gold_tasks_completed_display',
+        'mace_competence_score',
+        'mace_spam_bias',
     )
 
     fieldsets = (
@@ -39,9 +42,13 @@ class ProjectEnrollmentAdmin(ModelAdmin):
             "fields": ("target_tasks",),
             "description": "How many tasks this specific user must complete for this project.",
         }),
+        ("MACE Reliability Evaluation", {
+            "fields": ("mace_competence_score", "mace_spam_bias"),
+            "description": "Quality metrics estimated by the MACE algorithm based on consensus patterns (unsupervised).",
+        }),
         ("Gold Task Metrics", {
             "fields": ("gold_tasks_completed_display", "gold_accuracy"),
-            "description": "Quality metrics based on Gold Units.",
+            "description": "Quality metrics based on Gold Units (supervised).",
         }),
         ("Timestamps", {
             "fields": ("created_at", "updated_at"),
@@ -75,6 +82,26 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     @admin.display(description="Gold Tasks Completed")
     def gold_tasks_completed_display(self, obj):
         return obj.gold_tasks_completed
+
+    @admin.display(description="MACE Score", ordering="mace_competence_score")
+    def mace_competence_display(self, obj):
+        if obj.mace_competence_score is None:
+            return "-"
+        
+        # Color code: red for < 0.3, orange for < 0.6, green for >= 0.6
+        score = obj.mace_competence_score
+        if score >= 0.6:
+            color = "#10b981" # Green
+        elif score >= 0.3:
+            color = "#f59e0b" # Orange
+        else:
+            color = "#ef4444" # Red
+            
+        formatted_score = f"{score:.2f}"
+        return format_html(
+            '<span style="color:{}; font-weight:bold;">{}</span>',
+            color, formatted_score
+        )
 
     def changelist_view(self, request, extra_context=None):
         """Redirect if no project filter is active."""

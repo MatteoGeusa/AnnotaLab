@@ -66,6 +66,8 @@ class InitializeSession(APIView):
                 current_step = 'SCREENING'
             elif project.enable_codebook and not enrollment.codebook_completed:
                 current_step = 'CODEBOOK'
+            elif project.enable_instructions and not annotator.onboarding_completed:
+                current_step = 'INSTRUCTIONS'
             else:
                 current_step = 'ONBOARDING'
         if annotator.onboarding_completed:
@@ -154,7 +156,44 @@ class CompleteCodebook(APIView):
         enrollment.codebook_completed = True
         enrollment.save()
         
-        return Response({"status": "ok", "next_step": "ONBOARDING"})
+        return Response({"status": "ok", "next_step": "INSTRUCTIONS"})
+
+class GetInstructions(APIView):
+    """
+    Returns instructions content and practice task config for a project.
+    GET /api/v1/get-instructions/?pid=XX&project_slug=XX
+    """
+    def get(self, request):
+        pid = request.query_params.get('pid')
+        project_slug = request.query_params.get('project_slug')
+        project_id = request.query_params.get('project_id')
+
+        if not pid or (not project_id and not project_slug):
+            return Response({"error": "Missing PID or Project identification"}, status=400)
+        
+        annotator = get_object_or_404(Annotator, prolific_pid=pid)
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
+        
+        if not project.is_active:
+            return Response({"error": "Project is not active"}, status=404)
+        
+        if not project.enable_instructions:
+            return Response({"content": "", "skip": True})
+
+        practice = project.practice_task_config or {}
+        has_practice = bool(practice and practice.get('text'))
+
+        return Response({
+            "content": project.instructions_content or "",
+            "practice_task": practice if has_practice else None,
+            "task_config": project.task_type_config or {},
+            "skip": False
+        })
+
 
 class GetScreening(APIView):
     """

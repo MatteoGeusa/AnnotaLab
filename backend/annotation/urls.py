@@ -5,7 +5,8 @@ from .views import (
     InitializeSession, GetNextTask, SubmitAnnotation, 
     AcceptConsent, CompleteOnboarding, GetConsent,
     GetScreening, SubmitScreening,
-    GetCodebook, CompleteCodebook
+    GetCodebook, CompleteCodebook,
+    GetInstructions
 )
 
 urlpatterns = [
@@ -16,6 +17,7 @@ urlpatterns = [
     path('get-screening/', GetScreening.as_view(), name='get_screening'),
     path('get-codebook/', GetCodebook.as_view(), name='get_codebook'),
     path('codebook/', CompleteCodebook.as_view(), name='codebook'),
+    path('get-instructions/', GetInstructions.as_view(), name='get_instructions'),
     path('onboarding/', CompleteOnboarding.as_view(), name='onboarding'),
     path('next-task/', GetNextTask.as_view(), name='next_task'),
     path('submit/', SubmitAnnotation.as_view(), name='submit'),

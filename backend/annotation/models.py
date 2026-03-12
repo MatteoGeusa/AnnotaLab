@@ -103,6 +103,15 @@ def get_default_configuration_for_informed_consent():
     """
 
 def get_default_codebook_content():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'codebook_somiglianza_item.md')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except IOError:
+            pass
+    
     return """
 # Codebook
 
@@ -119,6 +128,40 @@ Provide worked examples here to help annotators understand the task.
 ## Guidelines
 Any additional rules or edge cases the annotator should know.
     """
+
+def get_default_instructions_content():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_instructions_content.md')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except IOError:
+            pass
+    
+    return """
+# Task Instructions
+
+## The Goal
+Read the items and complete the annotation tasks as described in the codebook.
+
+## How to Use the Interface
+1. Read the text carefully
+2. Select the appropriate classification
+3. Submit your annotation
+    """
+
+def get_default_practice_task():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_practice_task.json')
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    
+    return {}
 
 class Project(models.Model):
     """
@@ -176,6 +219,24 @@ class Project(models.Model):
         default=get_default_codebook_content,
         blank=True,
         help_text="Codebook content in Markdown format. Shown to annotators as theoretical/practical background."
+    )
+
+    # --- INSTRUCTIONS / ONBOARDING ---
+    enable_instructions = models.BooleanField(
+        default=True,
+        help_text="If True, annotators will see task instructions and optional practice task before annotating."
+    )
+
+    instructions_content = models.TextField(
+        default=get_default_instructions_content,
+        blank=True,
+        help_text="Instructions content in Markdown format. Shown to annotators as task instructions before the practice."
+    )
+
+    practice_task_config = models.JSONField(
+        default=get_default_practice_task,
+        blank=True,
+        help_text="Practice task config: { text, gold_solution: {classification, spans[]}, hints[] }. Empty = no practice."
     )
 
     # --- DISTRIBUTION CONSTRAINTS ---
@@ -299,6 +360,10 @@ class ProjectEnrollment(models.Model):
     
     exclude_from_distribution = models.BooleanField(default=False)
     
+    # MACE Quality Estimation
+    mace_competence_score = models.FloatField(null=True, blank=True, help_text="MACE estimated reliability (0.0 to 1.0)")
+    mace_spam_bias = models.JSONField(default=dict, blank=True, help_text="Estimated bias distribution when guessing")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -337,6 +402,10 @@ class Document(models.Model):
     is_gold_unit = models.BooleanField(default=False)
     # The correct answer (in JSON format) for automatic comparison
     gold_solution = JSONField(default=dict, blank=True, null=True)
+
+    # MACE Inference Results
+    mace_gold_label = models.CharField(max_length=50, null=True, blank=True)
+    mace_confidence = models.FloatField(null=True, blank=True, help_text="Certainty of the MACE prediction (entropy)")
 
     # REDUNDANCY MANAGEMENT (CRITICAL)
     # BUSINESS LOGIC: REDUNDANCY
