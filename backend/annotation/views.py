@@ -35,8 +35,10 @@ class InitializeSession(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
 
-        if not project.is_active:
-            return Response({"error": "Project is not active"}, status=404)
+        if not project.can_accept_annotations:
+            if project.status == 'DRAFT':
+                return Response({"error": "This project is still in DRAF phase and not yet open."}, status=404)
+            return Response({"error": f"Project is currently {project.status.lower()}"}, status=404)
 
         # Metadata extraction (e.g. STUDY_ID, SESSION_ID from Prolific)
         metadata = request.data.get('metadata', {})
@@ -115,7 +117,7 @@ class GetCodebook(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
         
-        if not project.is_active:
+        if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
         if not project.enable_codebook:
@@ -179,7 +181,7 @@ class GetInstructions(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
         
-        if not project.is_active:
+        if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
         if not project.enable_instructions:
@@ -216,7 +218,7 @@ class GetScreening(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
         
-        if not project.is_active:
+        if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
         if annotator.screening_completed:
@@ -401,8 +403,8 @@ class GetNextTask(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
 
-        if not project.is_active:
-            return Response({"status": "stopped", "message": "This project is currently not accepting annotations."})
+        if not project.can_accept_annotations:
+            return Response({"status": "stopped", "message": f"This project is currently {project.status.lower()} and not accepting annotations."})
 
         enrollment, _ = ProjectEnrollment.objects.get_or_create(
             project=project, 
@@ -562,7 +564,7 @@ class GetConsent(APIView):
         else:
             project = get_object_or_404(Project, id=project_id)
         
-        if not project.is_active:
+        if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
         if annotator.consent_accepted:

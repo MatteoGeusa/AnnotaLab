@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 from django.utils.html import format_html, mark_safe
 from django.urls import reverse, path
 from django.utils.http import urlencode
@@ -8,9 +8,10 @@ from django.http import HttpResponse
 from django.contrib import messages
 import json
 import re
-from ..models import Project, Annotation
+from ..models import Project, Annotation, ProjectLogEntry
 from ..services import parse_json_upload, process_uploaded_dataset
 from ..mace_service import run_mace_for_project
+
 class ProjectAdminForm(forms.ModelForm):
     """
     Custom form that adds non-model file inputs for uploading JSON configs.
@@ -67,10 +68,19 @@ class ProjectAdminForm(forms.ModelForm):
             # 1. It already has documents in the DB
             # 2. OR it's being provided a new document file right now
             if not has_existing_docs and not documents_file:
-                # We raise the error on the 'is_active' field so it shows up in Step 4
-                self.add_error('is_active', "❌ Cannot Activate: No dataset found. Please upload a .jsonl file in 'Step 3' before setting the project to Active.")
+                # We raise the error on the 'is_active' field
+                self.add_error('is_active', "❌ Cannot Activate: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project to Active.")
         
         return cleaned_data
+
+class ProjectLogInline(TabularInline):
+    model = ProjectLogEntry
+    extra = 0
+    readonly_fields = ('timestamp', 'action', 'details')
+    can_delete = False
+    
+    def has_add_permission(self, request, obj=None):
+        return False
 
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
@@ -93,6 +103,8 @@ class ProjectAdmin(ModelAdmin):
 
     form = ProjectAdminForm
     readonly_fields = (
+        'status_badge',
+        'launched_at',
         'formatted_task_type_config', 
         'formatted_gold_config', 
         'formatted_screening_config',
@@ -101,14 +113,29 @@ class ProjectAdmin(ModelAdmin):
         'formatted_practice_task_config',
     )
     
+    tabs = [
+        ("details", "Project Details"),
+        ("training", "Training & Instructions"),
+        ("config", "Task Configuration"),
+        ("quality", "Quality & Gold"),
+        ("launch", "Launch & Distribution"),
+        ("logs", "Activity Log"),
+    ]
+
+    tab_inlines = [
+        ("logs", [ProjectLogInline]),
+    ]
+
+    inlines = [ProjectLogInline]
+    
     fieldsets = (
         ("Project Details", {
-            "fields": (("name", "slug"), "description", "informed_consent_config",),
-            "classes": ("tab",),
+            "fields": (("name", "slug"), "status", "is_active", "launched_at", "description", "informed_consent_config",),
+            "classes": ("tab", "details"),
         }),
 
         ("Participant Training", {
-            "classes": ("tab",),
+            "classes": ("tab", "training"),
             "fields": (
                 "enable_screening",
                 "formatted_screening_config",
@@ -133,7 +160,7 @@ class ProjectAdmin(ModelAdmin):
         }),
 
         ("Instructions & Practice", {
-            "classes": ("tab",),
+            "classes": ("tab", "training"),
             "fields": (
                 "enable_instructions",
                 "formatted_instructions_content",
@@ -153,62 +180,70 @@ class ProjectAdmin(ModelAdmin):
             """
         }),
 
-        ("Task Design", {
-            "classes": ("tab",),
+        ("Task Configuration", {
+            "classes": ("tab", "config"),
             "fields": (
                 "formatted_task_type_config",
                 "upload_task_config",
-                "enable_gold_units",
-                "formatted_gold_config",
-                "upload_gold_config",
+                "documents_file",
+                ("dataset_text_key", "dataset_id_key"),
             ),
             "description": """
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #3B82F6; color: #ddd;">
-                        <b>⚙️ Task:</b><br>The actual labeling configuration (labels, questions).
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #3B82F6; color: #ddd; border-radius: 4px;">
+                        <b style="color: #60a5fa; font-size: 1.1em;">⚙️ Task Design</b><br>
+                        Configure the labeling interface (labels, questions, layout).
                     </div>
-                    <div style="flex: 1; background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
-                        <b>🛡️ Gold Units:</b><br>Quality control strategy and injection frequency.
+                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #10B981; color: #ddd; border-radius: 4px;">
+                        <b style="color: #34d399; font-size: 1.1em;">📊 Data Import</b><br>
+                        Upload your <b>.jsonl</b> dataset. Each line must be a JSON object with at least a text field.
                     </div>
                 </div>
             """
         }),
 
-        ("Data Import", {
-            "classes": ("tab",),
+        ("Quality / Monitoring", {
+            "classes": ("tab", "quality"),
             "fields": (
-                ("dataset_text_key", "dataset_id_key"),
-                ("documents_file","gold_units_file")
+                "enable_gold_units",
+                "formatted_gold_config",
+                "upload_gold_config",
+                "gold_units_file",
             ),
             "description": """
-                Upload <b>.jsonl</b> files where each line is a JSON object.<br><br>
-                <b>Supported Fields:</b>
-                <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 10px;">
-                    <li><b>Text</b>: Key corresponding to 'Dataset text key' (default: <code>text</code>).</li>
-                    <li><b>ID</b>: Key corresponding to 'Dataset id key' (default: <code>_id</code>).</li>
-                    <li><b>gold_solution</b> (json): [Required for Gold Units] The correct solution for quality control.</li>
-                    <li><b>metadata</b> (json): Optional metadata context.</li>
-                </ul>
-                <div style="background: #2a2a2a; padding: 10px; border-left: 4px solid #FFB700; color: #ddd;">
-                    <b>💡 Documents vs Gold Units:</b><br>
-                    - <b>Documents File</b>: Upload real data to be annotated.<br>
-                    - <b>Gold Units File</b>: Upload quality control units with solutions.
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #1e293b; padding: 15px; border-left: 4px solid #8b5cf6; color: #e2e8f0; border-radius: 4px;">
+                        <b style="color: #a78bfa; font-size: 1.1em;">🤖 MACE (Multi-Annotator Competence Estimation)</b><br>
+                        Use MACE to estimate annotator reliability and infer the most likely "true" labels even without gold units. 
+                        <i>Run this analysis from the project list 'Actions' menu once you have gathered annotations.</i>
+                    </div>
+
+                    <div style="background: #1e293b; padding: 15px; border-left: 4px solid #f59e0b; color: #e2e8f0; border-radius: 4px;">
+                        <b style="color: #fbbf24; font-size: 1.1em;">🛡️ Gold Units (Ground Truth)</b><br>
+                        Manually verified units used to "test" annotators in real-time. 
+                        Configure the strategy above and upload the Gold dataset below.
+                    </div>
                 </div>
             """
         }),
 
         ("Distribution & Launch", {
-            "classes": ("tab",),
+            "classes": ("tab", "launch"),
             "fields": (
-                "is_active",
                 "distribution_strategy",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
                 ("block_size", "annotators_per_block"),
                 "prioritize_unannotated"
-            )
-        })
-    )
+            ),
+            "description": "Configure how documents are served to workers."
+        }),
 
+        ("Activity Log", {
+            "classes": ("tab", "logs"),
+            "fields": [],
+            "description": "Historical timeline of project events and status changes."
+        }),
+    )
 
     class Media:
         css = {
@@ -385,7 +420,7 @@ class ProjectAdmin(ModelAdmin):
         return self._render_config_block(obj.practice_task_config, 'Practice Task', '🎯')
 
     def get_urls(self):
-        urls = super().get_urls()
+        urls = super(ProjectAdmin, self).get_urls()
         my_urls = [
             path(
                 '<path:object_id>/export/', 
@@ -448,20 +483,21 @@ class ProjectAdmin(ModelAdmin):
         )
 
 
-    @admin.display(description="Status", ordering='is_active')
+    @admin.display(description="Status", ordering='status')
     def status_badge(self, obj):
-        if obj.is_active:
-            return mark_safe(
-                '<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
-                'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
-                'background:#065f46;color:#6ee7b7;">● ACTIVE</span>'
-            )
-        else:
-            return mark_safe(
-                '<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
-                'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
-                'background:#7f1d1d;color:#fca5a5;">● INACTIVE</span>'
-            )
+        colors = {
+            'DRAFT': ('#4b5563', '#f3f4f6'), # Gray
+            'LIVE': ('#065f46', '#6ee7b7'),  # Green
+            'PAUSED': ('#92400e', '#fde68a'), # Amber/Yellow
+            'COMPLETED': ('#1e40af', '#bfdbfe'), # Blue
+        }
+        bg, fg = colors.get(obj.status, ('#7f1d1d', '#fca5a5'))
+        
+        return mark_safe(
+            f'<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
+            f'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
+            f'background:{bg};color:{fg};">● {obj.status}</span>'
+        )
 
     @admin.display(description="Documents")
     def documents_link(self, obj):
@@ -575,7 +611,26 @@ class ProjectAdmin(ModelAdmin):
 
 
     def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
+        is_new = not obj.pk
+        old_status = None
+        if not is_new:
+            old_status = Project.objects.get(pk=obj.pk).status
+
+        super(ProjectAdmin, self).save_model(request, obj, form, change)
+
+        # --- Logging ---
+        if is_new:
+            ProjectLogEntry.objects.create(
+                project=obj,
+                action="Project Created",
+                details=f"Project '{obj.name}' initialized as Draft."
+            )
+        elif old_status != obj.status:
+            ProjectLogEntry.objects.create(
+                project=obj,
+                action="Status Changed",
+                details=f"Project changed from {old_status} to {obj.status}."
+            )
 
         # --- Process uploaded Task Config JSON ---
         task_config_file = form.cleaned_data.get('upload_task_config')
@@ -583,6 +638,11 @@ class ProjectAdmin(ModelAdmin):
             try:
                 obj.task_type_config = parse_json_upload(task_config_file)
                 obj.save(update_fields=['task_type_config'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Config Updated",
+                    details="Task Configuration (labels/questions) uploaded via JSON file."
+                )
                 messages.success(request, "Task Configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Task Config Error: {str(e)}")
@@ -593,6 +653,11 @@ class ProjectAdmin(ModelAdmin):
             try:
                 obj.gold_config = parse_json_upload(gold_config_file)
                 obj.save(update_fields=['gold_config'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Gold Config Updated",
+                    details="Gold Units quality control strategy updated via JSON file."
+                )
                 messages.success(request, "Gold Units Configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Gold Config Error: {str(e)}")
@@ -606,6 +671,11 @@ class ProjectAdmin(ModelAdmin):
                     raise ValueError("Screening config must be a JSON array of questions.")
                 obj.screening_config = parsed
                 obj.save(update_fields=['screening_config'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Screening Updated",
+                    details=f"Screening questionnaire updated ({len(parsed)} questions)."
+                )
                 messages.success(request, f"Screening Configuration updated! {len(parsed)} question(s) loaded.")
             except Exception as e:
                 messages.error(request, f"Screening Config Error: {str(e)}")
@@ -614,10 +684,14 @@ class ProjectAdmin(ModelAdmin):
         codebook_file = form.cleaned_data.get('upload_codebook_content')
         if codebook_file:
             try:
-                # Read as text
                 content = codebook_file.read().decode('utf-8')
                 obj.codebook_content = content
                 obj.save(update_fields=['codebook_content'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Codebook Updated",
+                    details="Theoretical background (Codebook) updated via Markdown file."
+                )
                 messages.success(request, "Codebook content updated from file!")
             except Exception as e:
                 messages.error(request, f"Codebook Upload Error: {str(e)}")
@@ -629,6 +703,11 @@ class ProjectAdmin(ModelAdmin):
                 content = instructions_file.read().decode('utf-8')
                 obj.instructions_content = content
                 obj.save(update_fields=['instructions_content'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Instructions Updated",
+                    details="Task instructions updated via Markdown file."
+                )
                 messages.success(request, "Instructions content updated from file!")
             except Exception as e:
                 messages.error(request, f"Instructions Upload Error: {str(e)}")
@@ -639,6 +718,11 @@ class ProjectAdmin(ModelAdmin):
             try:
                 obj.practice_task_config = parse_json_upload(practice_file)
                 obj.save(update_fields=['practice_task_config'])
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Practice Task Updated",
+                    details="Guided practice task configuration updated via JSON file."
+                )
                 messages.success(request, "Practice Task configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Practice Task Config Error: {str(e)}")
@@ -647,6 +731,11 @@ class ProjectAdmin(ModelAdmin):
         if 'documents_file' in form.changed_data and obj.documents_file:
             try:
                 count, import_warnings = process_uploaded_dataset(obj, obj.documents_file)
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Dataset Imported",
+                    details=f"Successfully imported {count} regular documents."
+                )
                 messages.success(request, f"Regular documents import successful! Created {count} documents.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")
@@ -657,6 +746,11 @@ class ProjectAdmin(ModelAdmin):
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
             try:
                 count, import_warnings = process_uploaded_dataset(obj, obj.gold_units_file)
+                ProjectLogEntry.objects.create(
+                    project=obj,
+                    action="Gold Units Imported",
+                    details=f"Successfully imported {count} gold units."
+                )
                 messages.success(request, f"Gold units import successful! Created {count} units.")
                 for warn in import_warnings:
                     messages.warning(request, f"⚠️ {warn}")

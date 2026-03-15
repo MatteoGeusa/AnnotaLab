@@ -171,13 +171,64 @@ class Project(models.Model):
     name = models.CharField(max_length=200, help_text="Project name")
     slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="Unique Identifier for the URL (e.g., 'nome-studio')")
     description = models.TextField(blank=True, help_text="Project description")
-    is_active = models.BooleanField(default=False, help_text="If False, the project will not accept new annotations.")
+    is_active = models.BooleanField(default=False, help_text="If False, the project will not accept new annotations (Pause mode).")
+    
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('LIVE', 'Live'),
+        ('PAUSED', 'Paused'),
+        ('COMPLETED', 'Completed'),
+    ]
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='DRAFT',
+        help_text="Current lifecycle state of the project."
+    )
+    
+    launched_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the project was first set to LIVE.")
 
     def save(self, *args, **kwargs):
         if not self.slug:
             from django.utils.text import slugify
             self.slug = slugify(self.name)
+        
+        # Sync logic
+        if not self.pk:
+            # On creation, if is_active is true, it's technically a launch
+            if self.is_active:
+                self.status = 'LIVE'
+                self.launched_at = timezone.now()
+            else:
+                self.status = 'DRAFT'
+        else:
+            old_instance = Project.objects.get(pk=self.pk)
+            # If manually toggling is_active, update status
+            if old_instance.is_active != self.is_active:
+                if self.is_active:
+                    self.status = 'LIVE'
+                    if not self.launched_at:
+                        self.launched_at = timezone.now()
+                else:
+                    # If we were Live or Completed, Pause it. 
+                    # If we were Draft, stay Draft but inactive.
+                    if old_instance.status in ['LIVE', 'COMPLETED']:
+                        self.status = 'PAUSED'
+            
+            # If manually changing status to LIVE, ensure is_active is true
+            if old_instance.status != self.status:
+                if self.status == 'LIVE':
+                    self.is_active = True
+                    if not self.launched_at:
+                        self.launched_at = timezone.now()
+                elif self.status in ['DRAFT', 'PAUSED', 'COMPLETED']:
+                    self.is_active = False
+
         super().save(*args, **kwargs)
+
+    @property
+    def can_accept_annotations(self):
+        return self.status == 'LIVE' and self.is_active
     
     # CONFIGURATION
     
@@ -323,6 +374,27 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+class ProjectLogEntry(models.Model):
+    """
+    Tracks significant events in a project's lifecycle.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=100, help_text="The event type (e.g., 'Project Launched', 'Status Changed', 'Data Imported')")
+    details = models.TextField(blank=True, help_text="Optional details or message.")
+    
+    objects = models.Manager()
+    
+    class Meta:
+        verbose_name = "Project Log Entry"
+        verbose_name_plural = "Project Log Entries"
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        if self.timestamp:
+            return f"[{self.timestamp.strftime('%Y-%m-%d %H:%M')}] {self.action}"
+        return f"[No Date] {self.action}"
 
 class Annotator(models.Model):
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
