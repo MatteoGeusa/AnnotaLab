@@ -20,15 +20,26 @@
 
         <div class="text-card-area" ref="textRef" @mouseup="handleSelection">
             <template v-for="(chunk, index) in renderChunks" :key="index">
-                <span v-if="chunk.isHighlight" class="highlight-span"
-                    :style="{ backgroundColor: getLabelColor(chunk.label) + '33', borderBottomColor: getLabelColor(chunk.label) }">
-                    <span class="highlight-text">{{ chunk.text }}</span>
-                    <span class="highlight-tag" :style="{ backgroundColor: getLabelColor(chunk.label) }">
-                        {{ chunk.label }}
-                        <button class="remove-chip-btn" @click.stop="removeSpan(chunk.id)">×</button>
-                    </span>
+                <span class="chunk-span" :class="{ 'has-highlights': chunk.spans.length > 0 }">
+                    <span class="chunk-text" :style="getChunkTextStyle(chunk)">{{ chunk.text }}</span>
+                    <div class="chunk-highlights" v-if="chunk.spans.length > 0"
+                        :style="{ height: (maxLevels * 18) + 'px' }">
+                        <div v-for="level in maxLevels" :key="level" class="highlight-level">
+                            <template v-for="span in chunk.spansByLevel[level - 1]" :key="span.id">
+                                <div class="span-bar" :style="{
+                                    backgroundColor: getLabelColor(span.label),
+                                    opacity: hoveredSpanId && hoveredSpanId !== span.id ? 0.3 : 1
+                                }" @mouseover="hoveredSpanId = span.id" @mouseleave="hoveredSpanId = null">
+                                    <span class="span-label-hint" v-if="chunk.isStartOfSpan[span.id]">
+                                        {{ span.label }}
+                                        <button class="remove-chip-btn-mini"
+                                            @click.stop="removeSpan(span.id)">×</button>
+                                    </span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </span>
-                <span v-else class="normal-text">{{ chunk.text }}</span>
             </template>
         </div>
 
@@ -62,6 +73,7 @@ const textRef = ref(null);
 // Popup State
 const showPopup = ref(false);
 const popupMessage = ref("");
+const hoveredSpanId = ref(null);
 
 const openPopup = (msg) => {
     popupMessage.value = msg;
@@ -74,6 +86,11 @@ const closePopup = () => {
 
 // Keydown listener for labels 1-9
 const handleKeydown = (e) => {
+    // Ignore if user is typing in an input, textarea or contenteditable
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+    }
+
     const key = parseInt(e.key);
     if (!isNaN(key) && key > 0 && key <= props.labels.length) {
         selectedLabel.value = props.labels[key - 1].name;
@@ -99,10 +116,10 @@ const getGlobalOffset = (root, targetNode, targetOffset) => {
     let offset = 0;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) => {
-            if (node.parentNode && (node.parentNode.classList.contains('remove-chip-btn') || node.parentNode.classList.contains('highlight-tag'))) {
-                return NodeFilter.FILTER_REJECT;
+            if (node.parentNode && node.parentNode.classList.contains('chunk-text')) {
+                return NodeFilter.FILTER_ACCEPT;
             }
-            return NodeFilter.FILTER_ACCEPT;
+            return NodeFilter.FILTER_REJECT;
         }
     });
 
@@ -168,6 +185,20 @@ const handleSelection = () => {
         return;
     }
 
+    // Strict redundancy check (same label): prevent ANY overlap (fully contained, containing, or partial)
+    const hasAnySameLabelOverlap = props.spans.some(span =>
+        span.label === selectedLabel.value && (
+            realStart < span.end && realEnd > span.start
+        )
+    );
+
+    if (hasAnySameLabelOverlap) {
+        selection.removeAllRanges();
+        return;
+    }
+
+    // Overlap check removed to allow nested/overlapping spans
+    /*
     const hasOverlap = props.spans.some(span => {
         return (realStart < span.end && realEnd > span.start);
     });
@@ -177,13 +208,14 @@ const handleSelection = () => {
         selection.removeAllRanges();
         return;
     }
+    */
 
     const newSpan = {
         start: realStart,
         end: realEnd,
         label: selectedLabel.value,
         text: textSegment,
-        id: Date.now()
+        id: `span-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     };
 
     emit('update:spans', [...props.spans, newSpan]);
@@ -200,35 +232,91 @@ const getLabelColor = (labelName) => {
     return l ? l.color : '#cbd5e1';
 };
 
+const getChunkTextStyle = (chunk) => {
+    if (!hoveredSpanId.value) return {};
+    const activeSpan = chunk.spans.find(s => s.id === hoveredSpanId.value);
+    if (!activeSpan) return { transition: 'background-color 0.2s' };
+
+    return {
+        backgroundColor: getLabelColor(activeSpan.label) + '44', // ~25% opacity
+        borderRadius: '2px',
+        transition: 'background-color 0.2s'
+    };
+};
+
+const spansWithLevels = computed(() => {
+    // Sort spans by start position, then by end position (longer spans first)
+    const sortedSpans = [...props.spans].sort((a, b) => a.start - b.start || (b.end - a.end));
+    const levels = []; // stores the right-most end position of each level
+
+    return sortedSpans.map(span => {
+        let assignedLevel = -1;
+        for (let i = 0; i < levels.length; i++) {
+            // Check if this span fits in level i (current start >= last end in that level)
+            if (span.start >= levels[i]) {
+                assignedLevel = i;
+                levels[i] = span.end;
+                break;
+            }
+        }
+        if (assignedLevel === -1) {
+            assignedLevel = levels.length;
+            levels.push(span.end);
+        }
+        return { ...span, level: assignedLevel };
+    });
+});
+
+const maxLevels = computed(() => {
+    if (props.spans.length === 0) return 0;
+    const levels = [];
+    spansWithLevels.value.forEach(s => {
+        if (!levels.includes(s.level)) levels.push(s.level);
+    });
+    return Math.max(0, ...levels) + 1;
+});
+
 const renderChunks = computed(() => {
     if (!props.text) return [];
 
-    const sortedSpans = [...props.spans].sort((a, b) => a.start - b.start);
-    const chunks = [];
-    let currentIndex = 0;
-
-    sortedSpans.forEach(span => {
-        if (span.start > currentIndex) {
-            chunks.push({
-                text: props.text.slice(currentIndex, span.start),
-                isHighlight: false
-            });
-        }
-
-        chunks.push({
-            text: props.text.slice(span.start, span.end),
-            isHighlight: true,
-            label: span.label,
-            id: span.id
-        });
-
-        currentIndex = span.end;
+    // 1. Collect all boundaries
+    const boundaries = new Set([0, props.text.length]);
+    spansWithLevels.value.forEach(s => {
+        boundaries.add(s.start);
+        boundaries.add(s.end);
     });
 
-    if (currentIndex < props.text.length) {
+    // 2. Sort boundaries to create atomic segments
+    const sortedBoundaries = Array.from(boundaries).sort((a, b) => a - b);
+    const chunks = [];
+
+    for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+        const start = sortedBoundaries[i];
+        const end = sortedBoundaries[i + 1];
+        const text = props.text.slice(start, end);
+
+        if (text === "") continue;
+
+        // 3. Find which spans cover this atomic chunk
+        const coveringSpans = spansWithLevels.value.filter(s => s.start <= start && s.end >= end);
+
+        // Track if this chunk is the start of any span (to render the label/button)
+        const isStartOfSpan = {};
+        const spansByLevel = {};
+
+        coveringSpans.forEach(s => {
+            isStartOfSpan[s.id] = (s.start === start);
+            if (!spansByLevel[s.level]) spansByLevel[s.level] = [];
+            spansByLevel[s.level].push(s);
+        });
+
         chunks.push({
-            text: props.text.slice(currentIndex),
-            isHighlight: false
+            text,
+            start,
+            end,
+            spans: coveringSpans,
+            spansByLevel,
+            isStartOfSpan
         });
     }
 
@@ -314,8 +402,8 @@ const renderChunks = computed(() => {
 }
 
 .text-card-area {
-    font-size: 1.15rem;
-    line-height: 2.6;
+    font-size: 1.3rem;
+    line-height: 3.0;
     /* Balanced line height for labels and readability */
     padding: 35px;
     min-height: 250px;
@@ -330,62 +418,91 @@ const renderChunks = computed(() => {
     color: inherit;
 }
 
-/* PREMIUM HIGHLIGHT STYLES */
-.highlight-span {
-    padding: 2px 0;
-    margin: 0 1px;
-    border-bottom: 2px solid;
+/* ATOMIC CHUNK STYLES */
+.chunk-span {
     position: relative;
     display: inline;
+}
+
+.chunk-text {
+    position: relative;
+    z-index: 5;
+}
+
+.chunk-highlights {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    pointer-events: none;
+    margin-top: 4px;
+}
+
+.highlight-level {
+    height: 18px;
+    width: 100%;
+    display: flex;
+    position: relative;
+    align-items: center;
+}
+
+.span-bar {
+    height: 4px;
+    width: 100%;
+    position: relative;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: all 0.2s;
     border-radius: 2px;
 }
 
-.highlight-text {
-    /* Keep text clear */
-    position: relative;
-    z-index: 2;
-}
-
-.highlight-tag {
+.span-label-hint {
     position: absolute;
-    top: 1.6rem;
-    /* Perfectly centered between lines */
-    left: 4px;
-    font-size: 0.55rem;
-    font-weight: 800;
+    top: 0;
+    left: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
     color: white;
+    background: inherit;
     padding: 0 6px;
-    border-radius: 3px;
-    text-transform: uppercase;
-    display: inline-flex;
+    border-radius: 4px;
+    display: flex;
     align-items: center;
     gap: 4px;
-    user-select: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    z-index: 10;
     white-space: nowrap;
-    height: 14px;
-    letter-spacing: 0.3px;
+    height: 16px;
+    line-height: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    letter-spacing: 0.4px;
+    font-family: '__robotoCondensed_9f41a4', '__robotoCondensed_Fallback_9f41a4', 'Arial Narrow', 'Arial', sans-serif;
 }
 
-.remove-chip-btn {
-    background: rgba(0, 0, 0, 0.2);
+.remove-chip-btn-mini {
+    background: rgba(0, 0, 0, 0.25);
     border: none;
     color: white;
     border-radius: 50%;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 9px;
     padding: 0;
     transition: background 0.2s;
 }
 
-.remove-chip-btn:hover {
+.remove-chip-btn-mini:hover {
     background: rgba(0, 0, 0, 0.5);
+}
+
+.chunk-span.has-highlights {
+    border-radius: 2px;
 }
 
 /* POPUP MODAL (Premium Look) */
