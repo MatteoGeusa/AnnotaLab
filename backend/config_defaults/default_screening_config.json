@@ -16,8 +16,9 @@
   },
   {
     "id": "native_language",
-    "type": "text",
+    "type": "select",
     "label": "Native language?",
-    "required": true
+    "required": true,
+    "options": ["English", "Italian", "Spanish", "French", "German", "Other"]
   }
 ]

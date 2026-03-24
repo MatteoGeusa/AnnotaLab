@@ -78,7 +78,8 @@ class ProjectLogInline(TabularInline):
     extra = 0
     readonly_fields = ('timestamp', 'action', 'details')
     can_delete = False
-    
+    tab = True
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -104,7 +105,6 @@ class ProjectAdmin(ModelAdmin):
     form = ProjectAdminForm
     readonly_fields = (
         'status_badge',
-        'launched_at',
         'formatted_task_type_config', 
         'formatted_gold_config', 
         'formatted_screening_config',
@@ -119,18 +119,14 @@ class ProjectAdmin(ModelAdmin):
         ("config", "Task Configuration"),
         ("quality", "Quality & Gold"),
         ("launch", "Launch & Distribution"),
-        ("logs", "Activity Log"),
-    ]
-
-    tab_inlines = [
-        ("logs", [ProjectLogInline]),
     ]
 
     inlines = [ProjectLogInline]
+
     
     fieldsets = (
         ("Project Details", {
-            "fields": (("name", "slug"), "status", "is_active", "launched_at", "description", "informed_consent_config",),
+            "fields": (("name", "slug"), "status", "is_active", "description", "informed_consent_config",),
             "classes": ("tab", "details"),
         }),
 
@@ -167,6 +163,7 @@ class ProjectAdmin(ModelAdmin):
                 "upload_instructions_content",
                 "formatted_practice_task_config",
                 "upload_practice_task_config",
+                "practice_task_required",
             ),
             "description": """
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -236,12 +233,6 @@ class ProjectAdmin(ModelAdmin):
                 "prioritize_unannotated"
             ),
             "description": "Configure how documents are served to workers."
-        }),
-
-        ("Activity Log", {
-            "classes": ("tab", "logs"),
-            "fields": [],
-            "description": "Historical timeline of project events and status changes."
         }),
     )
 

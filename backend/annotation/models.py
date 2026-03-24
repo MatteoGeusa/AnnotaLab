@@ -290,6 +290,11 @@ class Project(models.Model):
         help_text="Practice task config: { text, gold_solution: {classification, spans[]}, hints[] }. Empty = no practice."
     )
 
+    practice_task_required = models.BooleanField(
+        default=False,
+        help_text="If True, annotators must pass the practice task correctly before starting. If False, they can skip after attempting."
+    )
+
     # --- DISTRIBUTION CONSTRAINTS ---
 
     STRATEGY_CHOICES = [

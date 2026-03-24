@@ -1,10 +1,16 @@
 {
+  "required": true,
   "text": "The government is putting chips in the water to control us and nobody seems to care about it.",
   "gold_solution": {
     "classification": "Yes",
     "spans": [
       { "start": 0, "end": 14, "label": "Actor", "text": "The government" },
-      { "start": 18, "end": 49, "label": "Action", "text": "putting chips in the water to" },
+      {
+        "start": 18,
+        "end": 49,
+        "label": "Action",
+        "text": "putting chips in the water to"
+      },
       { "start": 50, "end": 60, "label": "Victim", "text": "control us" }
     ]
   },

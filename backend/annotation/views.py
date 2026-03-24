@@ -190,9 +190,13 @@ class GetInstructions(APIView):
         practice = project.practice_task_config or {}
         has_practice = bool(practice and practice.get('text'))
 
+        # Read `required` from inside the JSON first, fallback to the dedicated field
+        practice_required = practice.get('required', project.practice_task_required) if has_practice else False
+
         return Response({
             "content": project.instructions_content or "",
             "practice_task": practice if has_practice else None,
+            "practice_task_required": practice_required,
             "task_config": project.task_type_config or {},
             "skip": False
         })

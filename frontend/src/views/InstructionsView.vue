@@ -38,8 +38,8 @@
 
         <!-- PHASE 2: PRACTICE TASK -->
         <div v-else-if="phase === 'practice'" class="task-card">
-            <div class="practice-banner">
-                🎯 PRACTICE TASK — Try annotating this example before starting the real task
+            <div class="practice-banner" :class="practiceTaskRequired ? 'practice-banner-required' : ''">
+                🎯 PRACTICE TASK — {{ practiceTaskRequired ? '⚠️ You must pass this task to proceed' : 'Try annotating this example before starting the real task' }}
             </div>
 
             <div class="card-header highlight-header">
@@ -141,9 +141,18 @@
                     <button v-if="!feedbackCorrect" class="action-btn retry-btn" @click="retryPractice">
                         🔄 Try Again
                     </button>
-                    <button class="submit-btn primary-submit" @click="finishInstructions">
+                    <!-- Skip only shown if practice is NOT required, or if they got it correct -->
+                    <button
+                        v-if="!practiceTaskRequired || feedbackCorrect"
+                        class="submit-btn primary-submit"
+                        @click="finishInstructions"
+                        :disabled="practiceTaskRequired && !feedbackCorrect"
+                    >
                         {{ feedbackCorrect ? '🚀 Start Real Task' : 'Skip & Start Task Anyway' }}
                     </button>
+                    <p v-if="practiceTaskRequired && !feedbackCorrect" class="required-notice">
+                        🔒 This practice task is mandatory. Please try again until you get it right.
+                    </p>
                 </div>
             </div>
         </div>
@@ -167,6 +176,7 @@ const loading = ref(true);
 const errorMsg = ref('');
 const shouldSkip = ref(false);
 const phase = ref('instructions'); // 'instructions' | 'practice'
+const practiceTaskRequired = ref(false);
 const hasReadInstructions = ref(false);
 
 // Instructions content
@@ -251,6 +261,7 @@ const fetchInstructions = async () => {
 
         rawInstructions.value = res.data.content || '';
         practiceTask.value = res.data.practice_task || null;
+        practiceTaskRequired.value = res.data.practice_task_required || false;
         taskConfig.value = res.data.task_config || {};
     } catch (err) {
         errorMsg.value = "Error loading instructions. " + (err.response?.data?.error || err.message);
@@ -531,6 +542,24 @@ const finishInstructions = async () => {
     font-size: 0.95rem;
     letter-spacing: 0.3px;
 }
+
+.practice-banner-required {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+.required-notice {
+    margin: 12px 0 0;
+    padding: 10px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    width: 100%;
+}
+
 
 /* PRACTICE TASK LAYOUT (same as AnnotatorView) */
 .highlight-header {
