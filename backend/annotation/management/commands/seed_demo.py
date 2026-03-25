@@ -87,12 +87,10 @@ TASK_CONFIG = {
     ]
 }
 
-GOLD_CONFIG = {
+# Gold Default Values for Demo
+DEMO_GOLD_SETTINGS = {
     "min_accuracy_required": 0.6,
     "gold_injection_frequency": 5,
-    "continuous_exclusion": False,
-    "evaluation_strategy": "percentage",
-    "max_strikes": 3,
     "min_gold_before_eval": 2
 }
 
@@ -136,12 +134,15 @@ class Command(BaseCommand):
                     "about climate change. This project is configured but not yet launched."
                 ),
                 "status": "DRAFT",
-                "is_active": False,
                 "task_type_config": TASK_CONFIG,
-                "gold_config": GOLD_CONFIG,
+                "min_accuracy_required": DEMO_GOLD_SETTINGS["min_accuracy_required"],
+                "gold_injection_frequency": DEMO_GOLD_SETTINGS["gold_injection_frequency"],
+                "min_gold_before_eval": DEMO_GOLD_SETTINGS["min_gold_before_eval"],
+                "enable_gold_units": True,
                 "enable_screening": True,
                 "enable_codebook": True,
                 "enable_instructions": True,
+                "enable_practice_task": True,
                 "distribution_strategy": "STANDARD",
                 "min_annotations_per_doc": 3,
                 "max_annotations_per_doc": 5,
@@ -191,13 +192,16 @@ class Command(BaseCommand):
                     "Annotators highlight key spans and classify each post."
                 ),
                 "status": "LIVE",
-                "is_active": True,
                 "launched_at": timezone.now(),
                 "task_type_config": TASK_CONFIG,
-                "gold_config": GOLD_CONFIG,
+                "min_accuracy_required": DEMO_GOLD_SETTINGS["min_accuracy_required"],
+                "gold_injection_frequency": DEMO_GOLD_SETTINGS["gold_injection_frequency"],
+                "min_gold_before_eval": DEMO_GOLD_SETTINGS["min_gold_before_eval"],
+                "enable_gold_units": True,
                 "enable_screening": True,
                 "enable_codebook": True,
                 "enable_instructions": True,
+                "enable_practice_task": True,
                 "distribution_strategy": "STANDARD",
                 "min_annotations_per_doc": 3,
                 "max_annotations_per_doc": 5,
@@ -251,25 +255,33 @@ class Command(BaseCommand):
 
         annotators = []
         for spec in annotator_specs:
+            pid = spec["pid"]
+            accuracy = spec["accuracy"]
+            n_docs = spec["n_docs"]
+            status = spec["status"]
+
             ann, _ = Annotator.objects.get_or_create(
-                prolific_pid=spec["pid"],
+                prolific_pid=pid,
                 defaults={
                     "consent_accepted": True,
                     "screening_completed": True,
                     "onboarding_completed": True,
-                    "metadata": {"source": "demo", "reliability": spec["accuracy"]},
+                    "metadata": {"source": "demo", "reliability": accuracy},
                 }
             )
             annotators.append((ann, spec))
 
             # Enrollment
-            enrollment, _ = ProjectEnrollment.objects.get_or_create(
+            gold_tasks = 1 if n_docs >= 5 else 0  # type: ignore[unsupported-operator]
+            gold_acc = accuracy if n_docs >= 5 else None  # type: ignore[unsupported-operator]
+
+            ProjectEnrollment.objects.get_or_create(
                 project=project,
                 annotator=ann,
                 defaults={
-                    "status": spec["status"],
-                    "gold_tasks_completed": 1 if spec["n_docs"] >= 5 else 0,
-                    "gold_accuracy": spec["accuracy"] if spec["n_docs"] >= 5 else None,
+                    "status": status,
+                    "gold_tasks_completed": gold_tasks,
+                    "gold_accuracy": gold_acc,
                     "codebook_completed": True,
                 }
             )

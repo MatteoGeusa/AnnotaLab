@@ -22,7 +22,6 @@
             <p>{{ stopMessage || "Thank you for your contribution." }}</p>
         </div>
 
-
         <div v-else class="task-card">
             <div v-if="isGold" class="training-banner">
                 QUALITY CONTROL TASK (This is a gold unit used to verify annotation quality)
@@ -65,7 +64,7 @@
             <div class="card-footer actions">
                 <button class="action-btn clear-btn" @click="clearForm">Clear</button>
                 <button class="submit-btn primary-submit" @click="submitTask" :disabled="!canSubmit">
-                    Submit & Next
+                    Submit &amp; Next
                 </button>
             </div>
 
@@ -76,14 +75,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import api from '../axios';
 import TextHighlighter from '../components/TextHighlighter.vue';
+import { useProjectContext } from '../composables/useProjectContext';
 
 const router = useRouter();
-const route = useRoute();
-const pid = localStorage.getItem('prolific_pid');
-const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_slug');
+const { pid, projectSlug, projectId } = useProjectContext();
 
 // STATO
 const loading = ref(true);
@@ -132,9 +130,6 @@ const fetchNextTask = async () => {
     errorMsg.value = '';
     spans.value = [];
     stopped.value = false;
-
-    const pid = localStorage.getItem('prolific_pid');
-    const projectId = localStorage.getItem('project_id');
 
     if (!projectId && !projectSlug) {
         errorMsg.value = "Fatal Error: No Project ID/Slug found.";
@@ -228,16 +223,10 @@ const submitTask = async () => {
         loading.value = false;
     }
 };
-
-
-const logout = () => {
-    localStorage.removeItem('prolific_pid');
-    router.push('/');
-};
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import '../assets/shared.css';
 
 .main-container {
     max-width: 1000px;
@@ -245,65 +234,6 @@ const logout = () => {
     padding: 37px;
     font-family: 'Outfit', sans-serif;
     color: #1a1f36;
-}
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 0;
-    margin-bottom: 2rem;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.logo {
-    font-size: 2rem;
-}
-
-.brand .title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #306ee8 0%, #172b4d 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: white;
-    padding: 6px 16px;
-    border-radius: 50px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.pid {
-    font-weight: 500;
-    color: #4f566b;
-    font-size: 0.9rem;
-}
-
-.logout-btn {
-    background: #fff;
-    border: 1px solid #dcdfe6;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.logout-btn:hover {
-    background: #fef2f2;
-    border-color: #fee2e2;
-    color: #dc2626;
 }
 
 /* CARDS */
@@ -314,11 +244,6 @@ const logout = () => {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     animation: slideUp 0.5s ease-out;
-}
-
-.card-header {
-    padding: 24px 30px;
-    border-bottom: 1px solid #e3e8ee;
 }
 
 .highlight-header {
@@ -337,117 +262,6 @@ const logout = () => {
     line-height: 1.5;
 }
 
-.card-body {
-    padding: 30px;
-}
-
-.card-footer {
-    padding: 20px 30px;
-    background: #f8fafc;
-    border-top: 1px solid #e3e8ee;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-}
-
-
-/* CLASSIFICATION */
-.classification-section {
-    margin-top: 30px;
-    padding-top: 30px;
-    border-top: 2px dashed #e3e8ee;
-}
-
-.question-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-    color: #1a1f36;
-}
-
-.options-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.option-label {
-    background: #f8fafc;
-    border: 2px solid #e3e8ee;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.option-label:hover {
-    border-color: #cbd5e1;
-    background: #fff;
-}
-
-.option-label.active {
-    background: #306ee8;
-    color: white;
-    border-color: #1a4ab9;
-    box-shadow: 0 4px 12px rgba(48, 110, 232, 0.3);
-}
-
-.option-label input {
-    display: none;
-}
-
-/* BUTTONS */
-.action-btn {
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-}
-
-.clear-btn {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.clear-btn:hover {
-    background: #e2e8f0;
-}
-
-.submit-btn {
-    padding: 14px 32px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 1.05rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-}
-
-.primary-submit {
-    background: #306ee8;
-    color: white;
-    flex-grow: 1;
-    max-width: 300px;
-}
-
-.primary-submit:hover:not(:disabled) {
-    background: #1a4ab9;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(48, 110, 232, 0.4);
-}
-
-.submit-btn:disabled {
-    background: #e3e8ee;
-    color: #a0aec0;
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
 /* TRAINING BANNER */
 .training-banner {
     background: #fef3c7;
@@ -457,25 +271,6 @@ const logout = () => {
     font-weight: 700;
     font-size: 0.9rem;
     border-bottom: 1px solid #fde68a;
-}
-
-/* LOADING */
-.loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 100px 0;
-}
-
-.loader {
-    width: 48px;
-    height: 48px;
-    border: 5px solid #e3e8ee;
-    border-bottom-color: #306ee8;
-    border-radius: 50%;
-    animation: rotation 1s linear infinite;
-    margin-bottom: 20px;
 }
 
 /* FINISHED STATE */
@@ -505,53 +300,5 @@ const logout = () => {
     border-left: 6px solid #306ee8;
     text-align: left;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-}
-
-/* ANIMATIONS */
-@keyframes rotation {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ERROR TOAST */
-.error-toast {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: #fee2e2;
-    color: #dc2626;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-left: 4px solid #dc2626;
-}
-
-/* UTILS */
-.doc-text-preview {
-    font-size: 1.2rem;
-    line-height: 1.8;
-    color: #334155;
-    background: #f8fafc;
-    padding: 24px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
 }
 </style>

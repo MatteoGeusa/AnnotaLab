@@ -363,10 +363,12 @@ class SubmitAnnotation(APIView):
                         annotation_result = data.get('result', {})
                         is_correct = check_gold_correctness(annotation_result, document.gold_solution)
                         
-                        # Get the configured evaluation strategy
-                        gold_cfg = project.gold_config or {}
-                        strategy_name = gold_cfg.get('evaluation_strategy', 'percentage')
-                        strategy = get_strategy(strategy_name)
+                        # Pack configuration into a dict for strategy compatibility (now hardcoded to percentage)
+                        strategy = get_strategy()
+                        gold_cfg = {
+                            'min_accuracy_required': project.min_accuracy_required,
+                            'min_gold_before_eval': project.min_gold_before_eval,
+                        }
                         
                         # Execute strategy — updates enrollment fields internally
                         should_exclude, reason = strategy(enrollment, gold_cfg, is_correct)
@@ -464,10 +466,9 @@ class GetNextTask(APIView):
 
     def _should_inject_gold(self, project, done_count):
         """ Determines if a Gold Unit should be injected based on frequency settings """
-        gold_cfg = project.gold_config or {}
-        injection_freq = gold_cfg.get('gold_injection_frequency', 0)
         if not project.enable_gold_units:
             return False
+        injection_freq = project.gold_injection_frequency or 0
         return injection_freq > 0 and (done_count + 1) % injection_freq == 0
 
     def _find_gold_candidate(self, project, annotator):

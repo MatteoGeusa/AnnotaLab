@@ -23,7 +23,7 @@
                 <p class="subtitle">Please read the following instructions carefully before starting.</p>
             </div>
 
-            <div class="instructions-body" v-html="renderedInstructions"></div>
+            <div class="markdown-body" v-html="rendered"></div>
 
             <div class="actions">
                 <label class="checkbox-label">
@@ -54,7 +54,7 @@
                     <div class="technical-mini-guide">
                         <h5>How to annotate:</h5>
                         <ul>
-                            <li><span class="step-icon">1</span> <strong>Highlight:</strong> Click & drag over text</li>
+                            <li><span class="step-icon">1</span> <strong>Highlight:</strong> Click &amp; drag over text</li>
                             <li><span class="step-icon">2</span> <strong>Label:</strong> Click a colored button</li>
                             <li><span class="step-icon">3</span> <strong>Remove:</strong> Click an existing highlight
                             </li>
@@ -161,15 +161,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import api from '../axios';
 import TextHighlighter from '../components/TextHighlighter.vue';
+import { useProjectContext } from '../composables/useProjectContext';
+import { useMarkdownRenderer } from '../composables/useMarkdownRenderer';
 
 const router = useRouter();
-const route = useRoute();
-const pid = localStorage.getItem('prolific_pid');
-const projectSlug = route.params.projectSlug ?? localStorage.getItem('project_slug');
-const projectId = localStorage.getItem('project_id');
+const { pid, projectSlug, projectId } = useProjectContext();
 
 // State
 const loading = ref(true);
@@ -205,43 +204,7 @@ const canSubmitPractice = computed(() => {
     return true;
 });
 
-// Simple Markdown renderer (same as CodebookView)
-const renderedInstructions = computed(() => {
-    let text = rawInstructions.value;
-    if (!text) return '';
-
-    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    // Headers
-    text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-
-    // Bold and italic
-    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/(?<!\w)_(.+?)_(?!\w)/g, '<em>$1</em>');
-    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-
-    // Inline code
-    text = text.replace(/`(.+?)`/g, '<code>$1</code>');
-
-    // Unordered lists
-    text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
-    text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-
-    // Ordered lists
-    text = text.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
-
-    // Horizontal rules
-    text = text.replace(/^---$/gm, '<hr>');
-
-    // Paragraphs
-    text = text.replace(/^(?!<[hulo]|<li|<hr)(.+)$/gm, '<p>$1</p>');
-    text = text.replace(/<p>\s*<\/p>/g, '');
-
-    return text;
-});
+const { rendered } = useMarkdownRenderer(rawInstructions);
 
 // Fetch data
 const fetchInstructions = async () => {
@@ -253,7 +216,6 @@ const fetchInstructions = async () => {
         if (res.data.skip) {
             shouldSkip.value = true;
             const slug = projectSlug || projectId;
-            // Skip instructions, go directly to annotate
             await api.post('onboarding/', { pid, project_slug: projectSlug, project_id: projectId });
             setTimeout(() => router.push(`/${slug}/annotate`), 500);
             return;
@@ -296,10 +258,8 @@ const getLabelColor = (labelName) => {
 const checkPractice = () => {
     const gold = goldSolution.value;
 
-    // Check classification
     classificationCorrect.value = !classOptions.value.length || practiceClassification.value === gold.classification;
 
-    // Check spans (fuzzy match: same label and overlapping text)
     const goldSpans = gold.spans || [];
     matchedSpans.value = goldSpans.map(gs => {
         return practiceSpans.value.some(ps =>
@@ -341,38 +301,9 @@ const finishInstructions = async () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import '../assets/shared.css';
 
-.page-container {
-    min-height: 100vh;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
-    font-family: 'Outfit', sans-serif;
-}
-
-/* CARDS */
-.card {
-    background: white;
-    max-width: 820px;
-    margin: 0 auto;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    animation: slideUp 0.5s ease-out;
-}
-
-.card.wide {
-    max-width: 900px;
-}
-
-.center-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 40px;
-}
-
+/* ── TASK CARD (più larga della card standard) ── */
 .task-card {
     background: white;
     max-width: 1000px;
@@ -383,185 +314,6 @@ const finishInstructions = async () => {
     animation: slideUp 0.5s ease-out;
 }
 
-.card-header {
-    padding: 32px 40px 20px;
-    border-bottom: 2px solid #e3e8ee;
-    background: #f8fafc;
-}
-
-.card-header h1 {
-    margin: 0 0 6px;
-    font-size: 1.8rem;
-    color: #1a1f36;
-    font-weight: 700;
-}
-
-.subtitle {
-    color: #666;
-    margin: 0;
-    font-size: 0.95rem;
-}
-
-.state-text {
-    color: #999;
-    font-style: italic;
-}
-
-.error {
-    color: #dc3545;
-    padding: 20px 40px;
-}
-
-/* INSTRUCTIONS BODY (markdown) */
-.instructions-body {
-    padding: 32px 40px;
-    color: #1a1f36;
-    line-height: 1.8;
-    font-size: 1rem;
-}
-
-.instructions-body :deep(h1) {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #1a1f36;
-    margin: 28px 0 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #e3e8ee;
-}
-
-.instructions-body :deep(h2) {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #306ee8;
-    margin: 24px 0 10px;
-}
-
-.instructions-body :deep(h3) {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #475569;
-    margin: 20px 0 8px;
-}
-
-.instructions-body :deep(p) {
-    margin: 8px 0;
-    color: #334155;
-}
-
-.instructions-body :deep(ul) {
-    padding-left: 20px;
-    margin: 8px 0;
-}
-
-.instructions-body :deep(li) {
-    margin: 6px 0;
-    color: #334155;
-}
-
-.instructions-body :deep(strong) {
-    color: #1a1f36;
-    font-weight: 700;
-}
-
-.instructions-body :deep(code) {
-    background: #f1f5f9;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    color: #306ee8;
-}
-
-.instructions-body :deep(hr) {
-    border: none;
-    border-top: 2px solid #e3e8ee;
-    margin: 24px 0;
-}
-
-/* ACTIONS */
-.actions {
-    padding: 24px 40px 32px;
-    border-top: 2px solid #e3e8ee;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.95rem;
-    color: #444;
-    margin-bottom: 18px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.checkbox-label input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    flex-shrink: 0;
-    accent-color: #306ee8;
-}
-
-.actions button,
-.feedback-actions button {
-    width: 100%;
-    padding: 14px;
-    background: #306ee8;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 4px 14px rgba(48, 110, 232, 0.3);
-}
-
-.actions button:hover:not(:disabled),
-.feedback-actions button:hover:not(:disabled) {
-    background: #1a4ab9;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(48, 110, 232, 0.4);
-}
-
-.actions button:disabled,
-.feedback-actions button:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-/* PRACTICE BANNER */
-.practice-banner {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-    padding: 14px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: 0.3px;
-}
-
-.practice-banner-required {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-}
-
-.required-notice {
-    margin: 12px 0 0;
-    padding: 10px 16px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    color: #991b1b;
-    font-size: 0.9rem;
-    font-weight: 500;
-    text-align: center;
-    width: 100%;
-}
-
-
-/* PRACTICE TASK LAYOUT (same as AnnotatorView) */
 .highlight-header {
     background-color: #f8fafc;
 }
@@ -623,129 +375,35 @@ const finishInstructions = async () => {
     flex-shrink: 0;
 }
 
-.card-body {
-    padding: 30px;
-}
-
-.card-footer {
-    padding: 20px 30px;
-    background: #f8fafc;
-    border-top: 1px solid #e3e8ee;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-}
-
-.classification-section {
-    margin-top: 30px;
-    padding-top: 30px;
-    border-top: 2px dashed #e3e8ee;
-}
-
-.question-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-    color: #1a1f36;
-}
-
-.options-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.option-label {
-    background: #f8fafc;
-    border: 2px solid #e3e8ee;
-    padding: 12px 24px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.option-label:hover {
-    border-color: #cbd5e1;
-    background: #fff;
-}
-
-.option-label.active {
-    background: #306ee8;
+/* ── PRACTICE BANNER ── */
+.practice-banner {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: white;
-    border-color: #1a4ab9;
-    box-shadow: 0 4px 12px rgba(48, 110, 232, 0.3);
-}
-
-.option-label input {
-    display: none;
-}
-
-.doc-text-preview {
-    font-size: 1.2rem;
-    line-height: 1.8;
-    color: #334155;
-    background: #f8fafc;
-    padding: 24px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-}
-
-/* ACTION BUTTONS */
-.action-btn {
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    font-family: 'Outfit', sans-serif;
-}
-
-.clear-btn {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.clear-btn:hover {
-    background: #e2e8f0;
-}
-
-.submit-btn {
-    padding: 14px 32px;
-    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
     font-weight: 700;
-    font-size: 1.05rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-    font-family: 'Outfit', sans-serif;
-    width: auto;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
 }
 
-.primary-submit {
-    background: #306ee8;
-    color: white;
-    flex-grow: 1;
-    max-width: 300px;
+.practice-banner-required {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
 }
 
-.primary-submit:hover:not(:disabled) {
-    background: #1a4ab9;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(48, 110, 232, 0.4);
+.required-notice {
+    margin: 12px 0 0;
+    padding: 10px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    width: 100%;
 }
 
-.submit-btn:disabled {
-    background: #e3e8ee;
-    color: #a0aec0;
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
-/* FEEDBACK */
+/* ── FEEDBACK ── */
 .feedback-container {
     border-top: 2px solid #e3e8ee;
     animation: slideUp 0.4s ease-out;
@@ -788,13 +446,8 @@ const finishInstructions = async () => {
     line-height: 1.6;
 }
 
-.correct-text {
-    color: #065f46;
-}
-
-.wrong-text {
-    color: #991b1b;
-}
+.correct-text { color: #065f46; }
+.wrong-text { color: #991b1b; }
 
 .spans-feedback {
     margin-top: 8px;
@@ -855,39 +508,5 @@ const finishInstructions = async () => {
 
 .retry-btn:hover {
     background: #fde68a;
-}
-
-/* LOADING */
-.loader {
-    width: 48px;
-    height: 48px;
-    border: 5px solid #e3e8ee;
-    border-bottom-color: #306ee8;
-    border-radius: 50%;
-    animation: rotation 1s linear infinite;
-    margin-bottom: 20px;
-}
-
-/* ANIMATIONS */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes rotation {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
 }
 </style>

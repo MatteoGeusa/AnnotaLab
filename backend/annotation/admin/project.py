@@ -22,11 +22,6 @@ class ProjectAdminForm(forms.ModelForm):
         label="Upload Task Config (JSON)",
         help_text="Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
     )
-    upload_gold_config = forms.FileField(
-        required=False,
-        label="Upload Gold Config (JSON)",
-        help_text="Upload a JSON file to overwrite the Gold Units QC configuration."
-    )
     upload_screening_config = forms.FileField(
         required=False,
         label="Upload Screening Config (JSON)",
@@ -54,7 +49,6 @@ class ProjectAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        is_active = cleaned_data.get('is_active')
         documents_file = cleaned_data.get('documents_file')
         
         # We need to know if the project ALREADY has documents in the database
@@ -62,14 +56,13 @@ class ProjectAdminForm(forms.ModelForm):
         if self.instance.pk:
             has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists()
 
-        # If the user tries to activate the project
-        if is_active:
+        # If the user tries to set the project to LIVE
+        if cleaned_data.get('status') == 'LIVE':
             # It's valid ONLY if:
             # 1. It already has documents in the DB
             # 2. OR it's being provided a new document file right now
             if not has_existing_docs and not documents_file:
-                # We raise the error on the 'is_active' field
-                self.add_error('is_active', "❌ Cannot Activate: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project to Active.")
+                self.add_error('status', "❌ Cannot Set to LIVE: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project status to Live.")
         
         return cleaned_data
 
@@ -106,7 +99,6 @@ class ProjectAdmin(ModelAdmin):
     readonly_fields = (
         'status_badge',
         'formatted_task_type_config', 
-        'formatted_gold_config', 
         'formatted_screening_config',
         'formatted_codebook_content',
         'formatted_instructions_content',
@@ -115,10 +107,11 @@ class ProjectAdmin(ModelAdmin):
     
     tabs = [
         ("details", "Project Details"),
-        ("training", "Training & Instructions"),
         ("config", "Task Configuration"),
-        ("quality", "Quality & Gold"),
-        ("launch", "Launch & Distribution"),
+        ("training", "Training & Instructions"),
+        ("quality", "Quality / Monitoring"),
+        ("distribution", "Distribution & Launch"),
+        ("log", "Activity Log"),
     ]
 
     inlines = [ProjectLogInline]
@@ -126,8 +119,30 @@ class ProjectAdmin(ModelAdmin):
     
     fieldsets = (
         ("Project Details", {
-            "fields": (("name", "slug"), "status", "is_active", "description", "informed_consent_config",),
+            "fields": (("name", "slug"), "status", "description", "informed_consent_config",),
             "classes": ("tab", "details"),
+        }),
+
+        ("Task Configuration", {
+            "classes": ("tab", "config"),
+            "fields": (
+                "formatted_task_type_config",
+                "upload_task_config",
+                "documents_file",
+                ("dataset_text_key", "dataset_id_key"),
+            ),
+            "description": """
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #3B82F6; color: #ddd; border-radius: 4px;">
+                        <b style="color: #60a5fa; font-size: 1.1em;">⚙️ Task Design</b><br>
+                        Configure the labeling interface (labels, questions, layout).
+                    </div>
+                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #10B981; color: #ddd; border-radius: 4px;">
+                        <b style="color: #34d399; font-size: 1.1em;">📊 Data Import</b><br>
+                        Upload your <b>.jsonl</b> dataset. Each line must be a JSON object with at least a text field.
+                    </div>
+                </div>
+            """
         }),
 
         ("Participant Training", {
@@ -161,6 +176,7 @@ class ProjectAdmin(ModelAdmin):
                 "enable_instructions",
                 "formatted_instructions_content",
                 "upload_instructions_content",
+                "enable_practice_task",
                 "formatted_practice_task_config",
                 "upload_practice_task_config",
                 "practice_task_required",
@@ -177,34 +193,12 @@ class ProjectAdmin(ModelAdmin):
             """
         }),
 
-        ("Task Configuration", {
-            "classes": ("tab", "config"),
-            "fields": (
-                "formatted_task_type_config",
-                "upload_task_config",
-                "documents_file",
-                ("dataset_text_key", "dataset_id_key"),
-            ),
-            "description": """
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #3B82F6; color: #ddd; border-radius: 4px;">
-                        <b style="color: #60a5fa; font-size: 1.1em;">⚙️ Task Design</b><br>
-                        Configure the labeling interface (labels, questions, layout).
-                    </div>
-                    <div style="flex: 1; background: #2a2a2a; padding: 15px; border-left: 4px solid #10B981; color: #ddd; border-radius: 4px;">
-                        <b style="color: #34d399; font-size: 1.1em;">📊 Data Import</b><br>
-                        Upload your <b>.jsonl</b> dataset. Each line must be a JSON object with at least a text field.
-                    </div>
-                </div>
-            """
-        }),
-
         ("Quality / Monitoring", {
             "classes": ("tab", "quality"),
             "fields": (
                 "enable_gold_units",
-                "formatted_gold_config",
-                "upload_gold_config",
+                "gold_injection_frequency",
+                ("min_accuracy_required", "min_gold_before_eval"),
                 "gold_units_file",
             ),
             "description": """
@@ -225,7 +219,7 @@ class ProjectAdmin(ModelAdmin):
         }),
 
         ("Distribution & Launch", {
-            "classes": ("tab", "launch"),
+            "classes": ("tab", "distribution"),
             "fields": (
                 "distribution_strategy",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
@@ -311,10 +305,6 @@ class ProjectAdmin(ModelAdmin):
     @admin.display(description="Task Config")
     def formatted_task_type_config(self, obj):
         return self._render_config_block(obj.task_type_config, 'Task Configuration', '⚙️')
-
-    @admin.display(description="Gold Config")
-    def formatted_gold_config(self, obj):
-        return self._render_config_block(obj.gold_config, 'Gold Units Configuration', '🛡️')
 
     @admin.display(description="Screening Config")
     def formatted_screening_config(self, obj):
@@ -637,21 +627,6 @@ class ProjectAdmin(ModelAdmin):
                 messages.success(request, "Task Configuration updated from JSON file!")
             except Exception as e:
                 messages.error(request, f"Task Config Error: {str(e)}")
-
-        # --- Process uploaded Gold Config JSON ---
-        gold_config_file = form.cleaned_data.get('upload_gold_config')
-        if gold_config_file:
-            try:
-                obj.gold_config = parse_json_upload(gold_config_file)
-                obj.save(update_fields=['gold_config'])
-                ProjectLogEntry.objects.create(
-                    project=obj,
-                    action="Gold Config Updated",
-                    details="Gold Units quality control strategy updated via JSON file."
-                )
-                messages.success(request, "Gold Units Configuration updated from JSON file!")
-            except Exception as e:
-                messages.error(request, f"Gold Config Error: {str(e)}")
 
         # --- Process uploaded Screening Config JSON ---
         screening_config_file = form.cleaned_data.get('upload_screening_config')

@@ -55,15 +55,6 @@ def get_default_configuration_for_task_type():
     }
 
 def get_default_gold_config():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_gold_config.json')
-    
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
-            
     return {
         "min_accuracy_required": 0.6,
         "gold_injection_frequency": 5,
@@ -171,8 +162,6 @@ class Project(models.Model):
     name = models.CharField(max_length=200, help_text="Project name")
     slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="Unique Identifier for the URL (e.g., 'nome-studio')")
     description = models.TextField(blank=True, help_text="Project description")
-    is_active = models.BooleanField(default=False, help_text="If False, the project will not accept new annotations (Pause mode).")
-    
     STATUS_CHOICES = [
         ('DRAFT', 'Draft'),
         ('LIVE', 'Live'),
@@ -193,42 +182,25 @@ class Project(models.Model):
             from django.utils.text import slugify
             self.slug = slugify(self.name)
         
-        # Sync logic
+        # On creation, if status is LIVE, it's technically a launch
         if not self.pk:
-            # On creation, if is_active is true, it's technically a launch
-            if self.is_active:
-                self.status = 'LIVE'
+            if self.status == 'LIVE':
                 self.launched_at = timezone.now()
-            else:
-                self.status = 'DRAFT'
+            elif self.status == 'DRAFT':
+                # Initial default status for new projects
+                pass
         else:
             old_instance = Project.objects.get(pk=self.pk)
-            # If manually toggling is_active, update status
-            if old_instance.is_active != self.is_active:
-                if self.is_active:
-                    self.status = 'LIVE'
-                    if not self.launched_at:
-                        self.launched_at = timezone.now()
-                else:
-                    # If we were Live or Completed, Pause it. 
-                    # If we were Draft, stay Draft but inactive.
-                    if old_instance.status in ['LIVE', 'COMPLETED']:
-                        self.status = 'PAUSED'
-            
-            # If manually changing status to LIVE, ensure is_active is true
+            # If manually changing status to LIVE, ensure we have a launch timestamp
             if old_instance.status != self.status:
-                if self.status == 'LIVE':
-                    self.is_active = True
-                    if not self.launched_at:
-                        self.launched_at = timezone.now()
-                elif self.status in ['DRAFT', 'PAUSED', 'COMPLETED']:
-                    self.is_active = False
+                if self.status == 'LIVE' and not self.launched_at:
+                    self.launched_at = timezone.now()
 
         super().save(*args, **kwargs)
 
     @property
     def can_accept_annotations(self):
-        return self.status == 'LIVE' and self.is_active
+        return self.status == 'LIVE'
     
     # CONFIGURATION
     
@@ -242,10 +214,32 @@ class Project(models.Model):
         help_text="Task Configuration (labels, colors, questions)"
     )
 
-    gold_config = models.JSONField(
-        default=get_default_gold_config,
+    # --- QUALITY CONTROL / GOLD UNITS ---
+    enable_gold_units = models.BooleanField(
+        default=True,
+        help_text="If True, gold units will be injected for quality control during annotation."
+    )
+
+    min_accuracy_required = models.FloatField(
+        default=0.6, 
+        help_text="Minimum accuracy required for gold tasks (0.0 to 1.0)."
+    )
+    
+    gold_injection_frequency = models.IntegerField(
+        default=5, 
+        help_text="Frequency of gold task injection (e.g., 1 every 5 tasks)."
+    )
+    
+    min_gold_before_eval = models.IntegerField(
+        default=3, 
+        help_text="Min gold units completed before starting evaluation."
+    )
+    
+    gold_units_file = models.FileField(
+        upload_to='datasets/gold/', 
+        null=True,
         blank=True,
-        help_text="Gold Units QC config: { 'min_accuracy_required': float, 'gold_injection_frequency': int, 'continuous_exclusion': bool }"
+        help_text="Upload a .jsonl file for GOLD units (Quality Control Injection)."
     )
 
     # --- TOGGLE SWITCHES ---
@@ -282,6 +276,11 @@ class Project(models.Model):
         default=get_default_instructions_content,
         blank=True,
         help_text="Instructions content in Markdown format. Shown to annotators as task instructions before the practice."
+    )
+
+    enable_practice_task = models.BooleanField(
+        default=True,
+        help_text="If True, annotators will see a practice task before starting the real task."
     )
 
     practice_task_config = models.JSONField(
@@ -361,18 +360,6 @@ class Project(models.Model):
         help_text="Upload a .jsonl file for REAL documents to be annotated."
     )
 
-    enable_gold_units = models.BooleanField(
-        default=True,
-        help_text="If True, gold units will be injected for quality control during annotation."
-    )
-
-    gold_units_file = models.FileField(
-        upload_to='datasets/gold/', 
-        null=True,
-        blank=True,
-        help_text="Upload a .jsonl file for GOLD units (Quality Control Injection)."
-    )
-    
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = models.Manager()
