@@ -10,7 +10,7 @@ from django.contrib import messages
 import json
 import re
 from ..models import Project, Annotation, ProjectLogEntry
-from ..services import parse_json_upload, process_uploaded_dataset
+from ..services import parse_json_upload, process_uploaded_dataset, ProjectService
 from ..mace_service import run_mace_for_project
 
 class ProjectAdminForm(forms.ModelForm):
@@ -444,42 +444,8 @@ class ProjectAdmin(ModelAdmin):
             data = json.loads(request.body)
             new_status = data.get('status')
             
-            project = self.get_object(request, object_id)
-            if not project:
-                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
-            
-            old_status = project.status
-            if new_status == old_status:
-                return JsonResponse({'status': 'success', 'message': 'No change needed'})
-
-            # Validate status
-            valid_statuses = [s[0] for s in Project.STATUS_CHOICES]
-            if new_status not in valid_statuses:
-                return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
-
-            # High-level validation for Quick Actions
-            if new_status == 'LIVE':
-                has_docs = project.documents.filter(is_gold_unit=False).exists()
-                # If they are not uploading a file (which they aren't in this view) 
-                # and no docs exist, we block it.
-                if not has_docs:
-                    return JsonResponse({
-                        'status': 'error', 
-                        'message': 'Cannot set to LIVE: No documents found in database. Please upload and save a dataset first.'
-                    }, status=400)
-
-            old_status = project.status
-            project.status = new_status
-            project.save()
-            
-            # Record the change in the history
-            ProjectLogEntry.objects.create(
-                project=project,
-                action="Status Updated (Quick)",
-                details=f"Project status changed from {old_status} to {new_status} by {request.user.username}."
-            )
-            
-            return JsonResponse({'status': 'success', 'new_status': new_status})
+            project, message = ProjectService.set_project_status(object_id, new_status, user=request.user)
+            return JsonResponse({'status': 'success', 'new_status': project.status, 'message': message})
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, 'messages') and len(e.messages) > 0 else str(e)
             return JsonResponse({'status': 'error', 'message': str(msg)}, status=400)
@@ -491,28 +457,10 @@ class ProjectAdmin(ModelAdmin):
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
         try:
-            project = self.get_object(request, object_id)
-            if not project:
-                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
-            
-            if project.status not in ['DRAFT', 'PAUSED']:
-                return JsonResponse({'status': 'error', 'message': 'Project must be in DRAFT or PAUSED state to Nuke data.'}, status=400)
-
-            from annotation.models import ProjectEnrollment, Annotation, ProjectLogEntry
-            
-            annotation_count = Annotation.objects.filter(document__project=project).delete()[0]
-            enrollment_count = ProjectEnrollment.objects.filter(project=project).delete()[0]
-            
-            msg = f"Deleted {annotation_count} annotations and {enrollment_count} workers."
-            
-            ProjectLogEntry.objects.create(
-                project=project,
-                action="Data Nuked (Quick) ☢️",
-                details=f"{msg} by {request.user.username}."
-            )
-            
-            return JsonResponse({'status': 'success', 'message': msg})
-
+            message = ProjectService.nuke_project_data(object_id, user=request.user)
+            return JsonResponse({'status': 'success', 'message': message})
+        except ValueError as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -521,50 +469,13 @@ class ProjectAdmin(ModelAdmin):
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
         try:
-            project = self.get_object(request, object_id)
-            if not project:
-                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
-            
-            if project.is_published:
-                return JsonResponse({'status': 'error', 'message': 'Project is already launched.'}, status=400)
-
-            # Nuke Data
-            from annotation.models import ProjectEnrollment, Annotation, ProjectLogEntry
-            from django.utils import timezone
-            
-            annotation_count = Annotation.objects.filter(document__project=project).delete()[0]
-            enrollment_count = ProjectEnrollment.objects.filter(project=project).delete()[0]
-            
-            # Transition safely
-            project.is_published = True
-            project.status = 'LIVE'
-            project.launched_at = timezone.now()
-            
-            try:
-                # Triggers the check_can_be_live validation
-                project.save()
-            except ValidationError as e:
-                msg = e.messages[0] if hasattr(e, 'messages') else str(e)
-                return JsonResponse({'status': 'error', 'message': str(msg)}, status=400)
-
-            # Safety check: Cannot launch if no documents exist
-            has_docs = project.documents.filter(is_gold_unit=False).exists()
-            if not has_docs:
-                return JsonResponse({
-                    'status': 'error', 
-                    'message': '❌ Cannot Launch: No documents found in database. Please upload and save a dataset first.'
-                }, status=400)
-
-            msg = f"Cleaned {annotation_count} annotations, {enrollment_count} workers. Project officially Launched!"
-            
-            ProjectLogEntry.objects.create(
-                project=project,
-                action="Project Launched 🚀",
-                details=f"{msg} Action by {request.user.username}."
-            )
-            
-            return JsonResponse({'status': 'success', 'message': msg})
-
+            message = ProjectService.launch_project(object_id, user=request.user)
+            return JsonResponse({'status': 'success', 'message': message})
+        except ValidationError as e:
+            msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+            return JsonResponse({'status': 'error', 'message': str(msg)}, status=400)
+        except ValueError as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -577,47 +488,8 @@ class ProjectAdmin(ModelAdmin):
             data = json.loads(request.body)
             clone_dataset = data.get('clone_dataset', False)
             
-            project = self.get_object(request, object_id)
-            if not project:
-                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
-            
-            # 1. Clone the Project instance
-            old_name = project.name
-            project.pk = None
-            project.name = f"{old_name} (Clone)"
-            project.slug = "" # Will be auto-generated on save
-            project.status = 'DRAFT'
-            project.is_published = False
-            project.launched_at = None
-            project.save()
-            
-            msg = f"Project '{old_name}' cloned successfully."
-            
-            # 2. Clone Documents if requested
-            if clone_dataset:
-                from annotation.models import Document
-                docs = Document.objects.filter(project_id=object_id)
-                count = docs.count()
-                
-                # Bulk clone (preserving attributes)
-                new_docs = []
-                for d in docs:
-                    d.pk = None # Reset PK for new instance
-                    d.project = project
-                    new_docs.append(d)
-                
-                Document.objects.bulk_create(new_docs, batch_size=500)
-                msg += f" {count} documents also cloned."
-
-            from annotation.models import ProjectLogEntry
-            ProjectLogEntry.objects.create(
-                project=project,
-                action="Project Cloned (Quick)",
-                details=f"Cloned from '{old_name}' (Dataset: {clone_dataset}) by {request.user.username}."
-            )
-            
-            return JsonResponse({'status': 'success', 'message': msg})
-
+            project, message = ProjectService.clone_project(object_id, clone_dataset=clone_dataset, user=request.user)
+            return JsonResponse({'status': 'success', 'message': message})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -676,55 +548,6 @@ class ProjectAdmin(ModelAdmin):
 
     @admin.display(description="Status & Operations", ordering='status')
     def status_badge(self, obj):
-        css_block = '''
-        <style>
-            .status-panel-custom-btn {
-                flex: 1; min-width: 0; padding: 6px 2px; background: transparent; 
-                border: 1px solid rgba(156, 163, 175, 0.4); border-radius: 6px; 
-                color: inherit; cursor: pointer; font-size: 11px; font-weight: 600; 
-                transition: all 0.2s ease-in-out; display: flex; align-items: center; 
-                justify-content: center; gap: 4px;
-            }
-            .status-panel-custom-btn:hover {
-                background-color: rgba(156, 163, 175, 0.15);
-                border-color: rgba(156, 163, 175, 0.6);
-            }
-            .nuke-test-data-btn {
-                width: 100%; margin-top: 8px; padding: 6px 12px; background: transparent; 
-                color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; 
-                font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
-                align-items: center; justify-content: center; transition: all 0.2s ease-in-out;
-            }
-            .nuke-test-data-btn:hover {
-                background-color: rgba(239, 68, 68, 0.1);
-                border-color: rgba(239, 68, 68, 0.6);
-            }
-            .launch-official-btn {
-                width: 100%; padding: 8px 12px; background: linear-gradient(135deg, #10b981, #059669); 
-                color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; 
-                cursor: pointer; display: flex; align-items: center; justify-content: center; 
-                gap: 6px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); transition: all 0.2s ease-in-out;
-            }
-            .launch-official-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 6px rgba(16,185,129,0.3);
-            }
-            .launch-official-btn:active {
-                transform: scale(0.98);
-            }
-            .clone-project-btn {
-                width: 100%; margin-top: 6px; padding: 5px 12px; background: transparent; 
-                color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; 
-                font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
-                align-items: center; justify-content: center; gap: 4px; transition: all 0.2s ease-in-out;
-            }
-            .clone-project-btn:hover {
-                background-color: rgba(99, 102, 241, 0.1);
-                border-color: rgba(99, 102, 241, 0.6);
-            }
-        </style>
-        '''
-
         status_colors = {
             'DRAFT': ('#64748b', '📁'), 
             'LIVE': ('#10b981', '▶️'),   
@@ -749,17 +572,18 @@ class ProjectAdmin(ModelAdmin):
                         onclick="quickUpdateStatus(this, '{update_url}', '{val}')"
                         title="Change to {label}"
                         class="status-panel-custom-btn">
-                    <span>{btn_icon}</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{label}</span>
+                    <span>{btn_icon}</span> <span class="truncate">{label}</span>
                 </button>
             '''
 
+        actions_panel = ""
         if not obj.is_published:
             nuke_url = reverse('admin:project_nuke_data', args=[obj.pk])
             launch_url = reverse('admin:project_launch_data', args=[obj.pk])
             clone_url = reverse('admin:project_quick_clone', args=[obj.pk])
             
             actions_panel = f'''
-                <div style="margin-top: 16px;">
+                <div class="mt-4">
                     <button type="button" 
                             onclick="quickLaunchProject(this, '{launch_url}')"
                             title="Lock project and Launch it to Production"
@@ -773,7 +597,6 @@ class ProjectAdmin(ModelAdmin):
                             class="nuke-test-data-btn">
                         🗑️ Nuke Test Data
                     </button>
-
                     <button type="button" 
                             onclick="quickCloneProject(this, '{clone_url}', '{obj.name}')"
                             title="Clone this project"
@@ -785,12 +608,11 @@ class ProjectAdmin(ModelAdmin):
         else:
             clone_url = reverse('admin:project_quick_clone', args=[obj.pk])
             actions_panel = f'''
-                <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <span style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
+                <div class="mt-4 flex flex-col items-center gap-2">
+                    <span class="officially-published-badge">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         OFFICIALLY PUBLISHED
                     </span>
-
                     <button type="button" 
                             onclick="quickCloneProject(this, '{clone_url}', '{obj.name}')"
                             title="Clone this project"
@@ -801,16 +623,15 @@ class ProjectAdmin(ModelAdmin):
             '''
 
         return mark_safe(
-            css_block +
-            f'<div class="status-badge-container" style="min-width: 200px; max-width: 250px; display: flex; flex-direction: column;">'
-            f'  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">'
-            f'      <span style="font-size: 11px; font-weight: 600; opacity: 0.6; text-transform: uppercase;">Current State</span>'
+            f'<div class="status-badge-container flex flex-col w-[200px] max-w-[250px]">'
+            f'  <div class="flex items-center justify-between mb-3">'
+            f'      <span class="text-[11px] font-semibold opacity-60 uppercase">Current State</span>'
             f'      <span class="status-indicator" style="background: {bg_color}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">'
             f'          {icon} {obj.status}'
             f'      </span>'
             f'  </div>'
-            f'  <div style="font-size: 10px; opacity: 0.5; margin-bottom: 6px; font-weight: 600;">TRANSITION TO:</div>'
-            f'  <div style="display: flex; gap: 6px; width: 100%;">'
+            f'  <div class="text-[10px] opacity-50 mb-1.5 font-semibold">TRANSITION TO:</div>'
+            f'  <div class="flex gap-1.5 w-full">'
             f'      {buttons_html}'
             f'  </div>'
             f'  {actions_panel}'
@@ -1096,9 +917,7 @@ class ProjectAdmin(ModelAdmin):
                     'distribution_strategy', 'min_annotations_per_doc', 
                     'max_annotations_per_doc', 'block_size', 'annotators_per_block',
                     'prioritize_unannotated',
-                    # I DUE CAMPI AGGIUNTI PER BLOCCARE IL DATASET:
-                    'documents_file', 'gold_units_file',
-                    'prolific_completion_code' 
+                    'documents_file', 'gold_units_file', 'prolific_completion_code' 
                 ]
                 
                 for field in locked_fields:

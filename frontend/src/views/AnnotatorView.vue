@@ -2,35 +2,34 @@
     <div class="main-container">
         <div v-if="loading" class="loading-container">
             <div class="loader"></div>
-            <p>Loading next task...</p>
+            <p>{{ UI_STRINGS.loading_task }}</p>
         </div>
 
         <div v-else-if="!currentDoc && !stopped" class="finished-card">
             <div class="confetti">🎉</div>
-            <h2>All tasks completed!</h2>
+            <h2>{{ UI_STRINGS.tasks_completed }}</h2>
             <div class="debrief-text">
-                <p>The texts you annotated were obtained from social media and may include false information and
-                    conspiracy theories. The authors of this task do not endorse them.</p>
-                <p>You may take this task multiple times. Thank you for your work!</p>
+                <p>{{ UI_STRINGS.debrief_warning }}</p>
+                <p>{{ UI_STRINGS.debrief_thank_you }}</p>
             </div>
-            <p class="redirect-notice">Redirecting to provider in <strong>{{ countdown }}</strong> seconds...</p>
+            <p class="redirect-notice">{{ UI_STRINGS.redirect_notice.replace('{seconds}', countdown) }}</p>
         </div>
 
         <div v-else-if="stopped" class="finished-card">
             <div class="icon">🛑</div>
-            <h2>Session Ended</h2>
-            <p>{{ stopMessage || "Thank you for your contribution." }}</p>
+            <h2>{{ UI_STRINGS.session_ended }}</h2>
+            <p>{{ stopMessage || UI_STRINGS.default_thank_you }}</p>
         </div>
 
         <div v-else class="task-card">
             <div v-if="isGold" class="training-banner">
-                QUALITY CONTROL TASK (This is a gold unit used to verify annotation quality)
+                {{ UI_STRINGS.gold_task_banner }}
             </div>
 
             <div class="card-header highlight-header">
                 <div class="instruction-box">
-                    <h3>Task Instruction</h3>
-                    <p>{{ config.instruction || "Read the text below and complete the tasks." }}</p>
+                    <h3>{{ UI_STRINGS.task_instruction_header }}</h3>
+                    <p>{{ config.instruction || UI_STRINGS.default_instruction }}</p>
                 </div>
             </div>
 
@@ -45,7 +44,7 @@
 
                 <div class="section classification-section" v-if="classOptions.length > 0">
                     <div class="question-title">
-                        {{ config.question || "Classify this text:" }}
+                        {{ config.question || UI_STRINGS.default_classification_query }}
                     </div>
 
                     <div class="options-grid">
@@ -62,9 +61,9 @@
             </div>
 
             <div class="card-footer actions">
-                <button class="action-btn clear-btn" @click="clearForm">Clear</button>
+                <button class="action-btn clear-btn" @click="clearForm">{{ UI_STRINGS.clear_btn }}</button>
                 <button class="submit-btn primary-submit" @click="submitTask" :disabled="!canSubmit">
-                    Submit &amp; Next
+                    {{ UI_STRINGS.submit_btn }}
                 </button>
             </div>
 
@@ -79,6 +78,7 @@ import { useRouter } from 'vue-router';
 import api from '../axios';
 import TextHighlighter from '../components/TextHighlighter.vue';
 import { useProjectContext } from '../composables/useProjectContext';
+import { UI_STRINGS } from '../i18n';
 
 const router = useRouter();
 const { pid, projectSlug, projectId } = useProjectContext();
@@ -132,7 +132,7 @@ const fetchNextTask = async () => {
     stopped.value = false;
 
     if (!projectId && !projectSlug) {
-        errorMsg.value = "Fatal Error: No Project ID/Slug found.";
+        errorMsg.value = UI_STRINGS.error_no_project;
         loading.value = false;
         return;
     }
@@ -176,7 +176,7 @@ const fetchNextTask = async () => {
 
         startTime.value = Date.now();
     } catch (err) {
-        errorMsg.value = "Error fetching task. Please refresh.";
+        errorMsg.value = UI_STRINGS.error_fetch_task;
     } finally {
         loading.value = false;
     }
@@ -219,7 +219,7 @@ const submitTask = async () => {
         await api.post('submit/', payload);
         fetchNextTask();
     } catch (err) {
-        errorMsg.value = "Error saving. Try again.";
+        errorMsg.value = UI_STRINGS.error_save_task;
         loading.value = false;
     }
 };

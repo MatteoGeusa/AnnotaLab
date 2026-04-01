@@ -399,3 +399,55 @@ div:has(> .json-config-display) {
 .quick-launch-btn:active {
     transform: translateY(0);
 }
+/* --- Status & Operations Panel --- */
+.status-panel-custom-btn {
+    flex: 1; min-width: 0; padding: 6px 2px; background: transparent; 
+    border: 1px solid rgba(156, 163, 175, 0.4); border-radius: 6px; 
+    color: inherit; cursor: pointer; font-size: 11px; font-weight: 600; 
+    transition: all 0.2s ease-in-out; display: flex; align-items: center; 
+    justify-content: center; gap: 4px;
+}
+.status-panel-custom-btn:hover {
+    background-color: rgba(156, 163, 175, 0.15);
+    border-color: rgba(156, 163, 175, 0.6);
+}
+.nuke-test-data-btn {
+    width: 100%; margin-top: 8px; padding: 6px 12px; background: transparent; 
+    color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; 
+    font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
+    align-items: center; justify-content: center; transition: all 0.2s ease-in-out;
+}
+.nuke-test-data-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+.launch-official-btn {
+    width: 100%; padding: 8px 12px; background: linear-gradient(135deg, #10b981, #059669); 
+    color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; 
+    cursor: pointer; display: flex; align-items: center; justify-content: center; 
+    gap: 6px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); transition: all 0.2s ease-in-out;
+}
+.launch-official-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(16,185,129,0.3);
+}
+.launch-official-btn:active {
+    transform: scale(0.98);
+}
+.clone-project-btn {
+    width: 100%; margin-top: 6px; padding: 5px 12px; background: transparent; 
+    color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; 
+    font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
+    align-items: center; justify-content: center; gap: 4px; transition: all 0.2s ease-in-out;
+}
+.clone-project-btn:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+.officially-published-badge {
+    display: flex; align-items: center; gap: 6px; padding: 4px 12px; 
+    background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); 
+    color: #3b82f6; border-radius: 20px; font-size: 11px; font-weight: 700; 
+    letter-spacing: 0.5px;
+}
