@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django import forms
+from django.core.exceptions import ValidationError
 from unfold.admin import ModelAdmin, TabularInline
 from django.utils.html import format_html, mark_safe
 from django.urls import reverse, path
 from django.utils.http import urlencode
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 import json
 import re
@@ -50,19 +51,19 @@ class ProjectAdminForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         documents_file = cleaned_data.get('documents_file')
+        status = cleaned_data.get('status')
         
-        # We need to know if the project ALREADY has documents in the database
-        has_existing_docs = False
-        if self.instance.pk:
-            has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists()
-
         # If the user tries to set the project to LIVE
-        if cleaned_data.get('status') == 'LIVE':
-            # It's valid ONLY if:
-            # 1. It already has documents in the DB
-            # 2. OR it's being provided a new document file right now
+        if status == 'LIVE':
+            # Check if there are already documents in the DB
+            has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists() if self.instance.pk else False
+            
+            # We allow going LIVE ONLY if:
+            # 1. We already have documents in DB
+            # 2. OR we are uploading a NEW file right now (which will be processed in save_model)
             if not has_existing_docs and not documents_file:
-                self.add_error('status', "❌ Cannot Set to LIVE: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project status to Live.")
+                error_msg = "Cannot Set to LIVE: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project status to Live."
+                self.add_error('status', error_msg)
         
         return cleaned_data
 
@@ -95,6 +96,8 @@ class ProjectAdmin(ModelAdmin):
             except Exception as e:
                 self.message_user(request, f"Error running MACE on {project.name}: {str(e)}", messages.ERROR)
 
+
+
     form = ProjectAdminForm
     readonly_fields = (
         'status_badge',
@@ -119,7 +122,7 @@ class ProjectAdmin(ModelAdmin):
     
     fieldsets = (
         ("Project Details", {
-            "fields": (("name", "slug"), "status", "description", "informed_consent_config",),
+            "fields": (("name", "slug"), "description", "informed_consent_config",),
             "classes": ("tab", "details"),
         }),
 
@@ -218,15 +221,16 @@ class ProjectAdmin(ModelAdmin):
             """
         }),
 
-        ("Distribution & Launch", {
+        ("Distribution", {
             "classes": ("tab", "distribution"),
             "fields": (
+                "prolific_completion_code",
                 "distribution_strategy",
                 ("min_annotations_per_doc", "max_annotations_per_doc"),
                 ("block_size", "annotators_per_block"),
                 "prioritize_unannotated"
             ),
-            "description": "Configure how documents are served to workers."
+            "description": "Configure how documents are served to workers and where they are redirected upon completion."
         }),
     )
 
@@ -408,8 +412,214 @@ class ProjectAdmin(ModelAdmin):
                 self.admin_site.admin_view(self.download_export_view), 
                 name='project_export_jsonl'
             ),
+            path(
+                '<path:object_id>/set-status/',
+                self.admin_site.admin_view(self.set_status_view),
+                name='project_set_status'
+            ),
+            path(
+                '<path:object_id>/nuke-data/',
+                self.admin_site.admin_view(self.nuke_project_view),
+                name='project_nuke_data'
+            ),
+            path(
+                '<path:object_id>/launch-data/',
+                self.admin_site.admin_view(self.launch_project_view),
+                name='project_launch_data'
+            ),
+            path(
+                '<path:object_id>/quick-clone/',
+                self.admin_site.admin_view(self.clone_project_view),
+                name='project_quick_clone'
+            ),
         ]
         return my_urls + urls
+
+    def set_status_view(self, request, object_id):
+        if request.method != 'POST':
+            return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+        
+        try:
+            import json
+            data = json.loads(request.body)
+            new_status = data.get('status')
+            
+            project = self.get_object(request, object_id)
+            if not project:
+                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
+            
+            old_status = project.status
+            if new_status == old_status:
+                return JsonResponse({'status': 'success', 'message': 'No change needed'})
+
+            # Validate status
+            valid_statuses = [s[0] for s in Project.STATUS_CHOICES]
+            if new_status not in valid_statuses:
+                return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+
+            # High-level validation for Quick Actions
+            if new_status == 'LIVE':
+                has_docs = project.documents.filter(is_gold_unit=False).exists()
+                # If they are not uploading a file (which they aren't in this view) 
+                # and no docs exist, we block it.
+                if not has_docs:
+                    return JsonResponse({
+                        'status': 'error', 
+                        'message': 'Cannot set to LIVE: No documents found in database. Please upload and save a dataset first.'
+                    }, status=400)
+
+            old_status = project.status
+            project.status = new_status
+            project.save()
+            
+            # Record the change in the history
+            ProjectLogEntry.objects.create(
+                project=project,
+                action="Status Updated (Quick)",
+                details=f"Project status changed from {old_status} to {new_status} by {request.user.username}."
+            )
+            
+            return JsonResponse({'status': 'success', 'new_status': new_status})
+        except ValidationError as e:
+            msg = e.messages[0] if hasattr(e, 'messages') and len(e.messages) > 0 else str(e)
+            return JsonResponse({'status': 'error', 'message': str(msg)}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    def nuke_project_view(self, request, object_id):
+        if request.method != 'POST':
+            return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+        
+        try:
+            project = self.get_object(request, object_id)
+            if not project:
+                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
+            
+            if project.status not in ['DRAFT', 'PAUSED']:
+                return JsonResponse({'status': 'error', 'message': 'Project must be in DRAFT or PAUSED state to Nuke data.'}, status=400)
+
+            from annotation.models import ProjectEnrollment, Annotation, ProjectLogEntry
+            
+            annotation_count = Annotation.objects.filter(document__project=project).delete()[0]
+            enrollment_count = ProjectEnrollment.objects.filter(project=project).delete()[0]
+            
+            msg = f"Deleted {annotation_count} annotations and {enrollment_count} workers."
+            
+            ProjectLogEntry.objects.create(
+                project=project,
+                action="Data Nuked (Quick) ☢️",
+                details=f"{msg} by {request.user.username}."
+            )
+            
+            return JsonResponse({'status': 'success', 'message': msg})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    def launch_project_view(self, request, object_id):
+        if request.method != 'POST':
+            return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+        
+        try:
+            project = self.get_object(request, object_id)
+            if not project:
+                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
+            
+            if project.is_published:
+                return JsonResponse({'status': 'error', 'message': 'Project is already launched.'}, status=400)
+
+            # Nuke Data
+            from annotation.models import ProjectEnrollment, Annotation, ProjectLogEntry
+            from django.utils import timezone
+            
+            annotation_count = Annotation.objects.filter(document__project=project).delete()[0]
+            enrollment_count = ProjectEnrollment.objects.filter(project=project).delete()[0]
+            
+            # Transition safely
+            project.is_published = True
+            project.status = 'LIVE'
+            project.launched_at = timezone.now()
+            
+            try:
+                # Triggers the check_can_be_live validation
+                project.save()
+            except ValidationError as e:
+                msg = e.messages[0] if hasattr(e, 'messages') else str(e)
+                return JsonResponse({'status': 'error', 'message': str(msg)}, status=400)
+
+            # Safety check: Cannot launch if no documents exist
+            has_docs = project.documents.filter(is_gold_unit=False).exists()
+            if not has_docs:
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': '❌ Cannot Launch: No documents found in database. Please upload and save a dataset first.'
+                }, status=400)
+
+            msg = f"Cleaned {annotation_count} annotations, {enrollment_count} workers. Project officially Launched!"
+            
+            ProjectLogEntry.objects.create(
+                project=project,
+                action="Project Launched 🚀",
+                details=f"{msg} Action by {request.user.username}."
+            )
+            
+            return JsonResponse({'status': 'success', 'message': msg})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    def clone_project_view(self, request, object_id):
+        if request.method != 'POST':
+            return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+        
+        try:
+            import json
+            data = json.loads(request.body)
+            clone_dataset = data.get('clone_dataset', False)
+            
+            project = self.get_object(request, object_id)
+            if not project:
+                return JsonResponse({'status': 'error', 'message': 'Project not found'}, status=404)
+            
+            # 1. Clone the Project instance
+            old_name = project.name
+            project.pk = None
+            project.name = f"{old_name} (Clone)"
+            project.slug = "" # Will be auto-generated on save
+            project.status = 'DRAFT'
+            project.is_published = False
+            project.launched_at = None
+            project.save()
+            
+            msg = f"Project '{old_name}' cloned successfully."
+            
+            # 2. Clone Documents if requested
+            if clone_dataset:
+                from annotation.models import Document
+                docs = Document.objects.filter(project_id=object_id)
+                count = docs.count()
+                
+                # Bulk clone (preserving attributes)
+                new_docs = []
+                for d in docs:
+                    d.pk = None # Reset PK for new instance
+                    d.project = project
+                    new_docs.append(d)
+                
+                Document.objects.bulk_create(new_docs, batch_size=500)
+                msg += f" {count} documents also cloned."
+
+            from annotation.models import ProjectLogEntry
+            ProjectLogEntry.objects.create(
+                project=project,
+                action="Project Cloned (Quick)",
+                details=f"Cloned from '{old_name}' (Dataset: {clone_dataset}) by {request.user.username}."
+            )
+            
+            return JsonResponse({'status': 'success', 'message': msg})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
     def download_export_view(self, request, object_id):
         project = self.get_object(request, object_id)
@@ -464,20 +674,147 @@ class ProjectAdmin(ModelAdmin):
         )
 
 
-    @admin.display(description="Status", ordering='status')
+    @admin.display(description="Status & Operations", ordering='status')
     def status_badge(self, obj):
-        colors = {
-            'DRAFT': ('#4b5563', '#f3f4f6'), # Gray
-            'LIVE': ('#065f46', '#6ee7b7'),  # Green
-            'PAUSED': ('#92400e', '#fde68a'), # Amber/Yellow
-            'COMPLETED': ('#1e40af', '#bfdbfe'), # Blue
+        css_block = '''
+        <style>
+            .status-panel-custom-btn {
+                flex: 1; min-width: 0; padding: 6px 2px; background: transparent; 
+                border: 1px solid rgba(156, 163, 175, 0.4); border-radius: 6px; 
+                color: inherit; cursor: pointer; font-size: 11px; font-weight: 600; 
+                transition: all 0.2s ease-in-out; display: flex; align-items: center; 
+                justify-content: center; gap: 4px;
+            }
+            .status-panel-custom-btn:hover {
+                background-color: rgba(156, 163, 175, 0.15);
+                border-color: rgba(156, 163, 175, 0.6);
+            }
+            .nuke-test-data-btn {
+                width: 100%; margin-top: 8px; padding: 6px 12px; background: transparent; 
+                color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; 
+                font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
+                align-items: center; justify-content: center; transition: all 0.2s ease-in-out;
+            }
+            .nuke-test-data-btn:hover {
+                background-color: rgba(239, 68, 68, 0.1);
+                border-color: rgba(239, 68, 68, 0.6);
+            }
+            .launch-official-btn {
+                width: 100%; padding: 8px 12px; background: linear-gradient(135deg, #10b981, #059669); 
+                color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; 
+                cursor: pointer; display: flex; align-items: center; justify-content: center; 
+                gap: 6px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); transition: all 0.2s ease-in-out;
+            }
+            .launch-official-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px rgba(16,185,129,0.3);
+            }
+            .launch-official-btn:active {
+                transform: scale(0.98);
+            }
+            .clone-project-btn {
+                width: 100%; margin-top: 6px; padding: 5px 12px; background: transparent; 
+                color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; 
+                font-size: 11px; font-weight: 600; cursor: pointer; display: flex; 
+                align-items: center; justify-content: center; gap: 4px; transition: all 0.2s ease-in-out;
+            }
+            .clone-project-btn:hover {
+                background-color: rgba(99, 102, 241, 0.1);
+                border-color: rgba(99, 102, 241, 0.6);
+            }
+        </style>
+        '''
+
+        status_colors = {
+            'DRAFT': ('#64748b', '📁'), 
+            'LIVE': ('#10b981', '▶️'),   
+            'PAUSED': ('#f59e0b', '⏸️'), 
+            'COMPLETED': ('#3b82f6', '✅'), 
         }
-        bg, fg = colors.get(obj.status, ('#7f1d1d', '#fca5a5'))
         
+        bg_color, icon = status_colors.get(obj.status, ('#64748b', '❓'))
+        
+        buttons_html = ""
+        for val, label in Project.STATUS_CHOICES:
+            if val == obj.status:
+                continue
+            if obj.is_published and val == 'DRAFT':
+                continue
+                
+            _, btn_icon = status_colors.get(val, ('#64748b', str(val[0])))
+            update_url = reverse('admin:project_set_status', args=[obj.pk])
+            
+            buttons_html += f'''
+                <button type="button" 
+                        onclick="quickUpdateStatus(this, '{update_url}', '{val}')"
+                        title="Change to {label}"
+                        class="status-panel-custom-btn">
+                    <span>{btn_icon}</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{label}</span>
+                </button>
+            '''
+
+        if not obj.is_published:
+            nuke_url = reverse('admin:project_nuke_data', args=[obj.pk])
+            launch_url = reverse('admin:project_launch_data', args=[obj.pk])
+            clone_url = reverse('admin:project_quick_clone', args=[obj.pk])
+            
+            actions_panel = f'''
+                <div style="margin-top: 16px;">
+                    <button type="button" 
+                            onclick="quickLaunchProject(this, '{launch_url}')"
+                            title="Lock project and Launch it to Production"
+                            class="launch-official-btn">
+                        🚀 LAUNCH OFFICIAL
+                    </button>
+                    
+                    <button type="button" 
+                            onclick="quickNukeProject(this, '{nuke_url}')"
+                            title="Delete all practice annotations"
+                            class="nuke-test-data-btn">
+                        🗑️ Nuke Test Data
+                    </button>
+
+                    <button type="button" 
+                            onclick="quickCloneProject(this, '{clone_url}', '{obj.name}')"
+                            title="Clone this project"
+                            class="clone-project-btn">
+                        📋 Clone Project
+                    </button>
+                </div>
+            '''
+        else:
+            clone_url = reverse('admin:project_quick_clone', args=[obj.pk])
+            actions_panel = f'''
+                <div style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        OFFICIALLY PUBLISHED
+                    </span>
+
+                    <button type="button" 
+                            onclick="quickCloneProject(this, '{clone_url}', '{obj.name}')"
+                            title="Clone this project"
+                            class="clone-project-btn">
+                        📋 Clone Project
+                    </button>
+                </div>
+            '''
+
         return mark_safe(
-            f'<span style="display:inline-block;padding:4px 12px;border-radius:20px;'
-            f'font-size:11px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;'
-            f'background:{bg};color:{fg};">● {obj.status}</span>'
+            css_block +
+            f'<div class="status-badge-container" style="min-width: 200px; max-width: 250px; display: flex; flex-direction: column;">'
+            f'  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">'
+            f'      <span style="font-size: 11px; font-weight: 600; opacity: 0.6; text-transform: uppercase;">Current State</span>'
+            f'      <span class="status-indicator" style="background: {bg_color}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">'
+            f'          {icon} {obj.status}'
+            f'      </span>'
+            f'  </div>'
+            f'  <div style="font-size: 10px; opacity: 0.5; margin-bottom: 6px; font-weight: 600;">TRANSITION TO:</div>'
+            f'  <div style="display: flex; gap: 6px; width: 100%;">'
+            f'      {buttons_html}'
+            f'  </div>'
+            f'  {actions_panel}'
+            f'</div>'
         )
 
     @admin.display(description="Documents")
@@ -491,9 +828,14 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700 transition inline-block text-center min-w-[120px] whitespace-nowrap"
+               style="background:#4f46e5; color:white; padding:7px 14px; border-radius:10px; 
+                      font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; 
+                      align-items:center; gap:6px; text-align:center; min-width:140px; 
+                      transition: all 0.25s ease; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);"
+               onmouseover="this.style.background=\'#4338ca\'; this.style.transform=\'translateY(-1px)\'"
+               onmouseout="this.style.background=\'#4f46e5\'; this.style.transform=\'translateY(0)\'"
                title="Manage Real Documents">
-               -> ({}) Manage Docs
+               <span style="font-size:14px;">📄</span> <span>({}) Documents</span>
             </a>
             ''',
             url, count
@@ -510,9 +852,14 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               class="bg-amber-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-amber-600 transition inline-block text-center min-w-[120px] whitespace-nowrap"
+               style="background:#eab308; color:white; padding:7px 14px; border-radius:10px; 
+                      font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; 
+                      align-items:center; gap:6px; text-align:center; min-width:140px; 
+                      transition: all 0.25s ease; box-shadow: 0 4px 6px -1px rgba(234, 179, 8, 0.2);"
+               onmouseover="this.style.background=\'#ca8a04\'; this.style.transform=\'translateY(-1px)\'"
+               onmouseout="this.style.background=\'#eab308\'; this.style.transform=\'translateY(0)\'"
                title="Manage Gold Units">
-               -> ({}) Manage Gold
+               <span style="font-size:14px;">🛡️</span> <span>({}) Gold Units</span>
             </a>
             ''',
             url, count
@@ -531,17 +878,24 @@ class ProjectAdmin(ModelAdmin):
             })
         )
         
-        bg_class = "bg-green-600 hover:bg-green-700" if count > 0 else "bg-gray-400 hover:bg-gray-500"
+        # Emerald if active, Slate otherwise
+        bg = "#10b981" if count > 0 else "#64748b"
+        hover_bg = "#059669" if count > 0 else "#475569"
         
         return format_html(
             '''
             <a href="{}" 
-               class="{} text-white px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px] whitespace-nowrap"
+               style="background:{}; color:white; padding:7px 14px; border-radius:10px; 
+                      font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; 
+                      align-items:center; gap:6px; text-align:center; min-width:140px; 
+                      transition: all 0.25s ease; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);"
+               onmouseover="this.style.background=\'{}\'; this.style.transform=\'translateY(-1px)\'"
+               onmouseout="this.style.background=\'{}\'; this.style.transform=\'translateY(0)\'"
                title="Manage Annotations">
-               -> ({}) Manage Annotations
+               <span style="font-size:14px;">📊</span> <span>({}) Annotations</span>
             </a>
             ''',
-            url, bg_class, count
+            url, bg, hover_bg, bg, count
         )
 
     @admin.display(description="Workers")
@@ -555,10 +909,14 @@ class ProjectAdmin(ModelAdmin):
         return format_html(
             '''
             <a href="{}" 
-               style="background: #fbbf24; color: #1f2937;"
-               class="px-3 py-1 rounded text-xs font-bold transition inline-block text-center min-w-[120px] whitespace-nowrap"
+               style="background:#8b5cf6; color:white; padding:6px 14px; border-radius:10px; 
+                      font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; 
+                      align-items:center; gap:6px; text-align:center; min-width:140px; 
+                      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.2);"
+               onmouseover="this.style.background=\'#7c3aed\'; this.style.transform=\'translateY(-2px)\'; this.style.boxShadow=\'0 10px 15px -3px rgba(139, 92, 246, 0.3)\'"
+               onmouseout="this.style.background=\'#8b5cf6\'; this.style.transform=\'translateY(0)\'; this.style.boxShadow=\'0 4px 6px -1px rgba(139, 92, 246, 0.2)\'"
                title="Manage Workers">
-               -> ({}) Manage Workers
+               <span style="font-size:14px;">👥</span> <span>({}) Workers</span>
             </a>
             ''',
             url, count
@@ -604,13 +962,13 @@ class ProjectAdmin(ModelAdmin):
             ProjectLogEntry.objects.create(
                 project=obj,
                 action="Project Created",
-                details=f"Project '{obj.name}' initialized as Draft."
+                details=f"Project '{obj.name}' initialized by {request.user.username}."
             )
         elif old_status != obj.status:
             ProjectLogEntry.objects.create(
                 project=obj,
                 action="Status Changed",
-                details=f"Project changed from {old_status} to {obj.status}."
+                details=f"Project status changed from {old_status} to {obj.status} by {request.user.username}."
             )
 
         # --- Process uploaded Task Config JSON ---
@@ -722,3 +1080,29 @@ class ProjectAdmin(ModelAdmin):
                     messages.warning(request, f"⚠️ {warn}")
             except Exception as e:
                 messages.error(request, f"Gold units import error: {str(e)}")
+
+    def get_readonly_fields(self, request, obj=None):
+            readonly = list(super().get_readonly_fields(request, obj))
+            
+            # Fields are locked permanently when PUBLISHED, or temporarily when LIVE in Playground mode
+            if obj and (obj.is_published or obj.status == 'LIVE'):
+                locked_fields = [
+                    'name', 'slug', 'description', 'informed_consent_config',
+                    'dataset_text_key', 'dataset_id_key',
+                    'enable_screening', 'enable_codebook', 'enable_instructions',
+                    'enable_practice_task', 'practice_task_required',
+                    'enable_gold_units', 'gold_injection_frequency',
+                    'min_accuracy_required', 'min_gold_before_eval',
+                    'distribution_strategy', 'min_annotations_per_doc', 
+                    'max_annotations_per_doc', 'block_size', 'annotators_per_block',
+                    'prioritize_unannotated',
+                    # I DUE CAMPI AGGIUNTI PER BLOCCARE IL DATASET:
+                    'documents_file', 'gold_units_file',
+                    'prolific_completion_code' 
+                ]
+                
+                for field in locked_fields:
+                    if field not in readonly:
+                        readonly.append(field)
+                        
+            return readonly

@@ -91,9 +91,15 @@
             <!-- ACTIONS -->
             <div class="card-footer actions" v-if="!showFeedback">
                 <button class="action-btn clear-btn" @click="clearPractice">Clear</button>
-                <button class="submit-btn primary-submit" @click="checkPractice" :disabled="!canSubmitPractice">
-                    Submit Practice
-                </button>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button v-if="!practiceTaskRequired" class="submit-btn skip-btn" @click="finishInstructions" style="background-color: #94a3b8;">
+                        Skip Practice
+                    </button>
+                    <button class="submit-btn primary-submit" @click="checkPractice" :disabled="!canSubmitPractice">
+                        Submit Practice
+                    </button>
+                </div>
             </div>
 
             <!-- FEEDBACK -->
@@ -225,6 +231,10 @@ const fetchInstructions = async () => {
         practiceTask.value = res.data.practice_task || null;
         practiceTaskRequired.value = res.data.practice_task_required || false;
         taskConfig.value = res.data.task_config || {};
+
+        if (!res.data.has_instructions && practiceTask.value) {
+            phase.value = 'practice';
+        }
     } catch (err) {
         errorMsg.value = "Error loading instructions. " + (err.response?.data?.error || err.message);
     } finally {

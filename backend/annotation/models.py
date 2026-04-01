@@ -104,21 +104,21 @@ def get_default_codebook_content():
             pass
     
     return """
-# Codebook
+            # Codebook
 
-## Overview
-Describe the annotation task here. This content supports **Markdown** formatting.
+            ## Overview
+            Describe the annotation task here. This content supports **Markdown** formatting.
 
-## Definitions
-- **Label 1**: Description of label 1
-- **Label 2**: Description of label 2
+            ## Definitions
+            - **Label 1**: Description of label 1
+            - **Label 2**: Description of label 2
 
-## Examples
-Provide worked examples here to help annotators understand the task.
+            ## Examples
+            Provide worked examples here to help annotators understand the task.
 
-## Guidelines
-Any additional rules or edge cases the annotator should know.
-    """
+            ## Guidelines
+            Any additional rules or edge cases the annotator should know.
+        """
 
 def get_default_instructions_content():
     config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_instructions_content.md')
@@ -131,15 +131,15 @@ def get_default_instructions_content():
             pass
     
     return """
-# Task Instructions
+        # Task Instructions
 
-## The Goal
-Read the items and complete the annotation tasks as described in the codebook.
+        ## The Goal
+        Read the items and complete the annotation tasks as described in the codebook.
 
-## How to Use the Interface
-1. Read the text carefully
-2. Select the appropriate classification
-3. Submit your annotation
+        ## How to Use the Interface
+        1. Read the text carefully
+        2. Select the appropriate classification
+        3. Submit your annotation
     """
 
 def get_default_practice_task():
@@ -174,24 +174,45 @@ class Project(models.Model):
         default='DRAFT',
         help_text="Current lifecycle state of the project."
     )
+    is_published = models.BooleanField(
+        default=False, 
+        help_text="If True, the project is officially deployed. Configurations and datasets cannot be edited anymore."
+    )
     
     launched_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the project was first set to LIVE.")
 
+    def check_can_be_live(self):
+        """
+        Business logic: a project CANNOT be LIVE if it has no documents to annotate.
+        Raises ValidationError if conditions are not met.
+        """
+        if self.status == 'LIVE':
+            # Use getattr to avoid lint errors for reverse/dynamic relationships defined later
+            docs_manager = getattr(self, 'documents', None)
+            has_docs = docs_manager.filter(is_gold_unit=False).exists() if docs_manager else False
+            if not has_docs and not self.documents_file:
+                raise ValidationError(
+                    "❌ Cannot Set to LIVE: No dataset found. "
+                    "Please upload a .jsonl file before setting the project status to Live."
+                )
+
     def save(self, *args, **kwargs):
+        # 1. Basic slug generation
         if not self.slug:
             from django.utils.text import slugify
             self.slug = slugify(self.name)
         
-        # On creation, if status is LIVE, it's technically a launch
+        # 2. Validation: check if it can be set to LIVE
+        # (Skip for new objects if they don't have a PK yet, but usually we handle this in the form)
+        if self.pk:
+            self.check_can_be_live()
+
+        # 3. Launch timestamp management
         if not self.pk:
             if self.status == 'LIVE':
                 self.launched_at = timezone.now()
-            elif self.status == 'DRAFT':
-                # Initial default status for new projects
-                pass
         else:
             old_instance = Project.objects.get(pk=self.pk)
-            # If manually changing status to LIVE, ensure we have a launch timestamp
             if old_instance.status != self.status:
                 if self.status == 'LIVE' and not self.launched_at:
                     self.launched_at = timezone.now()
@@ -296,6 +317,12 @@ class Project(models.Model):
 
     # --- DISTRIBUTION CONSTRAINTS ---
 
+    prolific_completion_code = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="The code provided by Prolific to confirm completion. Participants will be redirected to Prolific with this code."
+    )
+
     STRATEGY_CHOICES = [
         ('STANDARD', 'Standard - Randomly assign documents to annotators'),
         ('FULL_OVERLAP', 'Everyone sees everything (High Redundancy) - All annotators see all documents'),
@@ -356,7 +383,9 @@ class Project(models.Model):
     )
 
     documents_file = models.FileField(
-        upload_to='datasets/documents/', 
+        upload_to='datasets/documents/',
+        blank=True,
+        null=True, 
         help_text="Upload a .jsonl file for REAL documents to be annotated."
     )
 
@@ -385,21 +414,19 @@ class ProjectLogEntry(models.Model):
 
     def __str__(self):
         if self.timestamp:
-            return f"[{self.timestamp.strftime('%Y-%m-%d %H:%M')}] {self.action}"
+            from django.utils import dateformat
+            return f"[{dateformat.format(self.timestamp, 'Y-m-d H:i')}] {self.action}"
         return f"[No Date] {self.action}"
 
 class Annotator(models.Model):
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     metadata = JSONField(default=dict, blank=True)
-    consent_accepted = models.BooleanField(default=False)
-    screening_completed = models.BooleanField(default=False)
-    onboarding_completed = models.BooleanField(default=False)
     
     objects = models.Manager()
 
     def __str__(self):
-        return f"{self.prolific_pid} (Consent: {self.consent_accepted})"
+        return f"{self.prolific_pid}"
 
 class ProjectEnrollment(models.Model):
     """
@@ -428,7 +455,10 @@ class ProjectEnrollment(models.Model):
     gold_strikes = models.IntegerField(default=0, help_text="Consecutive wrong gold answers (for strike-based evaluation).")
     
     # Per-project phase tracking
+    consent_accepted = models.BooleanField(default=False)
+    screening_completed = models.BooleanField(default=False)
     codebook_completed = models.BooleanField(default=False)
+    onboarding_completed = models.BooleanField(default=False)
     
     exclude_from_distribution = models.BooleanField(default=False)
     

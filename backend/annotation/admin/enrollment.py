@@ -38,9 +38,9 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         ("Enrollment", {
             "fields": ("annotator", "project", "status", "exclude_from_distribution"),
         }),
-        ("Workload", {
-            "fields": ("target_tasks",),
-            "description": "How many tasks this specific user must complete for this project.",
+        ("Progression Status", {
+            "fields": ("consent_accepted", "screening_completed", "codebook_completed", "onboarding_completed"),
+            "description": "Pre-task progression steps for this specific project.",
         }),
         ("MACE Reliability Evaluation", {
             "fields": ("mace_competence_score", "mace_spam_bias"),

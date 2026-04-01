@@ -60,19 +60,24 @@ class InitializeSession(APIView):
         # Determine current step based on pipeline progression
         # Pipeline: CONSENT -> SCREENING -> CODEBOOK -> ONBOARDING -> ANNOTATION -> COMPLETED
         current_step = 'CONSENT'
-        if annotator.consent_accepted:
+        if enrollment.consent_accepted:
             # Check if project has a survey and annotator hasn't completed it
             has_screening = project.enable_screening and project.screening_config and len(project.screening_config) > 0
-            if has_screening and not annotator.screening_completed:
+            if has_screening and not enrollment.screening_completed:
                 current_step = 'SCREENING'
             elif project.enable_codebook and not enrollment.codebook_completed:
                 current_step = 'CODEBOOK'
-            elif project.enable_instructions and not annotator.onboarding_completed:
+            elif (project.enable_instructions or project.enable_practice_task) and not enrollment.onboarding_completed:
                 current_step = 'INSTRUCTIONS'
             else:
                 current_step = 'ONBOARDING'
-        if annotator.onboarding_completed:
+        if enrollment.onboarding_completed:
             current_step = 'ANNOTATION'
+            
+        # Fix state mismatch for global annotator completion flags vs local enrollment status
+        if current_step == 'ANNOTATION' and enrollment.status == 'PENDING':
+            enrollment.status = 'ACTIVE'
+            enrollment.save(update_fields=['status'])
             
         # To check completion universally, rely on GetNextTask logic when it actually loads
         # Here we just assume they are annotating if in ANNOTATION phase, 
@@ -82,19 +87,33 @@ class InitializeSession(APIView):
         if enrollment.status == 'COMPLETED':
             current_step = 'COMPLETED'
 
+        completion_url = PROLIFIC_COMPLETION_URL
+        if project.prolific_completion_code:
+            completion_url = f"https://app.prolific.co/submissions/complete?cc={project.prolific_completion_code}"
+
         return Response({
             "status": "ok",
             "step": current_step,
-            "completion_url": PROLIFIC_COMPLETION_URL if current_step == 'COMPLETED' else None
+            "completion_url": completion_url if current_step == 'COMPLETED' else None
         })
 
 class AcceptConsent(APIView):
     """ Saves that the user accepted the consent """
     def post(self, request):
         pid = request.data.get('pid')
+        project_slug = request.data.get('project_slug')
+        project_id = request.data.get('project_id')
+        
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
-        annotator.consent_accepted = True
-        annotator.save()
+        
+        if project_slug:
+            project = get_object_or_404(Project, slug=project_slug)
+        else:
+            project = get_object_or_404(Project, id=project_id)
+            
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
+        enrollment.consent_accepted = True
+        enrollment.save()
         return Response({"status": "ok", "next_step": "SCREENING"})
 
 class GetCodebook(APIView):
@@ -184,16 +203,17 @@ class GetInstructions(APIView):
         if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
-        if not project.enable_instructions:
+        if not project.enable_instructions and not project.enable_practice_task:
             return Response({"content": "", "skip": True})
 
         practice = project.practice_task_config or {}
-        has_practice = bool(practice and practice.get('text'))
+        has_practice = bool(project.enable_practice_task and practice and practice.get('text'))
 
-        # Read `required` from inside the JSON first, fallback to the dedicated field
-        practice_required = practice.get('required', project.practice_task_required) if has_practice else False
+        # Use the dedicated admin boolean field as the source of truth
+        practice_required = project.practice_task_required if has_practice else False
 
         return Response({
+            "has_instructions": project.enable_instructions,
             "content": project.instructions_content or "",
             "practice_task": practice if has_practice else None,
             "practice_task_required": practice_required,
@@ -225,7 +245,9 @@ class GetScreening(APIView):
         if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
-        if annotator.screening_completed:
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
+        
+        if enrollment.screening_completed:
             return Response({"error": "Screening already completed"}, status=400)
 
         if not project.enable_screening:
@@ -279,8 +301,11 @@ class SubmitScreening(APIView):
 
         # Save responses into annotator metadata
         annotator.metadata['screening_responses'] = responses
-        annotator.screening_completed = True
         annotator.save()
+        
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
+        enrollment.screening_completed = True
+        enrollment.save()
 
         return Response({"status": "ok", "next_step": "ONBOARDING"})
 
@@ -295,8 +320,6 @@ class CompleteOnboarding(APIView):
         project_id = request.data.get('project_id')
         
         annotator = get_object_or_404(Annotator, prolific_pid=pid)
-        annotator.onboarding_completed = True
-        annotator.save()
         
         # Transition enrollment PENDING -> ACTIVE if all phases complete
         if project_slug:
@@ -313,17 +336,20 @@ class CompleteOnboarding(APIView):
                 annotator=annotator
             )
             
+            enrollment.onboarding_completed = True
+            
             # Check all pre-task phases
-            screening_ok = annotator.screening_completed or not project.enable_screening or not project.screening_config or len(project.screening_config) == 0
+            screening_ok = enrollment.screening_completed or not project.enable_screening or not project.screening_config or len(project.screening_config) == 0
             all_phases_complete = (
-                annotator.consent_accepted and 
+                enrollment.consent_accepted and 
                 screening_ok and 
-                annotator.onboarding_completed
+                enrollment.onboarding_completed
             )
             
             if all_phases_complete and enrollment.status == 'PENDING':
                 enrollment.status = 'ACTIVE'
-                enrollment.save()
+            
+            enrollment.save()
 
         return Response({"status": "ok", "next_step": "ANNOTATION"})
 
@@ -425,7 +451,7 @@ class GetNextTask(APIView):
             return Response({"status": "stopped", "message": "You have been excluded from this project due to quality issues."})
         
         if enrollment.status == 'COMPLETED':
-            return self._completed_response()
+            return self._completed_response(project)
 
         # Current count is still useful for gold injection frequency calculation
         done_count = annotator.annotations.filter(document__project=project).count()
@@ -443,14 +469,14 @@ class GetNextTask(APIView):
                 if enrollment.status != 'COMPLETED':
                     enrollment.status = 'COMPLETED'
                     enrollment.save()
-                return self._completed_response()
+                return self._completed_response(project)
 
             final_doc = Document.objects.select_for_update(skip_locked=True).filter(id=target_id).first()
 
         if final_doc:
             return self._task_response(final_doc, enrollment)
         
-        return self._completed_response()
+        return self._completed_response(project)
 
     def _get_candidate_id(self, project, annotator, enrollment, done_count):
         """ Internal logic to find the 'next' candidate ID """
@@ -546,11 +572,14 @@ class GetNextTask(APIView):
             
         return Response(data)
 
-    def _completed_response(self):
+    def _completed_response(self, project):
         """ Standard response when no more tasks are available or target is reached """
+        code = project.prolific_completion_code
+        url = f"https://app.prolific.com/submissions/complete?cc={code}" if code else PROLIFIC_COMPLETION_URL
+        
         return Response({
             "status": "completed", 
-            "completion_url": PROLIFIC_COMPLETION_URL
+            "completion_url": url
         })
 
 class GetConsent(APIView):
@@ -572,7 +601,9 @@ class GetConsent(APIView):
         if not project.can_accept_annotations:
             return Response({"error": "Project is not active"}, status=404)
         
-        if annotator.consent_accepted:
+        enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
+        
+        if enrollment.consent_accepted:
             return Response({"error": "Already consented"}, status=400)
 
         return Response({

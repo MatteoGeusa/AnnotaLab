@@ -20,10 +20,7 @@ class AnnotatorAdmin(ModelAdmin):
         ("Annotator Profile", {
             "fields": ("prolific_pid", "created_at")
         }),
-        ("Onboarding Status", {
-            "fields": ("consent_accepted", "screening_completed", "onboarding_completed"),
-            "description": "Manage annotator's progression status."
-        }),
+
         ("Metadata", {
             "fields": ("formatted_metadata",),
             "description": "JSON metadata associated with this worker (e.g. Group, Demographics)."

@@ -133,33 +133,69 @@ class AnnotationAdmin(ModelAdmin):
             f'</div>'
         )
         
-        # Start Document Text Box
-        html_parts.append('<div class="annot-container">')
-        
+        # Implement Overlapping Spans Visualization
+        boundaries = set([0, len(text)])
         for span in spans:
-            start = span.get('start', 0)
-            end = span.get('end', 0)
-            label = span.get('label', 'Unknown')
-            color = color_map.get(label, '#fbbf24')
-            hex_color = color if str(color).startswith('#') else '#fbbf24'
+            boundaries.add(span.get('start', 0))
+            boundaries.add(span.get('end', 0))
             
-            # Add unannotated text before this span
-            if start > last_idx:
-                html_parts.append(escape(text[last_idx:start]))
+        sorted_boundaries = sorted(list(boundaries))
+        
+        # Start Document Text Box
+        html_parts.append('<div class="annot-container" style="line-height: 2.5;">')
+        
+        for i in range(len(sorted_boundaries) - 1):
+            start = sorted_boundaries[i]
+            end = sorted_boundaries[i+1]
+            if start == end:
+                continue
                 
-            # Add annotated text
-            span_text = text[start:end]
-            html_parts.append(
-                f'<mark style="background-color: {hex_color}33; border-bottom: 3px solid {hex_color}; padding: 4px 6px; border-radius: 4px; margin: 0 2px;" title="{escape(label)}">'
-                f'{escape(span_text)}'
-                f'<span class="annot-label" style="color: {hex_color}; border: 1px solid {hex_color}33;">{escape(label)}</span>'
-                f'</mark>'
-            )
-            last_idx = end
+            chunk_text = text[start:end]
             
-        # Add remaining text
-        if last_idx < len(text):
-            html_parts.append(escape(text[last_idx:]))
+            # Find active spans for this chunk
+            active_spans = []
+            for span in spans:
+                if span.get('start', 0) <= start and span.get('end', 0) >= end:
+                    active_spans.append(span)
+                    
+            if not active_spans:
+                html_parts.append(escape(chunk_text))
+            else:
+                labels_html = []
+                border_shadows = []
+                bg_color = None
+                
+                # Sort active spans predictably
+                active_spans_sorted = sorted(active_spans, key=lambda x: (x.get('start', 0), -x.get('end', 0)))
+                
+                for idx, span in enumerate(active_spans_sorted):
+                    label = span.get('label', 'Unknown')
+                    color = color_map.get(label, '#fbbf24')
+                    hex_color = color if str(color).startswith('#') else '#fbbf24'
+                    
+                    if idx == 0:
+                        bg_color = f"{hex_color}33"
+                        
+                    # Calculate border depth
+                    depth = (idx + 1) * 3
+                    border_shadows.append(f"0 {depth}px 0 0 {hex_color}")
+                    
+                    # Only insert the label if this chunk represents the END of this specific span
+                    if span.get('end', 0) == end:
+                        labels_html.append(
+                            f'<span class="annot-label" style="color: {hex_color}; border: 1px solid {hex_color}33;">{escape(label)}</span>'
+                        )
+                
+                shadow_style = ", ".join(border_shadows)
+                labels_joined = "".join(labels_html)
+                titles = " | ".join([s.get('label', 'Unknown') for s in active_spans_sorted])
+                
+                html_parts.append(
+                    f'<mark style="background-color: {bg_color}; box-shadow: {shadow_style}; padding: 2px 0px; border-radius: 2px;" title="{escape(titles)}">'
+                    f'{escape(chunk_text)}'
+                    f'{labels_joined}'
+                    f'</mark>'
+                )
             
         html_parts.append('</div>')
         

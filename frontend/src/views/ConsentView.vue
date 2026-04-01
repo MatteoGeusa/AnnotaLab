@@ -68,7 +68,7 @@ const full_consent_form_url = () => {
 };
 
 const submitConsent = async () => {
-    await api.post('consent/', { pid });
+    await api.post('consent/', { pid, project_id: projectId, project_slug: projectSlug });
     const slug = projectSlug || projectId;
     router.push(`/${slug}/screening`);
 };
