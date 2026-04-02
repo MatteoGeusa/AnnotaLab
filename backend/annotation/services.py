@@ -122,38 +122,102 @@ def parse_json_upload(file_obj):
 
 class ProjectService:
     @staticmethod
-    def clone_project(project_id, clone_dataset=False, user=None):
-        project = Project.objects.get(id=project_id)
-        old_name = project.name
+    def clone_project(project_id, clone_mode='config', user=None, new_name=None):
+        """
+        Clones a project with different modes:
+        - 'config': Settings only.
+        - 'full': Settings + All documents (Regular & Gold).
+        - 'incomplete': Settings + Unannotated documents + Active Workers.
+        """
+        source_project = Project.objects.get(id=project_id)
+        old_name = source_project.name
         
+        if not new_name:
+            new_name = f"{old_name} (Clone)"
+            
         with transaction.atomic():
-            project.pk = None
-            project.name = f"{old_name} (Clone)"
-            project.slug = "" 
-            project.status = 'DRAFT'
-            project.is_published = False
-            project.launched_at = None
-            project.save()
+            # Clone project object (settings)
+            new_project = Project.objects.get(id=project_id)
+            new_project.pk = None
+            new_project.name = new_name
+            new_project.slug = ""  # Let save() generate a new slug from name
+            new_project.status = 'DRAFT'
+            new_project.is_published = False
+            new_project.launched_at = None
+            
+            # Handle slug uniqueness if the generated slug already exists
+            from django.utils.text import slugify
+            base_slug = slugify(new_name)
+            if not base_slug:
+                base_slug = "cloned-project"
+                
+            unique_slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=unique_slug).exists():
+                unique_slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            new_project.slug = unique_slug
+            new_project.save()
             
             message = f"Project '{old_name}' cloned successfully."
             
-            if clone_dataset:
-                docs = Document.objects.filter(project_id=project_id)
-                count = docs.count()
+            # 1. Handle Document Cloning
+            docs_qs = Document.objects.filter(project_id=project_id)
+            
+            if clone_mode == 'full':
+                # Already have the full queryset
+                pass
+            elif clone_mode == 'incomplete':
+                # Clone Gold Units + Incomplete Documents
+                from django.db.models import Q
+                docs_qs = docs_qs.filter(
+                    Q(is_gold_unit=True) | 
+                    Q(current_annotations_count__lt=source_project.min_annotations_per_doc)
+                )
+            elif clone_mode == 'config':
+                docs_qs = Document.objects.none()
+            else: # Fallback for backward compatibility (clone_dataset=True/False)
+                if clone_mode is True or clone_mode == 'true':
+                    clone_mode = 'full'
+                else:
+                    docs_qs = Document.objects.none()
+
+            if docs_qs.exists():
+                count = docs_qs.count()
                 new_docs = []
-                for d in docs:
+                for d in docs_qs:
                     d.pk = None 
-                    d.project = project
+                    d.project = new_project
+                    d.current_annotations_count = 0 
                     new_docs.append(d)
                 Document.objects.bulk_create(new_docs, batch_size=500)
                 message += f" {count} documents also cloned."
 
+            # 2. Handle Enrollment Cloning (Only for 'incomplete' mode)
+            if clone_mode == 'incomplete':
+                enrollments = ProjectEnrollment.objects.filter(project_id=project_id).exclude(status__in=['COMPLETED', 'EXCLUDED'])
+                if enrollments.exists():
+                    e_count = enrollments.count()
+                    new_enrollments = []
+                    for e in enrollments:
+                        e.pk = None
+                        e.project = new_project
+                        # Reset quality metrics for fresh start in new project
+                        e.gold_tasks_completed = 0
+                        e.gold_accuracy = None
+                        e.gold_strikes = 0
+                        # Keep existing status if it was active/pending
+                        new_enrollments.append(e)
+                    ProjectEnrollment.objects.bulk_create(new_enrollments)
+                    message += f" {e_count} active workers also migrated."
+
             ProjectLogEntry.objects.create(
-                project=project,
+                project=new_project,
                 action="Project Cloned",
-                details=f"Cloned from '{old_name}' (Dataset: {clone_dataset}) by {user.username if user else 'System'}."
+                details=f"Cloned from '{old_name}' (Mode: {clone_mode}) by {user.username if user else 'System'}."
             )
-        return project, message
+        return new_project, message
 
     @staticmethod
     def set_project_status(project_id, new_status, user=None):

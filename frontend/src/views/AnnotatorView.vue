@@ -207,6 +207,8 @@ const submitTask = async () => {
 
     const payload = {
         pid: pid,
+        project_id: projectId,
+        project_slug: projectSlug,
         document: currentDoc.value.id,
         result: {
             classification: classification.value,

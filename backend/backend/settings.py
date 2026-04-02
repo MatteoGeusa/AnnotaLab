@@ -202,6 +202,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+#  FRONTEND CONFIGURATION
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
