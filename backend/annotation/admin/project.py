@@ -134,10 +134,10 @@ class ProjectAdmin(ModelAdmin):
                     '''
                     <div style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
                         <div style="line-height: 1.5;">
-                            <b style="color: #f59e0b; font-size: 1.1em;">🔒 Progetto Ufficiale & Bloccato</b><br>
-                            <span style="color: #94a3b8;">La configurazione è sigillata per integrità dati. Per modifiche strutturali, clona il progetto.</span>
+                            <b style="color: #f59e0b; font-size: 1.1em;">🔒 Official Project & Locked</b><br>
+                            <span style="color: #94a3b8;">This configuration is sealed to ensure data integrity. To make structural changes, you must clone the project.</span>
                         </div>
-                        <button type="button" onclick="quickCloneProject(this, '{}', '{}', true)" style="background: #f59e0b; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 800; border:none; cursor:pointer; font-size: 12px;">📋 CLONA PROGETTO</button>
+                        <button type="button" onclick="quickCloneProject(this, '{}', '{}', true)" style="background: #f59e0b; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 800; border:none; cursor:pointer; font-size: 12px;">📋 CLONE PROJECT</button>
                     </div>
                     ''',
                     clone_url, obj.name
@@ -148,10 +148,10 @@ class ProjectAdmin(ModelAdmin):
                     '''
                     <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
                         <div style="line-height: 1.5;">
-                            <b style="color: #60a5fa; font-size: 1.1em;">▶️ Playground Attivo (LIVE)</b><br>
-                            <span style="color: #94a3b8;">Il progetto è in sola lettura durante i test. Torna in Draft per sbloccare i campi.</span>
+                            <b style="color: #60a5fa; font-size: 1.1em;">▶️ Playground Active (LIVE)</b><br>
+                            <span style="color: #94a3b8;">The project is read-only during testing/simulation. Return to Draft to unlock all fields.</span>
                         </div>
-                        <button type="button" onclick="quickUpdateStatus(this, '{}', 'DRAFT', 'Draft')" style="background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 800; border:none; cursor:pointer; font-size: 12px;">📁 TORNA IN DRAFT</button>
+                        <button type="button" onclick="quickUpdateStatus(this, '{}', 'DRAFT', 'Draft')" style="background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 800; border:none; cursor:pointer; font-size: 12px;">📁 RETURN TO DRAFT</button>
                     </div>
                     ''',
                     draft_url

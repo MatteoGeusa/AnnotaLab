@@ -13,10 +13,10 @@ window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = fals
 
     if (isPublished) {
         window.adminConfirm(
-            "⚠️ ATTENZIONE: Progetto Ufficiale",
-            "Questo progetto è <b>LIVE/Ufficiale</b>.<br><br>Proseguendo con la simulazione potresti andare a <u><b>sporcare il dataset ufficiale</b></u> con dati di test non pertinenti allo studio.<br><br>Se desideri fare dei test strutturali senza rischi, ti consigliamo di <b>clonare</b> il progetto.",
+            "⚠️ WARNING: Official Project",
+            "This project is **LIVE/Official**.<br><br>Proceeding with this simulation might **<u>contaminate the official dataset</u>** with test data not relevant to the study.<br><br>If you want to perform risk-free structural tests, we recommend **cloning** the project first.",
             "🚫",
-            "Ho capito, prosegui comunque",
+            "I understand, proceed anyway",
             "#f59e0b",
             () => window.open(url, '_blank')
         );
@@ -147,6 +147,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
 // CSRF Token Helper
 window.getAdminCookie = function (name) {
     let cookieValue = null;
@@ -161,6 +162,16 @@ window.getAdminCookie = function (name) {
         }
     }
     return cookieValue;
+};
+
+/**
+ * Internal helper to parse basic markdown (**bold**) and newlines
+ */
+window._parseAdminMarkdown = function(text) {
+    if (!text) return "";
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<b style="color: white; font-weight: 800;">$1</b>')
+        .replace(/\n/g, '<br>');
 };
 
 /**
@@ -188,7 +199,7 @@ window.adminNotify = function (type, title, message, duration = 5000) {
         <div class="admin-popup-icon">${icons[type] || '🔔'}</div>
         <div class="admin-popup-content">
             <div class="admin-popup-title">${title}</div>
-            <div class="admin-popup-message">${message}</div>
+            <div class="admin-popup-message">${window._parseAdminMarkdown(message)}</div>
         </div>
         <div class="admin-popup-close" onclick="this.parentElement.closePopup()">✕</div>
     `;
@@ -314,7 +325,7 @@ window.adminConfirm = function (title, message, emojis, confirmText, confirmColo
     modal.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 16px; line-height: 1;">${emojis}</div>
         <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">${title}</h2>
-        <p style="margin: 0 0 28px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</p>
+        <p style="margin: 0 0 28px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">${window._parseAdminMarkdown(message)}</p>
         <div style="display: flex; gap: 12px; justify-content: center;">
             <button id="modal-cancel-btn" style="flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: #cbd5e1; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">Cancel</button>
             <button id="modal-confirm-btn" style="flex: 2; padding: 12px 16px; border-radius: 8px; border: none; background: ${confirmColor}; color: white; cursor: pointer; font-weight: 700; font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">${confirmText}</button>
@@ -348,6 +359,7 @@ window.adminConfirm = function (title, message, emojis, confirmText, confirmColo
  * Specific modal for Project Cloning choice
  */
 window.adminCloneChoice = function (projectName, url, onClone, isPublished = false) {
+    const message = `How would you like to clone **${projectName}**?`;
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0';
     overlay.style.width = '100vw'; overlay.style.height = '100vh';
@@ -366,8 +378,8 @@ window.adminCloneChoice = function (projectName, url, onClone, isPublished = fal
     if (isPublished) {
         publishedWarning = `
             <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; text-align: left; line-height: 1.5; display: flex; gap: 10px; align-items: start;">
-                <span style="font-size: 18px;">⚠️</span>
-                <span>Questo progetto è <b>Lanciato/Bloccato</b>. Per apportare modifiche strutturali o caricare nuovi dati, è necessario <b>clonarlo</b> in un nuovo progetto (Draft).</span>
+                 <span style="font-size: 18px;">⚠️</span>
+                 <span>This project is <b>Launched/Live</b>. To make structural changes or upload new data, you must <b>clone</b> it into a new project (Draft).</span>
             </div>
         `;
     }
@@ -375,7 +387,7 @@ window.adminCloneChoice = function (projectName, url, onClone, isPublished = fal
     modal.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 16px; line-height: 1;">📋</div>
         <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800;">Clone Project</h2>
-        <p style="margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">How would you like to clone <b>${projectName}</b>?</p>
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">${window._parseAdminMarkdown(message)}</p>
         
         ${publishedWarning}
 
