@@ -29,35 +29,34 @@
             <div class="card-header highlight-header">
                 <div class="instruction-box">
                     <h3>{{ UI_STRINGS.task_instruction_header }}</h3>
-                    <p>{{ config.instruction || UI_STRINGS.default_instruction }}</p>
+                    <p>{{ schema.instruction || UI_STRINGS.default_instruction }}</p>
                 </div>
             </div>
 
             <div class="card-body">
-                <div class="section" v-if="hasHighlighter">
-                    <TextHighlighter :text="currentDoc.text" :labels="spanLabels" v-model:spans="spans" />
-                </div>
-
-                <div class="doc-text-preview" v-else>
+                <!-- Text display (always shown) -->
+                <div v-if="!hasComponent('span_highlight')" class="doc-text-preview">
                     {{ currentDoc.text }}
                 </div>
 
-                <div class="section classification-section" v-if="classOptions.length > 0">
-                    <div class="question-title">
-                        {{ config.question || UI_STRINGS.default_classification_query }}
+                <!-- Component-driven blocks -->
+                <template v-for="comp in activeComponents" :key="comp.type">
+                    <div class="section" v-if="comp.type === 'span_highlight'">
+                        <SpanHighlightBlock
+                            :ref="el => blockRefs[comp.type] = el"
+                            :text="currentDoc.text"
+                            :config="comp"
+                            v-model="result[comp.type]"
+                        />
                     </div>
-
-                    <div class="options-grid">
-                        <label v-for="opt in classOptions" :key="opt.value" class="option-label"
-                            :class="{ active: isSelected(opt.value) }" :title="opt.hover_hint">
-                            <input v-if="config.multi_select" type="checkbox" :value="opt.value"
-                                v-model="classification">
-                            <input v-else type="radio" :value="opt.value" v-model="classification">
-                            <span class="check-icon"></span>
-                            {{ opt.label }}
-                        </label>
+                    <div class="section classification-section" v-else-if="comp.type === 'classification'">
+                        <ClassificationBlock
+                            :ref="el => blockRefs[comp.type] = el"
+                            :config="comp"
+                            v-model="result[comp.type]"
+                        />
                     </div>
-                </div>
+                </template>
             </div>
 
             <div class="card-footer actions">
@@ -76,59 +75,68 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../axios';
-import TextHighlighter from '../components/TextHighlighter.vue';
 import { useProjectContext } from '../composables/useProjectContext';
 import { UI_STRINGS } from '../i18n';
+import SpanHighlightBlock from '../components/blocks/SpanHighlightBlock.vue';
+import ClassificationBlock from '../components/blocks/ClassificationBlock.vue';
 
 const router = useRouter();
 const { pid, projectSlug, projectId } = useProjectContext();
 
-// STATO
+// State
 const loading = ref(true);
 const currentDoc = ref(null);
 const errorMsg = ref('');
-const config = ref({});
+const schema = ref({});       // annotation_schema from project_config
 const startTime = ref(0);
 const countdown = ref(5);
 let redirectTimer = null;
 const stopped = ref(false);
 const stopMessage = ref('');
-const isTraining = ref(false);
 const isGold = ref(false);
 
-onUnmounted(() => {
-    if (redirectTimer) clearInterval(redirectTimer);
+// Component system
+const blockRefs = ref({});
+const result = ref({});       // { span_highlight: [...], classification: '...' }
+
+onUnmounted(() => { if (redirectTimer) clearInterval(redirectTimer); });
+onMounted(() => { if (!pid) router.push('/'); fetchNextTask(); });
+
+// Derive active components from schema.components, with fallback for old schemas
+const activeComponents = computed(() => {
+    if (schema.value.components?.length > 0)
+        return schema.value.components;
+    // Backward-compat: infer from legacy root-level keys
+    const fallback = [];
+    if ((schema.value.span_labels || []).length > 0)
+        fallback.push({ type: 'span_highlight', labels: schema.value.span_labels });
+    if ((schema.value.class_labels || []).length > 0)
+        fallback.push({ type: 'classification', options: schema.value.class_labels });
+    return fallback;
 });
 
-// RISPOSTE DELL'UTENTE
-const classification = ref(null);
-const spans = ref([]);
+const hasComponent = (type) => activeComponents.value.some(c => c.type === type);
 
-// OPZIONI ESTRATTE DAL CONFIG
-const spanLabels = ref([]);
-const classOptions = ref([]);
-
-const hasHighlighter = computed(() => spanLabels.value.length > 0);
-
-onMounted(() => {
-    if (!pid) router.push('/');
-    fetchNextTask();
+const canSubmit = computed(() => {
+    // Require classification if that component is active
+    if (hasComponent('classification')) {
+        const val = result.value['classification'];
+        if (Array.isArray(val)) return val.length > 0;
+        return val != null;
+    }
+    return true;
 });
 
 const clearForm = () => {
-    spans.value = [];
-    if (config.value.multi_select) {
-        classification.value = [];
-    } else {
-        classification.value = null;
-    }
+    result.value = {};
+    Object.values(blockRefs.value).forEach(ref => ref?.reset?.());
 };
 
 const fetchNextTask = async () => {
     loading.value = true;
     currentDoc.value = null;
     errorMsg.value = '';
-    spans.value = [];
+    result.value = {};
     stopped.value = false;
 
     if (!projectId && !projectSlug) {
@@ -136,7 +144,6 @@ const fetchNextTask = async () => {
         loading.value = false;
         return;
     }
-
     try {
         const res = await api.get('next-task/', {
             params: { pid, project_id: projectId, project_slug: projectSlug }
@@ -146,34 +153,20 @@ const fetchNextTask = async () => {
             loading.value = false;
             redirectTimer = setInterval(() => {
                 countdown.value--;
-                if (countdown.value <= 0) {
-                    clearInterval(redirectTimer);
-                    window.location.href = res.data.completion_url;
-                }
+                if (countdown.value <= 0) { clearInterval(redirectTimer); window.location.href = res.data.completion_url; }
             }, 1000);
             return;
-        } else if (res.data.status === 'stopped') {
+        }
+        if (res.data.status === 'stopped') {
             loading.value = false;
             stopped.value = true;
             stopMessage.value = res.data.message;
             return;
         }
 
-        isTraining.value = !!res.data.feedback_enabled;
         isGold.value = !!res.data.is_gold;
-
         currentDoc.value = res.data;
-        config.value = res.data.project_config || {};
-
-        spanLabels.value = config.value.span_labels || [];
-        classOptions.value = config.value.class_labels || [];
-
-        if (config.value.multi_select) {
-            classification.value = [];
-        } else {
-            classification.value = null;
-        }
-
+        schema.value = res.data.project_config || {};
         startTime.value = Date.now();
     } catch (err) {
         errorMsg.value = UI_STRINGS.error_fetch_task;
@@ -182,39 +175,17 @@ const fetchNextTask = async () => {
     }
 };
 
-const isSelected = (val) => {
-    if (Array.isArray(classification.value)) {
-        return classification.value.includes(val);
-    }
-    return classification.value === val;
-};
-
-const canSubmit = computed(() => {
-    if (classOptions.value.length > 0) {
-        if (Array.isArray(classification.value)) {
-            return classification.value.length > 0;
-        }
-        return classification.value !== null;
-    }
-    return true;
-});
-
 const submitTask = async () => {
     if (!canSubmit.value) return;
-
-    const duration = (Date.now() - startTime.value);
     loading.value = true;
 
     const payload = {
-        pid: pid,
+        pid,
         project_id: projectId,
         project_slug: projectSlug,
         document: currentDoc.value.id,
-        result: {
-            classification: classification.value,
-            spans: spans.value
-        },
-        milliseconds_to_complete: duration
+        result: { ...result.value },
+        milliseconds_to_complete: Date.now() - startTime.value,
     };
 
     try {

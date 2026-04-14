@@ -46,7 +46,7 @@
                 <div class="instruction-box flex-guide">
                     <div class="task-instructions-text">
                         <h3>Practice Task</h3>
-                        <p>{{ taskConfig.instruction || `Read the text below and complete the tasks, then submit to see
+                        <p>{{ annotationSchema.instruction || `Read the text below and complete the tasks, then submit to see
                             feedback.` }}
                         </p>
                     </div>
@@ -64,34 +64,34 @@
             </div>
 
             <div class="card-body">
-                <!-- Text Highlighter or plain text -->
-                <div class="section" v-if="spanLabels.length > 0">
-                    <TextHighlighter :text="practiceTask.text" :labels="spanLabels" v-model:spans="practiceSpans" />
-                </div>
-                <div class="doc-text-preview" v-else>
+                <!-- Text-only fallback -->
+                <div v-if="!hasComponent('span_highlight')" class="doc-text-preview">
                     {{ practiceTask.text }}
                 </div>
 
-                <!-- Classification -->
-                <div class="section classification-section" v-if="classOptions.length > 0">
-                    <div class="question-title">
-                        {{ taskConfig.question || "Classify this text:" }}
+                <!-- Component-driven blocks -->
+                <template v-for="comp in activeComponents" :key="comp.type">
+                    <div class="section" v-if="comp.type === 'span_highlight'">
+                        <SpanHighlightBlock
+                            :ref="el => blockRefs[comp.type] = el"
+                            :text="practiceTask.text"
+                            :config="comp"
+                            v-model="practiceResult['span_highlight']"
+                        />
                     </div>
-                    <div class="options-grid">
-                        <label v-for="opt in classOptions" :key="opt.value" class="option-label"
-                            :class="{ active: practiceClassification === opt.value }">
-                            <input type="radio" :value="opt.value" v-model="practiceClassification">
-                            <span class="check-icon"></span>
-                            {{ opt.label }}
-                        </label>
+                    <div class="section classification-section" v-else-if="comp.type === 'classification'">
+                        <ClassificationBlock
+                            :ref="el => blockRefs[comp.type] = el"
+                            :config="comp"
+                            v-model="practiceResult['classification']"
+                        />
                     </div>
-                </div>
+                </template>
             </div>
 
             <!-- ACTIONS -->
             <div class="card-footer actions" v-if="!showFeedback">
                 <button class="action-btn clear-btn" @click="clearPractice">Clear</button>
-                
                 <div style="display: flex; gap: 10px;">
                     <button v-if="!practiceTaskRequired" class="submit-btn skip-btn" @click="finishInstructions" style="background-color: #94a3b8;">
                         Skip Practice
@@ -112,22 +112,18 @@
 
                 <div class="feedback-details">
                     <!-- Classification feedback -->
-                    <div v-if="classOptions.length > 0" class="feedback-item">
+                    <div v-if="hasComponent('classification')" class="feedback-item">
                         <strong>Classification:</strong>
-                        <span v-if="classificationCorrect" class="correct-text">✅ Your answer "{{ practiceClassification
-                        }}" is correct.</span>
-                        <span v-else class="wrong-text">❌ You selected "{{ practiceClassification || `nothing` }}" — the
-                            correct answer is
-                            "{{ goldSolution.classification }}".</span>
+                        <span v-if="classificationCorrect" class="correct-text">✅ Your answer "{{ practiceResult['classification'] }}" is correct.</span>
+                        <span v-else class="wrong-text">❌ You selected "{{ practiceResult['classification'] || 'nothing' }}" — the correct answer is "{{ goldSolution.classification }}".</span>
                     </div>
 
                     <!-- Spans feedback -->
-                    <div v-if="spanLabels.length > 0" class="feedback-item">
+                    <div v-if="hasComponent('span_highlight')" class="feedback-item">
                         <strong>Highlights:</strong>
                         <div class="spans-feedback">
                             <div v-for="(gs, i) in (goldSolution.spans || [])" :key="i" class="span-feedback-row">
-                                <span class="badge" :style="{ background: getLabelColor(gs.label) }">{{ gs.label
-                                }}</span>
+                                <span class="badge" :style="{ background: getLabelColor(gs.label) }">{{ gs.label }}</span>
                                 <span v-if="matchedSpans[i]" class="correct-text">✅ "{{ gs.text }}"</span>
                                 <span v-else class="wrong-text">❌ Missing: "{{ gs.text }}"</span>
                             </div>
@@ -169,7 +165,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../axios';
-import TextHighlighter from '../components/TextHighlighter.vue';
+import SpanHighlightBlock from '../components/blocks/SpanHighlightBlock.vue';
+import ClassificationBlock from '../components/blocks/ClassificationBlock.vue';
 import { useProjectContext } from '../composables/useProjectContext';
 import { useMarkdownRenderer } from '../composables/useMarkdownRenderer';
 
@@ -180,32 +177,45 @@ const { pid, projectSlug, projectId } = useProjectContext();
 const loading = ref(true);
 const errorMsg = ref('');
 const shouldSkip = ref(false);
-const phase = ref('instructions'); // 'instructions' | 'practice'
+const phase = ref('instructions');
 const practiceTaskRequired = ref(false);
 const hasReadInstructions = ref(false);
 
 // Instructions content
 const rawInstructions = ref('');
 const practiceTask = ref(null);
-const taskConfig = ref({});
+const annotationSchema = ref({});
 
-// Practice state
-const practiceSpans = ref([]);
-const practiceClassification = ref(null);
+// Component system
+const blockRefs = ref({});
+const practiceResult = ref({ span_highlight: [], classification: null });
+
+// Feedback state
 const showFeedback = ref(false);
 const feedbackCorrect = ref(false);
 const classificationCorrect = ref(false);
 const matchedSpans = ref([]);
 
-// Derived from config
-const spanLabels = computed(() => taskConfig.value.span_labels || []);
-const classOptions = computed(() => taskConfig.value.class_labels || []);
-const hasPractice = computed(() => practiceTask.value && practiceTask.value.text);
-const goldSolution = computed(() => (practiceTask.value && practiceTask.value.gold_solution) || {});
+// Derived from schema
+const activeComponents = computed(() => {
+    if (annotationSchema.value.components?.length > 0) return annotationSchema.value.components;
+    // Backward-compat: infer from legacy root-level keys
+    const fallback = [];
+    if ((annotationSchema.value.span_labels || []).length > 0)
+        fallback.push({ type: 'span_highlight', labels: annotationSchema.value.span_labels });
+    if ((annotationSchema.value.class_labels || []).length > 0)
+        fallback.push({ type: 'classification', options: annotationSchema.value.class_labels });
+    return fallback;
+});
+const hasComponent = (type) => activeComponents.value.some(c => c.type === type);
+const hasPractice = computed(() => practiceTask.value?.text);
+const goldSolution = computed(() => practiceTask.value?.gold_solution || {});
 
 const canSubmitPractice = computed(() => {
-    if (classOptions.value.length > 0) {
-        return practiceClassification.value !== null;
+    if (hasComponent('classification')) {
+        const val = practiceResult.value['classification'];
+        if (Array.isArray(val)) return val.length > 0;
+        return val != null;
     }
     return true;
 });
@@ -230,7 +240,8 @@ const fetchInstructions = async () => {
         rawInstructions.value = res.data.content || '';
         practiceTask.value = res.data.practice_task || null;
         practiceTaskRequired.value = res.data.practice_task_required || false;
-        taskConfig.value = res.data.task_config || {};
+        annotationSchema.value = res.data.annotation_schema || {};
+        practiceResult.value = { span_highlight: [], classification: null };
 
         if (!res.data.has_instructions && practiceTask.value) {
             phase.value = 'practice';
@@ -260,7 +271,9 @@ const goToPracticeOrFinish = () => {
 };
 
 const getLabelColor = (labelName) => {
-    const l = spanLabels.value.find(x => x.name === labelName);
+    const spanComp = activeComponents.value.find(c => c.type === 'span_highlight');
+    const labels = spanComp?.labels || [];
+    const l = labels.find(x => x.name === labelName);
     return l ? l.color : '#cbd5e1';
 };
 
@@ -268,25 +281,36 @@ const getLabelColor = (labelName) => {
 const checkPractice = () => {
     const gold = goldSolution.value;
 
-    classificationCorrect.value = !classOptions.value.length || practiceClassification.value === gold.classification;
+    // Classification check — skipped if component not in schema
+    classificationCorrect.value = !hasComponent('classification') ||
+        practiceResult.value['classification'] === gold.classification;
 
-    const goldSpans = gold.spans || [];
-    matchedSpans.value = goldSpans.map(gs => {
-        return practiceSpans.value.some(ps =>
-            ps.label === gs.label &&
-            Math.abs(ps.start - gs.start) <= 5 &&
-            Math.abs(ps.end - gs.end) <= 5
+    // Span check — skipped if component not in schema
+    // Accept both new key (span_highlight) and legacy key (spans) for backward compat
+    const goldSpans = gold.span_highlight || gold.spans || [];
+    if (hasComponent('span_highlight')) {
+        const userSpans = practiceResult.value['span_highlight'] || [];
+        matchedSpans.value = goldSpans.map(gs =>
+            userSpans.some(ps =>
+                ps.label === gs.label &&
+                Math.abs(ps.start - gs.start) <= 5 &&
+                Math.abs(ps.end - gs.end) <= 5
+            )
         );
-    });
+    } else {
+        matchedSpans.value = [];
+    }
 
     const allSpansCorrect = matchedSpans.value.every(m => m);
-    feedbackCorrect.value = classificationCorrect.value && (goldSpans.length === 0 || allSpansCorrect);
+    feedbackCorrect.value = classificationCorrect.value &&
+        (goldSpans.length === 0 || !hasComponent('span_highlight') || allSpansCorrect);
     showFeedback.value = true;
 };
 
+
 const clearPractice = () => {
-    practiceSpans.value = [];
-    practiceClassification.value = null;
+    practiceResult.value = { span_highlight: [], classification: null };
+    Object.values(blockRefs.value).forEach(r => r?.reset?.());
 };
 
 const retryPractice = () => {

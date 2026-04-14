@@ -15,7 +15,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         fields = ['id', 'text', 'project_config']
 
     def get_project_config(self, obj):
-        config = obj.project.task_type_config or {}
+        config = obj.project.annotation_schema or {}
 
         # Handle string case (bug fix for some DBs)
         if isinstance(config, str):
@@ -26,9 +26,6 @@ class DocumentSerializer(serializers.ModelSerializer):
 
         if not isinstance(config, dict):
             config = {}
-
-        # Remove internal/sensitive fields before sending to frontend
-        config.pop('task_type', None)
 
         return config
 

@@ -71,7 +71,6 @@ GOLD_TEXTS = [
 LABELS = ["Yes", "No", "Can't tell"]
 
 TASK_CONFIG = {
-    "task_type": "hybrid",
     "question": "Does this text describe or promote a conspiracy theory?",
     "instruction": "Read the text carefully and: (1) highlight the key elements using the span labels, (2) select the overall classification.",
     "span_labels": [
@@ -134,7 +133,7 @@ class Command(BaseCommand):
                     "about climate change. This project is configured but not yet launched."
                 ),
                 "status": "DRAFT",
-                "task_type_config": TASK_CONFIG,
+                "annotation_schema": TASK_CONFIG,
                 "min_accuracy_required": DEMO_GOLD_SETTINGS["min_accuracy_required"],
                 "gold_injection_frequency": DEMO_GOLD_SETTINGS["gold_injection_frequency"],
                 "min_gold_before_eval": DEMO_GOLD_SETTINGS["min_gold_before_eval"],
@@ -193,7 +192,7 @@ class Command(BaseCommand):
                 ),
                 "status": "LIVE",
                 "launched_at": timezone.now(),
-                "task_type_config": TASK_CONFIG,
+                "annotation_schema": TASK_CONFIG,
                 "min_accuracy_required": DEMO_GOLD_SETTINGS["min_accuracy_required"],
                 "gold_injection_frequency": DEMO_GOLD_SETTINGS["gold_injection_frequency"],
                 "min_gold_before_eval": DEMO_GOLD_SETTINGS["min_gold_before_eval"],

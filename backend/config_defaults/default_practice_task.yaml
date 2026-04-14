@@ -1,0 +1,39 @@
+# Practice Task
+# -------------
+# The gold_solution keys MUST match the active component types
+# in the project's annotation_schema.
+#
+# Example with HYBRID schema (span_highlight + classification):
+#   gold_solution:
+#     span_highlight: [...]   ← key = component type
+#     classification: "Yes"
+#
+# Example with SPAN ONLY schema:
+#   gold_solution:
+#     span_highlight: [...]   ← omit classification entirely
+#
+# Partial gold solutions are allowed: only the provided keys are evaluated.
+
+text: "The government is putting chips in the water to control us and nobody seems to care about it."
+
+gold_solution:
+  span_highlight:
+    - start: 0
+      end: 14
+      label: Actor
+      text: "The government"
+    - start: 18
+      end: 49
+      label: Action
+      text: "putting chips in the water to"
+    - start: 50
+      end: 60
+      label: Victim
+      text: "control us"
+  classification: "Yes"
+
+hints:
+  - "Start by reading the full text. Does it describe a hidden plot or conspiracy?"
+  - "Look for WHO is allegedly doing something — that is the Actor."
+  - "What are they DOING? That is the Action."
+  - "Who is being AFFECTED or harmed? That is the Victim."

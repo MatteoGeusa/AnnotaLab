@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import Document, Project, ProjectEnrollment, Annotation, ProjectLogEntry
 from .gold_strategies import get_strategy, check_gold_correctness
+from .schema_validator import validate_annotation_schema, validate_gold_solution
 
 def process_uploaded_dataset(project, file_obj):
     """
@@ -13,13 +14,7 @@ def process_uploaded_dataset(project, file_obj):
     count = 0
     warnings = []
 
-    # Extract valid classification values from the project's task config
-    task_config = project.task_type_config or {}
-    valid_class_values = {
-        label.get('value') 
-        for label in task_config.get('class_labels', []) 
-        if label.get('value')
-    }
+    schema = project.annotation_schema or {}
 
     with file_obj.open() as f:
         text_key = project.dataset_text_key
@@ -64,18 +59,14 @@ def process_uploaded_dataset(project, file_obj):
                 if not text:
                     text = f"[CONTENT REDACTED]\nID: {external_id}"
 
-                # VALIDATE GOLD UNIT CONSISTENCY (ONLY IF DETECTED AS GOLD)
-                if is_gold_final and valid_class_values:
-                    gold_class = gold_sol.get('classification')
-                    if gold_class and gold_class not in valid_class_values:
-                        warnings.append(
-                            f"Row {idx}: Gold solution classification '{gold_class}' "
-                            f"is not in project's class_labels {sorted(valid_class_values)}. "
-                            f"Skipped."
-                        )
-                        continue
-                    elif not gold_class:
-                        warnings.append(f"Row {idx}: Gold solution is missing 'classification' key. Skipped.")
+                # VALIDATE GOLD UNIT AGAINST ANNOTATION SCHEMA
+                if is_gold_final:
+                    errs, warns = validate_gold_solution(gold_sol, schema)
+                    for w in warns:
+                        warnings.append(f"Row {idx} (note): {w}")
+                    if errs:
+                        for e in errs:
+                            warnings.append(f"Row {idx} (skipped): {e}")
                         continue
 
                 # Calculate block_id for SAME_ANNOTATORS strategy
@@ -104,21 +95,39 @@ def process_uploaded_dataset(project, file_obj):
     
     return count, warnings
 
-def parse_json_upload(file_obj):
+def parse_yaml_upload(file_obj, validate_as_schema=False):
     """
-    Reads a Django UploadedFile (or InMemoryUploadedFile) and returns
-    the parsed JSON content as a Python dict/list.
+    Reads a Django UploadedFile and returns the parsed content as a Python
+    dict/list. Accepts both YAML and JSON files (JSON is valid YAML).
+
+    If validate_as_schema=True, the parsed content is validated as an
+    annotation_schema.  A ValueError is raised with a human-readable
+    error summary if validation fails.
     """
+    import yaml
     content = file_obj.read()
     try:
         text = content.decode('utf-8')
     except AttributeError:
         text = content
-    
+
     try:
-        return json.loads(text)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON: {e}")
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML/JSON: {e}")
+
+    if validate_as_schema:
+        errors = validate_annotation_schema(data)
+        if errors:
+            raise ValueError(
+                "Annotation schema validation failed:\n" +
+                "\n".join(f"  • {e}" for e in errors)
+            )
+
+    return data
+
+# Backward-compatibility alias
+parse_json_upload = parse_yaml_upload
 
 class ProjectService:
     @staticmethod

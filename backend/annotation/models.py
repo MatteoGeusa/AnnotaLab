@@ -6,20 +6,18 @@ from django.utils import timezone
 import uuid
 import os
 from django.conf import settings
-import json
+import yaml
 
 def get_default_configuration_for_task_type():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_project_config.json')
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_annotation_schema.yaml')
     
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            return {"task_type": "classification", "class_labels": []}
-            
+                return yaml.safe_load(f)
+        except (yaml.YAMLError, IOError):
+            pass
     return {
-        "task_type": "hybrid",
         "span_labels": [
                 {
                 "name": "Actor",
@@ -54,24 +52,15 @@ def get_default_configuration_for_task_type():
             ]
     }
 
-def get_default_gold_config():
-    return {
-        "min_accuracy_required": 0.6,
-        "gold_injection_frequency": 5,
-        "continuous_exclusion": False,
-        "evaluation_strategy": "percentage",
-        "max_strikes": 3,
-        "min_gold_before_eval": 3
-    }
 
 def get_default_screening_config():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_screening_config.json')
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_screening_config.yaml')
     
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+                return yaml.safe_load(f)
+        except (yaml.YAMLError, IOError):
             return []
     return [
         {"id": "age", "type": "number", "label": "How old are you?", "required": True, "min": 18, "max": 99},
@@ -80,21 +69,24 @@ def get_default_screening_config():
     ]
 
 def get_default_configuration_for_informed_consent():
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_informed_consent.md')
+
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except IOError:
+            pass
+
     return """
-    [EXAMPLE SCRIPT]
-    Welcome to the study!
-    
-    Your task: You will be asked to [describe the task in half a line, e.g., read and classify 20 sentences]. The estimated time is approximately [X] minutes. The goal is [very brief purpose, e.g., to improve an artificial intelligence system].
-    
-    Your data and privacy: This task is anonymous. We do not collect any personally identifiable information. We will only save your responses and your Prolific ID, which we need exclusively to confirm your completion of the task and authorize your payment on the platform.
-    
-    Your rights: Participation is voluntary. You may stop participating at any time. If you decide not to finish, simply close this page and click on "Return submission" on Prolific. In this case, your partial data will not be used, but we will not be able to process your payment.
-    
-    By clicking the button below, you confirm that you are at least 18 years old, that you have read this information, and that you consent to participate.
+# Informed Consent
+
+Welcome to the study! By clicking the button below, you confirm that you are at least 18 years old,
+that you have read this information, and that you consent to participate.
     """
 
 def get_default_codebook_content():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'codebook_somiglianza_item.md')
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'codebook_item_similarity.md')
     
     if os.path.exists(config_path):
         try:
@@ -143,13 +135,13 @@ def get_default_instructions_content():
     """
 
 def get_default_practice_task():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_practice_task.json')
+    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_practice_task.yaml')
     
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+                return yaml.safe_load(f)
+        except (yaml.YAMLError, IOError):
             pass
     
     return {}
@@ -230,9 +222,9 @@ class Project(models.Model):
         help_text="Informed Consent Configuration: accept a string can be showed to the annotator before starting the task"
     )
     
-    task_type_config = models.JSONField(
-        default=get_default_configuration_for_task_type, 
-        help_text="Task Configuration (labels, colors, questions)"
+    annotation_schema = models.JSONField(
+        default=get_default_configuration_for_task_type,
+        help_text="Annotation schema (span labels, class labels, colors)"
     )
 
     # --- QUALITY CONTROL / GOLD UNITS ---

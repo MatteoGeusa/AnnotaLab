@@ -9,9 +9,11 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.conf import settings
 import json
+import yaml
 import re
 from ..models import Project, Annotation, ProjectLogEntry
-from ..services import parse_json_upload, process_uploaded_dataset, ProjectService
+from ..services import parse_json_upload, parse_yaml_upload, process_uploaded_dataset, ProjectService
+from ..schema_validator import validate_gold_solution
 from ..mace_service import run_mace_for_project
 
 class ProjectAdminForm(forms.ModelForm):
@@ -21,13 +23,13 @@ class ProjectAdminForm(forms.ModelForm):
     """
     upload_task_config = forms.FileField(
         required=False,
-        label="Upload Task Config (JSON)",
-        help_text="Upload a JSON file to overwrite the Task configuration (Labels, Questions)."
+        label="Upload Task Config (YAML)",
+        help_text="Upload a YAML (or JSON) file to overwrite the Task configuration (Labels, Questions)."
     )
     upload_screening_config = forms.FileField(
         required=False,
-        label="Upload Screening Config (JSON)",
-        help_text="Upload a JSON file to configure the screening questionnaire (demographics, etc.)."
+        label="Upload Screening Config (YAML)",
+        help_text="Upload a YAML (or JSON) file to configure the screening questionnaire (demographics, etc.)."
     )
     upload_codebook_content = forms.FileField(
         required=False,
@@ -41,8 +43,13 @@ class ProjectAdminForm(forms.ModelForm):
     )
     upload_practice_task_config = forms.FileField(
         required=False,
-        label="Upload Practice Task (JSON)",
-        help_text="Upload a JSON file with the practice task (text, gold_solution, hints)."
+        label="Upload Practice Task (YAML)",
+        help_text="Upload a YAML (or JSON) file with the practice task (text, gold_solution, hints)."
+    )
+    upload_informed_consent_content = forms.FileField(
+        required=False,
+        label="Upload Informed Consent (Markdown)",
+        help_text="Upload a .md file to overwrite the informed consent text shown to participants before the task."
     )
 
     class Meta:
@@ -50,22 +57,71 @@ class ProjectAdminForm(forms.ModelForm):
         fields = '__all__'
 
     def clean(self):
+        import yaml
         cleaned_data = super().clean()
         documents_file = cleaned_data.get('documents_file')
         status = cleaned_data.get('status')
-        
-        # If the user tries to set the project to LIVE
+
+        # ── LIVE status: requires a dataset ────────────────────────────────
         if status == 'LIVE':
-            # Check if there are already documents in the DB
             has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists() if self.instance.pk else False
-            
-            # We allow going LIVE ONLY if:
-            # 1. We already have documents in DB
-            # 2. OR we are uploading a NEW file right now (which will be processed in save_model)
             if not has_existing_docs and not documents_file:
-                error_msg = "Cannot Set to LIVE: No dataset found. Please upload a .jsonl file in 'Task Configuration' before setting the project status to Live."
-                self.add_error('status', error_msg)
-        
+                self.add_error('status',
+                    "Cannot Set to LIVE: No dataset found. "
+                    "Please upload a .jsonl file in 'Task Configuration' before setting the project status to Live."
+                )
+
+        # ── Cross-check: practice task gold_solution vs annotation_schema ──
+        # Only runs when practice task is enabled AND a file is being uploaded.
+        enable_practice = cleaned_data.get('enable_practice_task', True)
+        task_config_file    = cleaned_data.get('upload_task_config')
+        practice_task_file  = cleaned_data.get('upload_practice_task_config')
+
+        if not enable_practice:
+            return cleaned_data  # practice task disabled — skip all cross-validation
+
+        def _parse_yaml_file(file_obj):
+            """Parse an uploaded file as YAML, return dict or None on parse failure."""
+            if not file_obj:
+                return None
+            try:
+                file_obj.seek(0)
+                content = file_obj.read().decode('utf-8')
+                file_obj.seek(0)   # rewind so save_model can read it again
+                return yaml.safe_load(content)
+            except Exception:
+                return None
+
+        # Determine which schema to validate against:
+        # 1. A newly uploaded schema (takes priority)
+        # 2. The existing schema already in the DB
+        if task_config_file:
+            new_schema = _parse_yaml_file(task_config_file)
+        elif self.instance and self.instance.pk:
+            new_schema = self.instance.annotation_schema or {}
+        else:
+            new_schema = {}
+
+        # Determine which practice task to validate:
+        if practice_task_file:
+            new_practice = _parse_yaml_file(practice_task_file)
+        elif self.instance and self.instance.pk:
+            new_practice = self.instance.practice_task_config or {}
+        else:
+            new_practice = {}
+
+        if new_schema and new_practice:
+            gold_sol = new_practice.get('gold_solution')
+            if gold_sol:
+                from ..schema_validator import validate_gold_solution
+                errs, _ = validate_gold_solution(gold_sol, new_schema)
+                if errs:
+                    raise forms.ValidationError(
+                        "Practice task gold_solution is incompatible with the annotation schema — "
+                        "fix the practice task or the schema before saving:\n"
+                        + "\n".join(f"• {e}" for e in errs)
+                    )
+
         return cleaned_data
 
 class ProjectLogInline(TabularInline):
@@ -98,11 +154,12 @@ class ProjectAdmin(ModelAdmin):
     readonly_fields = (
         'status_notice',
         'status_badge',
-        'formatted_task_type_config', 
+        'formatted_annotation_schema',
         'formatted_screening_config',
         'formatted_codebook_content',
         'formatted_instructions_content',
         'formatted_practice_task_config',
+        'formatted_informed_consent_content',
     )
     
     tabs = [
@@ -160,26 +217,147 @@ class ProjectAdmin(ModelAdmin):
         # Standard fieldsets but with notice_html prepended to descriptions
         return (
             ("Project Details", {
-                "fields": (("name", "slug"), "description", "informed_consent_config",),
+                "fields": (("name", "slug"), "description",),
                 "classes": ("tab", "details"),
-                "description": notice_html
-            }),
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #3B82F6; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#60a5fa; font-size:1.1em;'>📝 Project Details</b><br>In this section you can edit the project name, slug (URL), and description.\
+                    </div>\
+                </div>")
+                }),
             ("Task Configuration", {
                 "classes": ("tab", "config"),
                 "fields": (
-                    "formatted_task_type_config",
+                    "formatted_annotation_schema",
                     "upload_task_config",
                     "documents_file",
                     ("dataset_text_key", "dataset_id_key"),
                 ),
-                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #3B82F6; color:#ddd; border-radius:4px;'>\
-                        <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task Design</b><br>Labels, Questions, Layout.\
-                    </div>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10B981; color:#ddd; border-radius:4px;'>\
-                        <b style='color:#34d399; font-size:1.1em;'>📊 Data Import</b><br>Upload .jsonl dataset.\
-                    </div>\
-                </div>")
+                "description": mark_safe(f"""{notice_html}
+<style>
+  .schema-docs summary {{
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }}
+  .schema-docs summary::-webkit-details-marker {{ display: none; }}
+  .schema-docs[open] .schema-docs-arrow {{ transform: rotate(90deg); }}
+  .schema-docs-arrow {{
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-style: normal;
+    margin-right: 6px;
+  }}
+</style>
+
+<details class="schema-docs" style="margin-top:16px;">
+  <summary>
+    <div style="display:inline-flex; align-items:center; gap:8px; background:#1e293b;
+                padding:10px 16px; border-left:4px solid #3B82F6; border-radius:4px;
+                font-size:13px; color:#94a3b8; font-weight:500;">
+      <i class="schema-docs-arrow">▶</i>
+      <span style="color:#60a5fa;">⚙️ Annotation Schema</span>
+      <span style="color:#475569; font-weight:400; font-size:12px;">— click to view configuration reference</span>
+    </div>
+  </summary>
+
+  <div style='margin-top:10px; display:flex; flex-direction:column; gap:12px; font-size:13px; color:#cbd5e1;'>
+
+    <!-- Overview -->
+    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #3B82F6; border-radius:4px;'>
+      Upload a <code style='background:#0f172a; padding:1px 6px; border-radius:3px; color:#93c5fd;'>.yaml</code> file
+      that defines how annotators interact with each document.
+      The schema drives both the live annotation view and the practice task.
+    </div>
+
+    <!-- components[] -->
+    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #8B5CF6; border-radius:4px;'>
+      <b style='color:#a78bfa;'>components <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+      Ordered list of annotation modules rendered to the annotator. Supported types:
+      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+        <tr style='border-bottom:1px solid #334155;'>
+          <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>span_highlight</code></td>
+          <td style='padding:4px 0; color:#94a3b8;'>Interactive text highlighter. Requires <code>labels[]</code>.</td>
+        </tr>
+        <tr>
+          <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>classification</code></td>
+          <td style='padding:4px 0; color:#94a3b8;'>Radio / checkbox buttons. Requires <code>options[]</code>.</td>
+        </tr>
+      </table>
+      <div style='margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;'>
+        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>HYBRID (default)</div>
+          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+  - type: span_highlight
+    labels: [...]
+  - type: classification
+    options: [...]</pre>
+        </div>
+        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>CLASSIFICATION ONLY</div>
+          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+  - type: classification
+    options: [...]</pre>
+        </div>
+        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>SPAN ONLY</div>
+          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+  - type: span_highlight
+    labels: [...]</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- span_highlight fields -->
+    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #10B981; border-radius:4px;'>
+      <b style='color:#34d399;'>span_highlight.labels <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+      Each entry defines one highlight category:
+      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+        <tr style='border-bottom:1px solid #334155;'>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>name</code></td><td style='color:#94a3b8;'>Label identifier — appears in the result payload</td>
+        </tr>
+        <tr style='border-bottom:1px solid #334155;'>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>color</code></td><td style='color:#94a3b8;'>Hex colour for the highlight badge (e.g. <code>"#FF5733"</code>)</td>
+        </tr>
+        <tr>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip shown on the label button <span style='color:#64748b;'>(optional)</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- classification fields -->
+    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #F59E0B; border-radius:4px;'>
+      <b style='color:#fbbf24;'>classification.options <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+      Each entry is one answer option:
+      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+        <tr style='border-bottom:1px solid #334155;'>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>label</code></td><td style='color:#94a3b8;'>Display text shown to the annotator</td>
+        </tr>
+        <tr style='border-bottom:1px solid #334155;'>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>value</code></td><td style='color:#94a3b8;'>Machine-readable value stored in the result</td>
+        </tr>
+        <tr>
+          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip for this option <span style='color:#64748b;'>(optional)</span></td>
+        </tr>
+      </table>
+      Optional component-level fields:
+      <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>question</code> (string) ·
+      <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>multi_select</code> (bool, default false)
+    </div>
+
+    <!-- Result payload -->
+    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #EC4899; border-radius:4px;'>
+      <b style='color:#f472b6;'>Result payload stored per annotation</b><br>
+      <pre style='margin:8px 0 0; color:#e2e8f0; font-size:11px; background:#0f172a; padding:10px; border-radius:4px;'>{{
+  "span_highlight": [{{"start": 12, "end": 28, "label": "Actor"}}],
+  "classification": "Yes"
+}}</pre>
+    </div>
+
+  </div>
+</details>""")
+
+
             }),
             ("Participant Training", {
                 "classes": ("tab", "training"),
@@ -191,9 +369,10 @@ class ProjectAdmin(ModelAdmin):
                     "formatted_codebook_content",
                     "upload_codebook_content",
                 ),
-                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:10px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:10px; border-left:4px solid #10B981; color:#ddd;'><b>📋 Screening</b></div>\
-                    <div style='flex:1; background:#2a2a2a; padding:10px; border-left:4px solid #A78BFA; color:#ddd;'><b>📖 Codebook</b></div>\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10B981; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#10B981; font-size:1.1em;'>📋 Screening & Codebook</b><br>Set participant screening criteria and upload a Codebook (Markdown) to define scientific guidelines. Each module can be toggled on or off as needed.\
+                    </div>\
                 </div>")
             }),
             ("Instructions & Practice", {
@@ -207,9 +386,10 @@ class ProjectAdmin(ModelAdmin):
                     "upload_practice_task_config",
                     "practice_task_required",
                 ),
-                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:10px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:10px; border-left:4px solid #F59E0B; color:#ddd;'><b>📝 Instructions</b></div>\
-                    <div style='flex:1; background:#2a2a2a; padding:10px; border-left:4px solid #EC4899; color:#ddd;'><b>🎯 Practice</b></div>\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #F59E0B; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#f59e0b; font-size:1.1em;'>📝 Instructions & Practice</b><br>Create detailed worker instructions and set up a mandatory training phase with solved examples (Gold). Every step can be toggled on or off based on your needs.\
+                    </div>\
                 </div>")
             }),
             ("Quality / Monitoring", {
@@ -220,8 +400,10 @@ class ProjectAdmin(ModelAdmin):
                     ("min_accuracy_required", "min_gold_before_eval"),
                     "gold_units_file",
                 ),
-                "description": mark_safe(f"{notice_html}<div style='background:#1e293b; padding:15px; border-left:4px solid #8b5cf6; color:#e2e8f0; border-radius:4px; margin-top:20px;'>\
-                    <b>🤖 MACE Analysis</b> available in Actions menu.\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #8B5CF6; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#a78bfa; font-size:1.1em;'>🛡️ Monitoring & Quality</b><br>Monitor data quality using Gold Units and accuracy thresholds. Use the <b>Actions</b> menu to run <b>MACE Analysis</b> to calculate annotator reliability.\
+                    </div>\
                 </div>")
             }),
             ("Distribution", {
@@ -231,9 +413,15 @@ class ProjectAdmin(ModelAdmin):
                     "distribution_strategy",
                     ("min_annotations_per_doc", "max_annotations_per_doc"),
                     ("block_size", "annotators_per_block"),
-                    "prioritize_unannotated"
+                    "prioritize_unannotated",
+                    "formatted_informed_consent_content",
+                    "upload_informed_consent_content",
                 ),
-                "description": mark_safe(f"{notice_html}<p style='margin-top:10px;'>Configure document serving and Prolific redirection.</p>")
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #3B82F6; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#3b82f6; font-size:1.1em;'>🚀 Distribution Criteria</b><br>Define how documents are assigned (Distribution Strategies) and configure Prolific completion codes. Manage the <b>Informed Consent</b> text (Markdown) shown to participants before the task. When ready, use the <b>Launch</b> button to publish.\
+                    </div>\
+                </div>")
             }),
         )
 
@@ -243,59 +431,147 @@ class ProjectAdmin(ModelAdmin):
         }
         js = ('js/admin_project.js',)
 
-    def _colorize_json(self, json_str):
-        """Apply simple syntax highlighting to a JSON string for HTML display."""
-        # Escape HTML first
+    def _colorize_yaml(self, yaml_str):
+        """
+        Syntax-highlight a YAML string for HTML display.
+
+        Approach: classify each line into one exclusive category so that
+        no regex can accidentally re-match HTML we already injected.
+
+        Categories (checked in order):
+          1. Comment line         →  gray italic
+          2. Bullet + scalar      →  bullet muted, value white
+          3. Bullet + key: val    →  bullet muted, key sky, value coloured
+          4. Key: val / Key:      →  key sky, value coloured
+          5. Fallback             →  unchanged
+        """
         from django.utils.html import escape
-        escaped = escape(json_str)
-        # Highlight keys ("key":)
-        escaped = re.sub(
-            r'&quot;([^&]+?)&quot;(?=\s*:)',
-            r'<span class="json-key">&quot;\1&quot;</span>',
-            escaped
-        )
-        # Highlight string values (: "value")
-        escaped = re.sub(
-            r':\s*&quot;([^&]*?)&quot;',
-            r': <span class="json-string">&quot;\1&quot;</span>',
-            escaped
-        )
-        # Highlight numbers
-        escaped = re.sub(
-            r':\s*(\d+\.?\d*)',
-            r': <span class="json-number">\1</span>',
-            escaped
-        )
-        # Highlight booleans
-        escaped = re.sub(
-            r'\b(true|false|null)\b',
-            r'<span class="json-bool">\1</span>',
-            escaped
-        )
-        return escaped
+
+        # ── Colour palette (matches admin_project.css classes) ──────────────
+        C_KEY     = 'class="json-key"'          # #7dd3fc sky-300
+        C_STRING  = 'class="json-string"'        # #86efac green-300
+        C_NUMBER  = 'class="json-number"'        # #fbbf24 amber-400
+        C_BOOL    = 'class="json-bool"'          # #c084fc purple-400
+        C_VALUE   = 'style="color:#e2e8f0;"'     # slate-200 – unquoted scalars
+        C_BULLET  = 'style="color:#94a3b8;"'     # slate-400
+        C_COMMENT = 'style="color:#64748b; font-style:italic;"'
+
+        def _val(raw):
+            """Return a coloured <span> for the value part after ':'."""
+            s = raw.strip()
+            if not s:
+                return raw  # key-only line → keep trailing newline as-is
+            # Single-quoted YAML string  → 'value'  (not HTML-escaped by Django)
+            if re.match(r"^'[^']*'$", s):
+                return f' <span {C_STRING}>{s}</span>'
+            # Double-quoted string (Django escapes " to &quot;)
+            if re.match(r'^&quot;.*&quot;$', s):
+                return f' <span {C_STRING}>{s}</span>'
+            # Integer or float
+            if re.match(r'^\-?\d+\.?\d*$', s):
+                return f' <span {C_NUMBER}>{s}</span>'
+            # Boolean / null (YAML accepts multiple casings)
+            if re.match(r'^(true|false|null|yes|no|True|False|Null|Yes|No)$', s):
+                return f' <span {C_BOOL}>{s}</span>'
+            # Unquoted scalar
+            return f' <span {C_VALUE}>{s}</span>'
+
+        escaped = escape(yaml_str)
+        lines = escaped.split('\n')
+        result = []
+
+        for line in lines:
+
+            # 1. Comment lines ───────────────────────────────────────────────
+            if re.match(r'^\s*#', line):
+                result.append(f'<span {C_COMMENT}>{line}</span>')
+                continue
+
+            # 2. Bullet + bare scalar  "  - Actor"  (no colon in scalar part)
+            m = re.match(r'^(\s*)(- )(\S.*)$', line)
+            if m and ':' not in m.group(3):
+                indent, scalar = m.group(1), m.group(3)
+                result.append(
+                    f'{indent}'
+                    f'<span {C_BULLET}>- </span>'
+                    f'<span {C_VALUE}>{scalar}</span>'
+                )
+                continue
+
+            # 3. Bullet + key: [value]  "  - name: Actor"
+            m = re.match(r'^(\s*)(- )([^\s:][^:]*?)(:)([ \t].*|)$', line)
+            if m:
+                indent, key, value_part = m.group(1), m.group(3), m.group(5)
+                result.append(
+                    f'{indent}'
+                    f'<span {C_BULLET}>- </span>'
+                    f'<span {C_KEY}>{key}</span>'
+                    f':{_val(value_part)}'
+                )
+                continue
+
+            # 4. Regular key: [value]  "  name: Actor"  or  "name:"
+            m = re.match(r'^(\s*)([^\s#:][^:]*?)(:)([ \t].*|)$', line)
+            if m:
+                indent, key, value_part = m.group(1), m.group(2), m.group(4)
+                result.append(
+                    f'{indent}'
+                    f'<span {C_KEY}>{key}</span>'
+                    f':{_val(value_part)}'
+                )
+                continue
+
+            # 5. Fallback ────────────────────────────────────────────────────
+            result.append(line)
+
+        return '\n'.join(result)
+
 
     def _render_config_block(self, obj, config_data, title, icon):
-        """Render a JSON config as a styled HTML block."""
+        """Render a structured config (dict/list) as a YAML-formatted HTML block."""
         if not config_data:
             return format_html(
                 '<div class="config-empty">'
                 '<span class="empty-icon">{}</span>'
-                '<span>No {} configured yet. Upload a JSON file above.</span>'
+                '<span>No {} configured yet. Upload a YAML file above.</span>'
                 '</div>',
                 icon, title.lower()
             )
 
         # Ensure important keys are on top if it's a dictionary
         if isinstance(config_data, dict):
-            priority_keys = ["task_type", "min_accuracy_required", "gold_injection_frequency", "continuous_exclusion"]
+            priority_keys = ["min_accuracy_required", "gold_injection_frequency", "continuous_exclusion"]
             ordered_data = {k: config_data[k] for k in priority_keys if k in config_data}
             for k, v in config_data.items():
                 if k not in ordered_data:
                     ordered_data[k] = v
             config_data = ordered_data
 
-        json_str = json.dumps(config_data, indent=4)
-        colorized = self._colorize_json(json_str)
+        yaml_str = yaml.dump(config_data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        colorized = self._colorize_yaml(yaml_str)
+
+        return format_html(
+            '<div class="json-config-display break-words max-w-none py-3 text-sm bg-base-50 border border-base-200 font-medium px-4 rounded-default shadow-xs dark:border-base-700 dark:bg-base-800">'
+            '  <div class="config-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(128,128,128,0.1); color: #64748b;">'
+            '    <div style="display: flex; align-items: center; gap: 8px;">'
+            '      <span class="config-icon">{icon}</span> <strong style="font-size: 13px;">{title}</strong>'
+            '    </div>'
+            '    <div style="display: flex; gap: 6px;">'
+            '        <button type="button" class="copy-json-btn" onclick="copyConfigToClipboard(this)" '
+            '                style="background: rgba(48,110,232,0.1); color: #306ee8; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s;"'
+            '                onmouseover="this.style.background=\'rgba(48,110,232,0.2)\'" onmouseout="this.style.background=\'rgba(48,110,232,0.1)\'">'
+            '           📋 Copy YAML'
+            '        </button>'
+            '    </div>'
+            '  </div>'
+            '  <div class="json-raw-content" style="display: none;">{raw_yaml}</div>'
+            '  <pre style="font-family: \'JetBrains Mono\', monospace; font-size: 13px; line-height: 1.5; color: inherit; white-space: pre-wrap; margin: 0;">{colorized}</pre>'
+            '</div>',
+            icon=icon,
+            title=title,
+            raw_yaml=yaml_str,
+            colorized=mark_safe(colorized)
+        )
 
     @admin.display(description="")
     def status_notice(self, obj):
@@ -310,11 +586,11 @@ class ProjectAdmin(ModelAdmin):
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <span style="font-size: 32px;">🔒</span>
                         <div style="line-height: 1.5;">
-                            <div style="font-weight: 900; color: #f59e0b; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Progetto Lanciato & Bloccato</div>
-                            <div style="color: #94a3b8; font-size: 13.5px; font-weight: 500;">La configurazione è sigillata per garantire la validità scientifica. Per modificare i parametri, è necessario creare una copia.</div>
+                            <div style="font-weight: 900; color: #f59e0b; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Project Launched & Locked</div>
+                            <div style="color: #94a3b8; font-size: 13.5px; font-weight: 500;">Configuration is sealed to ensure scientific validity. To modify parameters, you must create a copy.</div>
                         </div>
                     </div>
-                    <button type="button" onclick="quickCloneProject(this, '{}', '{}', true)" style="background: #f59e0b; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 800; border:none; cursor:pointer; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">📋 CLONA E MODIFICA</button>
+                    <button type="button" onclick="quickCloneProject(this, '{}', '{}', true)" style="background: #f59e0b; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 800; border:none; cursor:pointer; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">📋 CLONE & EDIT</button>
                 </div>
                 ''',
                 clone_url, obj.name
@@ -327,11 +603,11 @@ class ProjectAdmin(ModelAdmin):
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <span style="font-size: 32px;">▶️</span>
                         <div style="line-height: 1.5;">
-                            <div style="font-weight: 900; color: #3b82f6; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Playground Attivo (LIVE)</div>
-                            <div style="color: #94a3b8; font-size: 13.5px; font-weight: 500;">Il progetto è in fase di test. I campi sono in sola lettura per evitare conflitti; torna in DRAFT per apportare modifiche.</div>
+                            <div style="font-weight: 900; color: #3b82f6; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Playground Active (LIVE)</div>
+                            <div style="color: #94a3b8; font-size: 13.5px; font-weight: 500;">The project is in testing phase. Fields are read-only to prevent conflicts; return to DRAFT to make changes.</div>
                         </div>
                     </div>
-                    <button type="button" onclick="quickUpdateStatus(this, '{}', 'DRAFT', 'Draft')" style="background: #3b82f6; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 800; border:none; cursor:pointer; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">📁 TORNA IN DRAFT</button>
+                    <button type="button" onclick="quickUpdateStatus(this, '{}', 'DRAFT', 'Draft')" style="background: #3b82f6; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 800; border:none; cursor:pointer; font-size: 13px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">📁 RETURN TO DRAFT</button>
                 </div>
                 ''',
                 draft_url
@@ -339,8 +615,9 @@ class ProjectAdmin(ModelAdmin):
         return ""
 
     @admin.display(description="Task Config")
-    def formatted_task_type_config(self, obj):
-        return self._render_config_block(obj, obj.task_type_config, 'Task Configuration', '⚙️')
+    @admin.display(description="Annotation Schema")
+    def formatted_annotation_schema(self, obj):
+        return self._render_config_block(obj, obj.annotation_schema, 'Annotation Schema', '⚙️')
 
     @admin.display(description="Screening Config")
     def formatted_screening_config(self, obj):
@@ -441,6 +718,10 @@ class ProjectAdmin(ModelAdmin):
     @admin.display(description="Instructions Content")
     def formatted_instructions_content(self, obj):
         return self._render_markdown_block(obj, obj.instructions_content, 'Task Instructions', '📝')
+
+    @admin.display(description="Informed Consent Content")
+    def formatted_informed_consent_content(self, obj):
+        return self._render_markdown_block(obj, obj.informed_consent_config, 'Informed Consent', '📜')
 
     @admin.display(description="Practice Task Config")
     def formatted_practice_task_config(self, obj):
@@ -730,29 +1011,93 @@ class ProjectAdmin(ModelAdmin):
         old_status = None
         if not is_new:
             old_status = Project.objects.get(pk=obj.pk).status
+            
+        # 1. Salva i dati base del form
         super(ProjectAdmin, self).save_model(request, obj, form, change)
+        
+        # 2. Crea i log
         if is_new:
             ProjectLogEntry.objects.create(project=obj, action="Project Created", details=f"Project '{obj.name}' initialized.")
         elif old_status != obj.status:
             ProjectLogEntry.objects.create(project=obj, action="Status Changed", details=f"Status changed from {old_status} to {obj.status}.")
 
-        # File uploads
-        for field, handler in [('upload_task_config', parse_json_upload), ('upload_screening_config', parse_json_upload), ('upload_practice_task_config', parse_json_upload)]:
-            f = form.cleaned_data.get(field)
+        # 3. File uploads (YAML) — Mappatura esplicita Form -> Database
+        #
+        # Ordine deliberato: annotation_schema prima, practice_task dopo.
+        # Questo garantisce che quando si valida il practice vs schema,
+        # obj.annotation_schema sia già aggiornato se entrambi vengono caricati insieme.
+        #
+        # upload_task_config   → validate structure as annotation_schema (hard error)
+        # practice_task_config → validate gold_solution against schema (hard error → NOT saved)
+        # upload_screening_config → no validation
+        yaml_fields_mapping = {
+            'upload_task_config':          'annotation_schema',
+            'upload_screening_config':     'screening_config',
+            'upload_practice_task_config': 'practice_task_config',
+        }
+
+        for form_field, db_field in yaml_fields_mapping.items():
+            f = form.cleaned_data.get(form_field)
+            if not f:
+                continue
+
+            # ── Parse YAML ────────────────────────────────────────────────
+            validate_as_schema = (db_field == 'annotation_schema')
+            try:
+                parsed = parse_yaml_upload(f, validate_as_schema=validate_as_schema)
+            except ValueError as e:
+                self.message_user(request, f"❌ Upload error for '{form_field}': {e}", level='error')
+                continue
+
+            # ── Practice task: warn-only if no gold_solution ──────────────
+            if db_field == 'practice_task_config':
+                gold_sol = parsed.get('gold_solution')
+                if not gold_sol:
+                    self.message_user(
+                        request,
+                        "⚠️ Practice task saved, but has no 'gold_solution' key — annotators will not receive feedback.",
+                        level='warning',
+                    )
+
+            # ── annotation_schema: warn if existing practice task is now stale ──
+            # (blocking already happened in form.clean(), this is just an info reminder)
+            elif db_field == 'annotation_schema' and 'upload_practice_task_config' not in form.changed_data:
+                existing_practice = obj.practice_task_config or {}
+                gold_sol = existing_practice.get('gold_solution')
+                if existing_practice and gold_sol:
+                    errs, _ = validate_gold_solution(gold_sol, parsed)
+                    if errs:
+                        self.message_user(
+                            request,
+                            "⚠️ The new annotation schema may be incompatible with the existing practice task. "
+                            "Please re-upload the practice task to fix: "
+                            + "; ".join(errs),
+                            level='warning',
+                        )
+
+            # ── Persist ───────────────────────────────────────────────────
+            setattr(obj, db_field, parsed)
+            obj.save()
+
+        # 4. File uploads (Markdown) - Mappatura esplicita Form -> Database
+        markdown_fields_mapping = {
+            'upload_codebook_content': 'codebook_content',
+            'upload_instructions_content': 'instructions_content',
+            'upload_informed_consent_content': 'informed_consent_config',
+        }
+
+        for form_field, db_field in markdown_fields_mapping.items():
+            f = form.cleaned_data.get(form_field)
             if f:
-                setattr(obj, field.replace('upload_', ''), handler(f))
+                setattr(obj, db_field, f.read().decode('utf-8'))
                 obj.save()
 
-        for field in ['upload_codebook_content', 'upload_instructions_content']:
-            f = form.cleaned_data.get(field)
-            if f:
-                setattr(obj, field.replace('upload_', ''), f.read().decode('utf-8'))
-                obj.save()
-
+        # 5. Processamento Dataset
         if 'documents_file' in form.changed_data and obj.documents_file:
             process_uploaded_dataset(obj, obj.documents_file)
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
             process_uploaded_dataset(obj, obj.gold_units_file)
+
 
     def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
         return super().render_change_form(request, context, add, change, form_url, obj)

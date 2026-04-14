@@ -140,7 +140,7 @@ class GetInstructions(ProjectContextMixin, APIView):
             "content": project.instructions_content or "",
             "practice_task": practice if has_practice else None,
             "practice_task_required": practice_required,
-            "task_config": project.task_type_config or {},
+            "annotation_schema": project.annotation_schema or {},
             "skip": False
         })
 

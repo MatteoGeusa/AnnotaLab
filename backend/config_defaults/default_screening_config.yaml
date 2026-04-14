@@ -1,0 +1,28 @@
+- id: age
+  type: number
+  label: "How old are you?"
+  required: true
+  min: 18
+  max: 99
+
+- id: gender
+  type: select
+  label: "Gender?"
+  required: true
+  options:
+    - Male
+    - Female
+    - Non-binary
+    - Prefer not to say
+
+- id: native_language
+  type: select
+  label: "Native language?"
+  required: true
+  options:
+    - English
+    - Italian
+    - Spanish
+    - French
+    - German
+    - Other
