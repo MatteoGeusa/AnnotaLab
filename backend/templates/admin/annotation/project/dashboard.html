@@ -1,0 +1,1131 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'js/admin_project.js' %}"></script>
+<style>
+    #content {
+        padding: 0 !important;
+        background: transparent !important;
+    }
+
+    :root {
+        --db-bg: #f8fafc;
+        --db-card-bg: #ffffff;
+        --db-border: #e2e8f0;
+        --db-text-main: #0f172a;
+        --db-text-muted: #475569;
+        --db-primary: #2563eb;
+        --db-primary-soft: #eff6ff;
+        --db-success: #059669;
+    }
+
+    :root[data-theme="dark"],
+    html.dark,
+    .dark {
+        --db-bg: #0b0f1a;
+        --db-card-bg: #111827;
+        --db-border: #1f2937;
+        --db-text-main: #f1f5f9;
+        --db-text-muted: #94a3b8;
+        --db-primary: #60a5fa;
+        --db-primary-soft: rgba(96, 165, 250, 0.1);
+        --db-success: #34d399;
+    }
+
+
+    .premium-card {
+        background: var(--db-card-bg);
+        border: 1px solid var(--db-border);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .premium-card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+
+    .stats-card {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+    }
+
+    .status-pill {
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pill-live {
+        background: #10b981;
+        color: white;
+    }
+
+    .pill-draft {
+        background: #64748b;
+        color: white;
+    }
+
+    .pill-completed {
+        background: #6366f1;
+        color: white;
+    }
+
+    .pill-initial {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .dash-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.875rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .dash-btn:active {
+        transform: scale(0.97);
+    }
+
+    .dash-btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .dash-btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .dash-btn-glass {
+        background: var(--db-card-bg);
+        color: var(--db-primary);
+        border: 1px solid var(--db-border);
+    }
+
+    .dash-btn-glass:hover {
+        background: var(--db-bg);
+    }
+
+    .progress-bar-container {
+        height: 12px;
+        background: var(--db-bg);
+        border-radius: 999px;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: #2563eb;
+        border-radius: 999px;
+        transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .action-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-radius: 1rem;
+        background: var(--db-bg);
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .action-row:hover {
+        border-color: var(--db-border);
+        background: var(--db-card-bg);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* --- Stats card color borders --- */
+    .stats-blue {
+        border-color: #3b82f6;
+    }
+
+    .stats-blue:hover {
+        border-color: #3b82f6;
+    }
+
+    .stats-emerald {
+        border-color: #10b981;
+    }
+
+    .stats-emerald:hover {
+        border-color: #10b981;
+    }
+
+    .stats-indigo {
+        border-color: #6366f1;
+    }
+
+    .stats-indigo:hover {
+        border-color: #6366f1;
+    }
+
+    .stats-amber {
+        border-color: #f59e0b;
+    }
+
+    .stats-amber:hover {
+        border-color: #f59e0b;
+    }
+
+    .label-blue {
+        color: #3b82f6;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .label-emerald {
+        color: #10b981;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .label-indigo {
+        color: #818cf8;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .label-amber {
+        color: #f59e0b;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .link-blue {
+        font-size: 11px;
+        font-weight: 700;
+        color: #3b82f6;
+    }
+
+    .link-blue:hover {
+        color: #2563eb;
+    }
+
+    .link-emerald {
+        font-size: 11px;
+        font-weight: 700;
+        color: #10b981;
+    }
+
+    .link-emerald:hover {
+        color: #059669;
+    }
+
+    .link-indigo {
+        font-size: 11px;
+        font-weight: 700;
+        color: #818cf8;
+    }
+
+    .link-indigo:hover {
+        color: #6366f1;
+    }
+
+    .link-amber {
+        font-size: 11px;
+        font-weight: 700;
+        color: #f59e0b;
+    }
+
+    .link-amber:hover {
+        color: #d97706;
+    }
+
+    /* --- Dark panel (Operations) --- */
+    .dark-panel {
+        background: #0f172a;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        color: white;
+    }
+
+    .dark-panel-label {
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #64748b;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding-bottom: 0.5rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .dark-panel-label-rose {
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: #fb7185;
+        border-bottom: 1px solid rgba(239, 68, 68, 0.15);
+        padding-bottom: 0.5rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .lifecycle-btn {
+        padding: 0.625rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+    }
+
+    .lifecycle-btn:hover {
+        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* --- System task buttons --- */
+    .btn-emerald {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        background: #10b981;
+        color: white;
+        transition: background 0.2s;
+    }
+
+    .btn-emerald:hover {
+        background: #059669;
+    }
+
+    .btn-amber {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        background: #f59e0b;
+        color: white;
+        transition: background 0.2s;
+    }
+
+    .btn-amber:hover {
+        background: #d97706;
+    }
+
+    .btn-indigo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        background: #6366f1;
+        color: white;
+        transition: background 0.2s;
+    }
+
+    .btn-indigo:hover {
+        background: #4f46e5;
+    }
+
+    .btn-launch {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 900;
+        font-size: 14px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border: none;
+        cursor: pointer;
+        background: #f43f5e;
+        color: white;
+        transition: opacity 0.2s;
+    }
+
+    .btn-launch:hover {
+        opacity: 0.9;
+    }
+
+    .btn-nuke {
+        background: none;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(251, 113, 133, 0.7);
+        padding-top: 0.5rem;
+        transition: color 0.2s;
+    }
+
+    .btn-nuke:hover {
+        color: #fb7185;
+    }
+
+    /* --- Shield panel --- */
+    .shield-panel {
+        padding: 1.25rem;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 1rem;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .shield-label {
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #818cf8;
+    }
+
+    .shield-text {
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(199, 210, 254, 0.55);
+        font-weight: 500;
+    }
+
+    /* --- Tip card --- */
+    .tip-card {
+        border-radius: 1.25rem;
+        padding: 2.5rem 1.5rem;
+        background: #2563eb;
+        color: white;
+        text-align: center;
+    }
+
+    .tip-icon {
+        width: 4rem;
+        height: 4rem;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 1.75rem;
+    }
+
+    .tip-link {
+        font-size: 10px;
+        font-weight: 900;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 9999px;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.2s;
+        display: inline-block;
+    }
+
+    .tip-link:hover {
+        background: white;
+        color: #2563eb;
+    }
+
+    /* --- Simulator card --- */
+    .sim-label {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #6366f1;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .sim-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: var(--db-bg);
+        border: 2px solid var(--db-border);
+        border-radius: 1rem;
+        outline: none;
+        font-weight: 700;
+        font-size: 1.125rem;
+        transition: border-color 0.2s;
+        color: var(--db-text-main);
+        box-sizing: border-box;
+    }
+
+    .sim-input:focus {
+        border-color: #6366f1;
+    }
+
+    .sim-url-box {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--db-border);
+        padding: 1.5rem;
+    }
+
+    .sim-url-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        background: white;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--db-border);
+    }
+
+    .sim-url-copy-btn {
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid transparent;
+        background: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--db-text-muted);
+    }
+
+    .sim-url-copy-btn:hover {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+    }
+
+    /* --- Audit Log Table --- */
+    .audit-log-card {
+        background: var(--db-card-bg);
+        border: 1px solid var(--db-border);
+        border-radius: 1.25rem;
+        overflow: hidden;
+        min-height: 400px;
+    }
+
+    .audit-log-header {
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid var(--db-border);
+        background: var(--db-bg);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .realtime-dot {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        display: inline-block;
+    }
+
+    @keyframes ping {
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.4;
+            transform: scale(1.4);
+        }
+    }
+
+    /* --- Popup notifications --- */
+    #admin-popup-container {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        pointer-events: none;
+    }
+
+    .admin-popup {
+        pointer-events: auto;
+        background: #1e293b;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        min-width: 320px;
+        max-width: 450px;
+        animation: popupSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popupSlideIn {
+        from {
+            transform: translateX(100%) scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+        }
+    }
+
+    .admin-popup.closing {
+        animation: popupSlideOut 0.3s forwards;
+    }
+
+    @keyframes popupSlideOut {
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    .admin-popup-title {
+        font-weight: 800;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .admin-popup-message {
+        font-size: 0.8125rem;
+        opacity: 0.8;
+        line-height: 1.5;
+    }
+
+    .admin-popup-close {
+        cursor: pointer;
+        opacity: 0.5;
+        margin-left: auto;
+    }
+
+    .admin-popup-close:hover {
+        opacity: 1;
+    }
+
+    .admin-popup.success {
+        border-left: 4px solid #10b981;
+    }
+
+    .admin-popup.error {
+        border-left: 4px solid #ef4444;
+    }
+
+    .admin-popup.warning {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .admin-popup.info {
+        border-left: 4px solid #3b82f6;
+    }
+
+    /* --- Utility overrides --- */
+    .breadcrumb-link {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--db-text-muted);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-link:hover {
+        color: var(--db-primary);
+    }
+
+    .breadcrumb-sep {
+        opacity: 0.3;
+    }
+
+    .breadcrumb-current {
+        color: var(--db-primary);
+    }
+
+    /* Grid helpers */
+    .grid-4col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    @media (max-width: 900px) {
+        .grid-2col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .grid-lifecycle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+        .main-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .left-col {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .right-col {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    @media (min-width: 1024px) {
+        .page-header {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 2.5rem 1.5rem; color: var(--db-text-main); max-width: 1400px; margin: 0 auto;">
+
+    <!-- ── Header ── -->
+    <div class="page-header">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+            <!-- Breadcrumb -->
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <a href="/admin/" class="breadcrumb-link">Home</a>
+                <span class="breadcrumb-sep">/</span>
+                <a href="{% url 'admin:annotation_project_changelist' %}" class="breadcrumb-link">Projects</a>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-current"
+                    style="font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.2em;">Dashboard</span>
+            </div>
+
+            <!-- Title row -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;">
+                <h1
+                    style="font-size: 3rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin: 0; color: var(--db-text-main);">
+                    {{ project.name }}</h1>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="status-pill
+                        {% if project.status == 'LIVE' %}pill-live
+                        {% elif project.status == 'DRAFT' %}pill-draft
+                        {% elif project.status == 'COMPLETED' %}pill-completed
+                        {% else %}pill-initial{% endif %}">
+                        {{ project.status }}{% if project.status == 'LIVE' and not project.is_published %}
+                        (Playground){% endif %}
+                    </span>
+                    {% if project.is_published %}
+                    <span class="status-pill"
+                        style="background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg style="width:12px;height:12px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Official
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p
+                style="color: var(--db-text-muted); font-size: 1.1rem; font-weight: 500; max-width: 42rem; line-height: 1.65; margin: 0;">
+                {{ project.description|default:"No description provided for this project."|truncatewords:25 }}
+            </p>
+        </div>
+
+        <div style="flex-shrink: 0;">
+            <a href="{{ action_urls.settings }}" class="dash-btn dash-btn-glass" style="display: inline-flex;">
+                <svg style="width:20px;height:20px;transition:transform 0.2s;" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Project Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Main Layout ── -->
+    <div class="main-layout">
+
+        <!-- ── Left Column ── -->
+        <div class="left-col">
+
+            <!-- Progress Card -->
+            <div class="premium-card">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+                    <h3
+                        style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.18em; color: var(--db-text-muted); margin: 0;">
+                        Data Collection Lifecycle</h3>
+                    <div
+                        style="padding: 0.375rem 1rem; background: var(--db-bg); border-radius: 9999px; font-size: 12px; font-weight: 700; border: 1px solid var(--db-border);">
+                        Progress: <span style="color: var(--db-primary);">{{ progress }}%</span>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container" style="margin-bottom: 3rem;">
+                    <div class="progress-bar-fill" style="width: {{ progress }}%;"></div>
+                </div>
+
+                <div class="grid-4col">
+                    <!-- Total Docs -->
+                    <div class="premium-card stats-card stats-blue" style="padding: 1.25rem;">
+                        <div>
+                            <span class="label-blue">Total Documents</span>
+                            <div
+                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
+                                {{ stats.docs }}</div>
+                        </div>
+                        <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&o=1"
+                            class="link-blue">Explore Dataset →</a>
+                    </div>
+                    <!-- Gold Units -->
+                    <div class="premium-card stats-card stats-amber" style="padding: 1.25rem;">
+                        <div>
+                            <span class="label-amber">Gold Units</span>
+                            <div
+                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
+                                {{ stats.gold }}</div>
+                        </div>
+                        <a href="{% url 'admin:annotation_goldunitproxy_changelist' %}?project__id={{ project.id }}&o=1"
+                            class="link-amber">Quality Control →</a>
+                    </div>
+
+
+                    <!-- Workers -->
+                    <div class="premium-card stats-card stats-indigo" style="padding: 1.25rem;">
+                        <div>
+                            <span class="label-indigo">Enrolled Workers</span>
+                            <div
+                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
+                                {{ stats.enrollments }}</div>
+                        </div>
+                        <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}"
+                            class="link-indigo">Manage Workers →</a>
+                    </div>
+
+                    <!-- Annotations -->
+                    <div class="premium-card stats-card stats-emerald" style="padding: 1.25rem;">
+                        <div>
+                            <span class="label-emerald">Annotations</span>
+                            <div
+                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
+                                {{ stats.annotations }}</div>
+                        </div>
+                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&category=regular"
+                            class="link-emerald">Annotation Data →</a>
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <!-- Operations Panel -->
+            <div class="premium-card">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 2rem;">
+                    <h3
+                        style="font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.18em; color: var(--db-text-muted); margin: 0;">
+                        Operations Panel
+                    </h3>
+                    <p style="font-size: 12px; color: var(--db-text-muted); font-weight: 500; margin: 0;">
+                        Execute project actions and lifecycle transitions
+                    </p>
+                </div>
+
+                <div style="align-items: start; gap: 4rem;">
+                    <!-- Lifecycle Transitions -->
+                    <div style="flex: 1;">
+                        <p style="font-size: 12px; color: var(--db-text-muted); font-weight: 500; margin: 0;">
+                            Set project status to:
+                        </p>
+                        <br>
+                        <div class="grid-lifecycle">
+                            {% for trans in status_transitions %}
+                            <button
+                                onclick="window.quickUpdateStatus(this, '{{ action_urls.set_status }}', '{{ trans.value }}', '{{ trans.label }}')"
+                                class="lifecycle-btn"
+                                style="background: var(--db-bg); color: var(--db-text-main); border: 1px solid var(--db-border);">
+                                {{ trans.label }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High Risk Controls -->
+                {% if not project.is_published %}
+                <div
+                    style="margin-top: 3rem; padding: 2rem; background: rgba(244, 63, 94, 0.03); border: 1px solid rgba(244, 63, 94, 0.15); border-radius: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+                        <svg style="width:20px;height:20px;color:#f43f5e;" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span
+                            style="font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #f43f5e;">
+                            High Risk Management Area
+                        </span>
+                    </div>
+
+                    <div class="grid-2col" style="gap: 2rem;">
+                        <div style="flex: 1;">
+                            <p
+                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
+                                Move this project to production. This will lock settings and open it to the public.
+                            </p>
+                            <button onclick="quickLaunchProject(this, '{{ action_urls.launch }}')" class="btn-launch"
+                                style="width: 100%;">
+                                🚀 LAUNCH OFFICIAL CAMPAIGN
+                            </button>
+                        </div>
+                        <div style="flex: 1;">
+                            <p
+                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
+                                If you have collect some annotation in playground mode you can delete all annotations
+                                and participants from the test environment.
+                            </p>
+                            <button onclick="quickNukeProject(this, '{{ action_urls.nuke }}')" class="btn-nuke"
+                                style="width: 100%; border: 1px solid rgba(244, 63, 94, 0.2); padding: 0.75rem; border-radius: 0.75rem;">
+                                ☢️ DESTROY TEST DATA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="shield-panel"
+                    style="margin-top: 3rem; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 2rem; border-radius: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div
+                            style="width: 3rem; height: 3rem; background: #10b981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                            🛡️
+                        </div>
+                        <div>
+                            <h4
+                                style="font-size: 16px; font-weight: 900; color: #065f46; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">
+                                Published & Secured</h4>
+                            <p style="font-size: 13px; font-weight: 600; color: #059669; margin: 0;">Production
+                                Environment Active</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #047857; font-weight: 500; margin: 1rem 0 0;">
+                        This campaign is officially active. Configuration settings and gold units are cryptographically
+                        locked to preserve the integrity of the scientific results.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Audit Log -->
+            <div class="audit-log-card">
+                <div class="audit-log-header">
+                    <h3
+                        style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--db-text-muted); margin: 0;">
+                        Live Audit Log</h3>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="realtime-dot"></span>
+                        <span
+                            style="font-size: 10px; font-weight: 900; color: #10b981; text-transform: uppercase;">Realtime
+                            Tracking</span>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--db-card-bg);">
+                                <th
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    Timestamp</th>
+                                <th
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    Event Action</th>
+                                <th
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    Activity Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr style="border-top: 1px solid var(--db-border);">
+                                <td
+                                    style="padding: 1rem 2rem; font-size: 12px; font-family: monospace; color: var(--db-text-muted);">
+                                    {{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                                <td
+                                    style="padding: 1rem 2rem; font-size: 12px; font-weight: 700; color: var(--db-text-main);">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        {% if "Launch" in log.action or "Live" in log.action %}
+                                        <span
+                                            style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                                        {% elif "Nuke" in log.action or "Deleted" in log.action %}
+                                        <span
+                                            style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                                        {% else %}
+                                        <span
+                                            style="width:6px;height:6px;background:#3b82f6;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                                        {% endif %}
+                                        {{ log.action }}
+                                    </div>
+                                </td>
+                                <td style="padding: 1.25rem 2rem; font-size: 14px; color: var(--db-text-muted);"
+                                    title="{{ log.details }}">
+                                    {{ log.details }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3"
+                                    style="padding: 5rem 2rem; text-align: center; font-size: 14px; color: var(--db-text-muted); font-weight: 700; font-style: italic;">
+                                    No activity entries found for this study.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /left-col -->
+
+        <!-- ── Right Column ── -->
+        <div class="right-col">
+
+            <!-- Simulator Hub -->
+            <div class="premium-card">
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+                    <div style="flex: 1;">
+                        <span
+                            style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--db-text-muted); padding-bottom: 0.5rem; display: block;">System
+                            Tasks</span>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <button onclick="quickExportProject(this, '{{ action_urls.export }}', '{{ project.name }}')"
+                                class="btn-emerald">
+                                📊 Export Dataset (.JSONL)
+                            </button>
+                            <button onclick="quickRunMace(this, '{{ action_urls.run_mace }}')" class="btn-amber">
+                                🤖 Calculate Reliability (MACE)
+                            </button>
+                            <button
+                                onclick="quickCloneProject(this, '{{ action_urls.clone }}', '{{ project.name }}', {{ project.is_published|lower }})"
+                                class="btn-indigo">
+                                📋 Clone Config & Workspace
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="sim-label" style="font-size: 9px;">Participant Prolific PID</label>
+                        <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value="ADMIN_TEST"
+                            class="sim-input" style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem;">
+                    </div>
+                    <div class="sim-url-inner" style="padding: 0.5rem; border-radius: 0.5rem;">
+                        <code
+                            style="font-size: 10px; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:20 }}...</code>
+                        <button
+                            onclick="navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID='); window.adminNotify('info', 'Link Copied', 'URL copied.')"
+                            class="sim-url-copy-btn" style="padding: 0.25rem;">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <button
+                        onclick="window.openProjectPreview('{{ frontend_url }}', '{{ project.slug }}', 'preview_pid_sidebar_{{ project.pk }}', {{ project.is_published|lower }})"
+                        class="dash-btn dash-btn-primary"
+                        style="width: 100%; justify-content: center; font-size: 11px;">
+                        Open in external window
+                    </button>
+                </div>
+            </div>
+        </div><!-- /right-col -->
+
+    </div>
+</div>
+{% endblock %}

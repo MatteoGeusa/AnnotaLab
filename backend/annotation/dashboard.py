@@ -19,9 +19,11 @@ def custom_dashboard_callback(request, context):
     # 5. Activity Log (Vede gli eventi di sistema)
     recent_logs_qs = ProjectLogEntry.objects.select_related('project').order_by('-timestamp')[:6]
     recent_logs = []
+    from django.urls import reverse
     for log in recent_logs_qs:
         recent_logs.append({
             'project': log.project.name,
+            'project_url': reverse('admin:project_dashboard', args=[log.project.slug]),
             'action': log.action,
             'details': log.details[:50] + '...' if len(log.details) > 50 else log.details,
             'time_ago': timesince(log.timestamp) + ' fa' if log.timestamp else 'Poco fa',
@@ -38,10 +40,13 @@ def custom_dashboard_callback(request, context):
         p_pct = int((p_completed / p_total) * 100) if p_total > 0 else 0
         str_type = p.get_distribution_strategy_display().split('-')[0].strip()
         return {
+            'id': p.id,
             'name': p.name,
             'type': str_type,
             'status_label': 'Live' if not p.is_published else 'Launched',
-            'progress': p_pct
+            'progress': p_pct,
+            'description': p.description,
+            'url': reverse('admin:project_dashboard', args=[p.slug])
         }
 
     playground_projects = [serialize_project(p) for p in playground_qs]

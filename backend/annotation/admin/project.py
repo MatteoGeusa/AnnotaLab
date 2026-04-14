@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.shortcuts import render, get_object_or_404
+from django.db.models import F
 from django import forms
 from django.core.exceptions import ValidationError
 from unfold.admin import ModelAdmin, TabularInline
@@ -137,17 +139,37 @@ class ProjectLogInline(TabularInline):
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('project_name_link', 'status_badge', 'documents_link', 'gold_units_link', 'enrollments_link', 'annotations_link', 'link_prolific', 'export_list_button')
-    
+    list_display = ('name_link', 'simple_status', 'created_at')
+    list_filter = ('status', 'is_published', 'created_at')
+    search_fields = ('name', 'slug')
     @admin.display(description="Project Name", ordering='name')
-    def project_name_link(self, obj):
-        url = reverse('admin:annotation_project_change', args=[obj.pk])
-        if obj.is_published:
-            return format_html(
-                '<a href="{}" style="font-weight:700; color:#3b82f6; text-decoration:none;" title="View read-only configuration">{} 🔒</a>',
-                url, obj.name
-            )
-        return format_html('<a href="{}" style="font-weight:700; text-decoration:none; color:inherit;">{}</a>', url, obj.name)
+    def name_link(self, obj):
+        url = reverse('admin:project_dashboard', args=[obj.slug])
+        suffix = " 🔒" if obj.is_published else ""
+        return format_html('<a href="{}" style="font-weight:700; text-decoration:none; color:#3b82f6;">{}{}</a>', url, obj.name, suffix)
+
+    @admin.display(description="Status", ordering='status')
+    def simple_status(self, obj):
+        status_colors = {
+            'DRAFT': '#64748b', 
+            'LIVE': '#10b981',   
+            'PAUSED': '#f59e0b', 
+            'COMPLETED': '#3b82f6', 
+        }
+        color = status_colors.get(obj.status, '#64748b')
+        return format_html(
+            '<span style="background: {}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase;">'
+            '{}</span>', color, obj.status
+        )
+
+    @admin.display(description="Management")
+    def manage_project_link(self, obj):
+        url = reverse('admin:project_dashboard', args=[obj.slug])
+        return format_html(
+            '<a href="{}" class="bg-primary-600 text-white px-3 py-1 rounded-md text-xs font-bold hover:bg-primary-700 transition inline-block">'
+            '📊 DASHBOARD</a>', 
+            url
+        )
 
     actions = []
     form = ProjectAdminForm
@@ -727,9 +749,63 @@ class ProjectAdmin(ModelAdmin):
     def formatted_practice_task_config(self, obj):
         return self._render_config_block(obj, obj.practice_task_config, 'Practice Task', '🎯')
 
+    def dashboard_view(self, request, slug):
+        project = get_object_or_404(Project, slug=slug)
+        
+        # Gather stats
+        stats = {
+             'docs': project.documents.filter(is_gold_unit=False).count(),
+             'gold': project.documents.filter(is_gold_unit=True).count(),
+             'enrollments': project.enrollments.count(),
+             'annotations': Annotation.objects.filter(document__project=project).count(),
+        }
+        
+        # Progress calculation
+        p_total = stats['docs']
+        p_completed = project.documents.filter(current_annotations_count__gte=F('min_annotations_required')).count()
+        progress = int((p_completed / p_total) * 100) if p_total > 0 else 0
+        
+        # Action URLs
+        action_urls = {
+            'export': reverse('admin:project_export_jsonl', args=[project.pk]),
+            'set_status': reverse('admin:project_set_status', args=[project.pk]),
+            'nuke': reverse('admin:project_nuke_data', args=[project.pk]),
+            'launch': reverse('admin:project_launch_data', args=[project.pk]),
+            'clone': reverse('admin:project_quick_clone', args=[project.pk]),
+            'run_mace': reverse('admin:project_run_mace', args=[project.pk]),
+            'settings': reverse('admin:annotation_project_change', args=[project.pk]),
+            'dashboard': reverse('admin:project_dashboard', args=[project.slug]),
+        }
+        
+        # For simple list of status transitions
+        status_transitions = []
+        for val, label in Project.STATUS_CHOICES:
+            if val == project.status: continue
+            if project.is_published and val == 'DRAFT': continue
+            status_transitions.append({'value': val, 'label': label})
+
+        context = {
+            **self.admin_site.each_context(request),
+            'project': project,
+            'stats': stats,
+            'progress': progress,
+            'action_urls': action_urls,
+            'status_transitions': status_transitions,
+            'logs': project.logs.all()[:10],
+            'opts': self.model._meta,
+            'title': f"Dashboard: {project.name}",
+            'frontend_url': getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/'),
+        }
+        return render(request, 'admin/annotation/project/dashboard.html', context)
+
     def get_urls(self):
         urls = super(ProjectAdmin, self).get_urls()
         my_urls = [
+            path(
+                '<slug:slug>/dashboard/', 
+                self.admin_site.admin_view(self.dashboard_view), 
+                name='project_dashboard'
+            ),
             path(
                 '<path:object_id>/export/', 
                 self.admin_site.admin_view(self.download_export_view), 
