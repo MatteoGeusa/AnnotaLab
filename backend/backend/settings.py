@@ -78,8 +78,13 @@ UNFOLD = {
         "show_all_applications": False,
         "navigation": [
             {
-                "title": "Annotation",
+                "title": "Navigazione",
                 "items": [
+                    {
+                        "title": "Home",
+                        "link": "/admin/",
+                        "icon": "dashboard",
+                    },
                     {
                         "title": "Projects",
                         "link": "/admin/annotation/project/",
@@ -104,6 +109,7 @@ UNFOLD = {
             },
         ],
     },
+    "DASHBOARD_CALLBACK": "annotation.dashboard.custom_dashboard_callback",
 }
 
 INSTALLED_APPS = [
@@ -154,7 +160,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

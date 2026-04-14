@@ -229,7 +229,7 @@ class Project(models.Model):
 
     # --- QUALITY CONTROL / GOLD UNITS ---
     enable_gold_units = models.BooleanField(
-        default=True,
+        default=False,
         help_text="If True, gold units will be injected for quality control during annotation."
     )
 
@@ -257,7 +257,7 @@ class Project(models.Model):
 
     # --- TOGGLE SWITCHES ---
     enable_screening = models.BooleanField(
-        default=True,
+        default=False,
         help_text="If True, annotators will see the screening questionnaire before the task."
     )
 
@@ -269,7 +269,7 @@ class Project(models.Model):
 
     # --- CODEBOOK (BACKGROUND TEORICO-PRATICO) ---
     enable_codebook = models.BooleanField(
-        default=True,
+        default=False,
         help_text="If True, annotators will see the codebook/instructions before the task."
     )
     
@@ -281,7 +281,7 @@ class Project(models.Model):
 
     # --- INSTRUCTIONS / ONBOARDING ---
     enable_instructions = models.BooleanField(
-        default=True,
+        default=False,
         help_text="If True, annotators will see task instructions and optional practice task before annotating."
     )
 
@@ -292,7 +292,7 @@ class Project(models.Model):
     )
 
     enable_practice_task = models.BooleanField(
-        default=True,
+        default=False,
         help_text="If True, annotators will see a practice task before starting the real task."
     )
 
