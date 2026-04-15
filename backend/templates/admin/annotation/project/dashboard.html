@@ -857,7 +857,7 @@
                 </div>
 
                 <div class="progress-bar-container" style="margin-bottom: 3rem;">
-                    <div class="progress-bar-fill" style="width: {{ progress }}%;"></div>
+                    <div class="progress-bar-fill bg-emerald-500 js-progress-bar" data-progress="{{ progress|default:0 }}"></div>
                 </div>
 
                 <div class="grid-4col">
@@ -1100,8 +1100,11 @@
                             <button onclick="quickRunMace(this, '{{ action_urls.run_mace }}')" class="btn-amber">
                                 🤖 Calculate Reliability (MACE)
                             </button>
-                            <button
-                                onclick="quickCloneProject(this, '{{ action_urls.clone }}', '{{ project.name }}', {{ project.is_published|lower }})"
+                            <button 
+                                data-url="{{ action_urls.clone }}" 
+                                data-name="{{ project.name }}" 
+                                data-published="{{ project.is_published|lower }}"
+                                onclick="quickCloneProject(this, this.dataset.url, this.dataset.name, this.dataset.published === 'true')"
                                 class="btn-indigo">
                                 📋 Clone Config & Workspace
                             </button>
@@ -1125,7 +1128,11 @@
                         </button>
                     </div>
                     <button
-                        onclick="window.openProjectPreview('{{ frontend_url }}', '{{ project.slug }}', 'preview_pid_sidebar_{{ project.pk }}', {{ project.is_published|lower }})"
+                        data-frontend="{{ frontend_url }}"
+                        data-slug="{{ project.slug }}"
+                        data-pid-id="preview_pid_sidebar_{{ project.pk }}"
+                        data-published="{{ project.is_published|lower }}"
+                        onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true')"
                         class="dash-btn dash-btn-primary"
                         style="width: 100%; justify-content: center; font-size: 11px;">
                         Open in external window
@@ -1136,4 +1143,13 @@
 
     </div>
 </div>
+
+<script>
+    // Apply dynamic widths after load to satisfy the IDE linter
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.js-progress-bar').forEach(function(el) {
+            el.style.width = el.getAttribute('data-progress') + '%';
+        });
+    });
+</script>
 {% endblock %}

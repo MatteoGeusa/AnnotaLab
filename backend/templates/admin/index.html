@@ -185,7 +185,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
         <!-- Drafts -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-slate-400"
-            onclick="window.location.href='{% url 'admin:annotation_project_changelist' %}?status__exact=DRAFT'">
+            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=DRAFT"
+            onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Drafts Projects</span>
                 <span class="text-slate-400">📝</span>
@@ -195,7 +196,8 @@
 
         <!-- Playground -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-amber-400"
-            onclick="window.location.href='{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=0'">
+            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=0"
+            onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Playground Projects
                 </span>
@@ -206,7 +208,8 @@
 
         <!-- Launched -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-emerald-500"
-            onclick="window.location.href='{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=1'">
+            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=1"
+            onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Launched Projects
                 </span>
@@ -217,7 +220,8 @@
 
         <!-- Completed -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-blue-500"
-            onclick="window.location.href='{% url 'admin:annotation_project_changelist' %}?status__exact=COMPLETED'">
+            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=COMPLETED"
+            onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Completed Projects</span>
                 <span class="text-blue-500">🏁</span>
@@ -227,7 +231,8 @@
 
         <!-- Annotators -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-indigo-500"
-            onclick="window.location.href='{% url 'admin:annotation_annotator_changelist' %}'">
+            data-url="{% url 'admin:annotation_annotator_changelist' %}"
+            onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Total Annotators</span>
                 <span class="text-indigo-500">👥</span>
@@ -304,7 +309,8 @@
                             {{ proj.description|default:"" }}
                         </p>
                         <div class="progress-bar-bg">
-                            <div class="progress-bar-fill bg-emerald-500" style="width: {{ proj.progress }}%;"></div>
+                            <div class="progress-bar-fill bg-emerald-500 js-progress-bar"
+                                data-progress="{{ proj.progress|default:0 }}"></div>
                         </div>
                     </div>
                     {% empty %}
@@ -315,4 +321,12 @@
         </div>
     </div>
 </div>
+<script>
+    // Apply dynamic widths after load to satisfy the IDE linter
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.js-progress-bar').forEach(function (el) {
+            el.style.width = el.getAttribute('data-progress') + '%';
+        });
+    });
+</script>
 {% endblock %}

@@ -293,7 +293,7 @@ class ProjectAdmin(ModelAdmin):
                     </div>\
                 </div>")
                 }),
-            ("Task Configuration", {
+            ("Annotation schema & Dataset configuration", {
                 "classes": ("tab", "config"),
                 "fields": (
                     "formatted_annotation_schema",
@@ -467,7 +467,7 @@ class ProjectAdmin(ModelAdmin):
                     </div>\
                 </div>")
             }),
-            ("Quality / Monitoring", {
+            ("Quality & Monitoring", {
                 "classes": ("tab", "quality"),
                 "fields": (
                     "enable_gold_units",
