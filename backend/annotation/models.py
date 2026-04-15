@@ -152,7 +152,7 @@ class Project(models.Model):
     Example: 'Sentiment Analysis Batch 1'
     """
     name = models.CharField(max_length=200, help_text="Project name")
-    slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="Unique Identifier for the URL (e.g., 'nome-studio')")
+    slug = models.SlugField(max_length=250, unique=True, blank=True, help_text="Unique Identifier for the URL (e.g., 'project-slug')")
     description = models.TextField(blank=True, help_text="Project description")
     STATUS_CHOICES = [
         ('DRAFT', 'Draft'),
@@ -267,7 +267,7 @@ class Project(models.Model):
         help_text="Screening questionnaire: JSON list of questions shown to annotators before the task. Empty list = skip screening."
     )
 
-    # --- CODEBOOK (BACKGROUND TEORICO-PRATICO) ---
+    # --- CODEBOOK (THEORETICAL-PRACTICAL BACKGROUND) ---
     enable_codebook = models.BooleanField(
         default=False,
         help_text="If True, annotators will see the codebook/instructions before the task."

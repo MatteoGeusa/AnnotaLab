@@ -58,9 +58,9 @@
     }
 
     .status-pill {
-        padding: 6px 16px;
+        padding: 8px 20px;
         border-radius: 9999px;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 800;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -160,6 +160,7 @@
     .gradient-text {
         background: linear-gradient(135deg, #3b82f6, #6366f1);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
@@ -392,7 +393,7 @@
         text-transform: uppercase;
         border: none;
         cursor: pointer;
-        background: #f43f5e;
+        background: #10b981;
         color: white;
         transition: opacity 0.2s;
     }
@@ -794,7 +795,7 @@
                         {% elif project.status == 'DRAFT' %}pill-draft
                         {% elif project.status == 'COMPLETED' %}pill-completed
                         {% else %}pill-initial{% endif %}">
-                        {{ project.status }}{% if project.status == 'LIVE' and not project.is_published %}
+                        Status: {{ project.status }}{% if project.status == 'LIVE' and not project.is_published %}
                         (Playground){% endif %}
                     </span>
                     {% if project.is_published %}
@@ -805,7 +806,7 @@
                                 d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
                                 clip-rule="evenodd" />
                         </svg>
-                        Official
+                        Launched
                     </span>
                     {% endif %}
                 </div>
@@ -813,24 +814,30 @@
 
             <p
                 style="color: var(--db-text-muted); font-size: 1.1rem; font-weight: 500; max-width: 42rem; line-height: 1.65; margin: 0;">
-                {{ project.description|default:"No description provided for this project."|truncatewords:25 }}
+                Description: <br>
+                {{ project.description|default:"No description provided for this project."|truncatewords:25}}
             </p>
         </div>
-
-        <div style="flex-shrink: 0;">
-            <a href="{{ action_urls.settings }}" class="dash-btn dash-btn-glass" style="display: inline-flex;">
-                <svg style="width:20px;height:20px;transition:transform 0.2s;" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Project Settings
-            </a>
-        </div>
     </div>
-
+    <hr style="margin: 1rem 0; border: 1px solid var(--db-border);">
+    <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+        <a href="{{ action_urls.settings }}" class="dash-btn dash-btn-primary"
+            style="display: inline-flex; width: fit-content;">
+            <svg style="width:20px;height:20px;transition:transform 0.2s;" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Project Configuration
+        </a>
+        <p
+            style="font-size: 11px; color: var(--db-text-muted); font-weight: 600; margin: 0; padding-left: 0.5rem; line-height: 1.4; max-width: 400px;">
+            Project Architect: define task logic, upload datasets and manage project schema.
+        </p>
+    </div>
+    <br>
     <!-- ── Main Layout ── -->
     <div class="main-layout">
 
@@ -932,7 +939,7 @@
                                 onclick="window.quickUpdateStatus(this, '{{ action_urls.set_status }}', '{{ trans.value }}', '{{ trans.label }}')"
                                 class="lifecycle-btn"
                                 style="background: var(--db-bg); color: var(--db-text-main); border: 1px solid var(--db-border);">
-                                {{ trans.label }}
+                                {% if trans.value == 'LIVE' %}Live (Playground){% else %}{{ trans.label }}{% endif %}
                             </button>
                             {% endfor %}
                         </div>
@@ -951,31 +958,32 @@
                         </svg>
                         <span
                             style="font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #f43f5e;">
-                            High Risk Management Area
+                            Risk Area
                         </span>
                     </div>
 
                     <div class="grid-2col" style="gap: 2rem;">
                         <div style="flex: 1;">
-                            <p
-                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
-                                Move this project to production. This will lock settings and open it to the public.
-                            </p>
                             <button onclick="quickLaunchProject(this, '{{ action_urls.launch }}')" class="btn-launch"
                                 style="width: 100%;">
-                                🚀 LAUNCH OFFICIAL CAMPAIGN
+                                🚀 LAUNCH OFFICIAL
                             </button>
+                            <p
+                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; margin-top: 0.5rem;line-height: 1.5;">
+                                Move this project to production. This will lock settings and open it to the public.
+                            </p>
                         </div>
                         <div style="flex: 1;">
-                            <p
-                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
-                                If you have collect some annotation in playground mode you can delete all annotations
-                                and participants from the test environment.
-                            </p>
                             <button onclick="quickNukeProject(this, '{{ action_urls.nuke }}')" class="btn-nuke"
                                 style="width: 100%; border: 1px solid rgba(244, 63, 94, 0.2); padding: 0.75rem; border-radius: 0.75rem;">
                                 ☢️ DESTROY TEST DATA
                             </button>
+                            <p
+                                style="font-size: 13px; font-weight: 500; color: var(--db-text-muted); margin-bottom: 1.5rem; margin-top: 0.5rem; line-height: 1.5;">
+                                If you have collected some annotations in playground mode, you can delete all
+                                annotations
+                                and participants from the test environment.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -996,8 +1004,8 @@
                         </div>
                     </div>
                     <p style="font-size: 14px; line-height: 1.6; color: #047857; font-weight: 500; margin: 1rem 0 0;">
-                        This campaign is officially active. Configuration settings and gold units are cryptographically
-                        locked to preserve the integrity of the scientific results.
+                        This campaign is officially active. Configuration settings and gold units are
+                        locked to preserve the integrity of the results.
                     </p>
                 </div>
                 {% endif %}
@@ -1106,7 +1114,7 @@
                     </div>
                     <div class="sim-url-inner" style="padding: 0.5rem; border-radius: 0.5rem;">
                         <code
-                            style="font-size: 10px; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:20 }}...</code>
+                            style="font-size: 10px; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:100 }}...</code>
                         <button
                             onclick="navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID='); window.adminNotify('info', 'Link Copied', 'URL copied.')"
                             class="sim-url-copy-btn" style="padding: 0.25rem;">

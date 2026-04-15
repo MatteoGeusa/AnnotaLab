@@ -1,14 +1,14 @@
-from django.db.models import Avg, Count, F, Q
+from django.db.models import Avg, Count, F, Q, Sum
 from django.utils import timezone
 from annotation.models import Project, Document, Annotator, Annotation, ProjectEnrollment, ProjectLogEntry
 from django.utils.timesince import timesince
 
 def custom_dashboard_callback(request, context):
     """
-    Dashboard globale: mostra lo stato di salute generale del sistema e i volumi.
+    Global dashboard: shows the general health status of the system and volumes.
     """
     
-    # 1. KPI Progetti e Annotatori
+    # 1. Project and Annotator KPIs
     draft_projects_count = Project.objects.filter(status='DRAFT').count()
     playground_projects_count = Project.objects.filter(status='LIVE', is_published=False).count()
     launched_projects_count = Project.objects.filter(status='LIVE', is_published=True).count()
@@ -16,7 +16,7 @@ def custom_dashboard_callback(request, context):
     
     total_annotators = Annotator.objects.count()
     
-    # 5. Activity Log (Vede gli eventi di sistema)
+    # 5. Activity Log (System events)
     recent_logs_qs = ProjectLogEntry.objects.select_related('project').order_by('-timestamp')[:6]
     recent_logs = []
     from django.urls import reverse
@@ -26,18 +26,20 @@ def custom_dashboard_callback(request, context):
             'project_url': reverse('admin:project_dashboard', args=[log.project.slug]),
             'action': log.action,
             'details': log.details[:50] + '...' if len(log.details) > 50 else log.details,
-            'time_ago': timesince(log.timestamp) + ' fa' if log.timestamp else 'Poco fa',
+            'time_ago': timesince(log.timestamp) + ' ago' if log.timestamp else 'Just now',
             'is_launch': 'Launch' in log.action or 'Live' in log.action
         })
 
-    # 6. Progetti Live e Lanciati (Per la colonna a destra)
+    # 6. Live and Launched Projects (For the right column)
     playground_qs = Project.objects.filter(status='LIVE', is_published=False)
     launched_qs = Project.objects.filter(status='LIVE', is_published=True)
     
     def serialize_project(p):
-        p_total = p.documents.count()
-        p_completed = p.documents.filter(current_annotations_count__gte=F('min_annotations_required')).count()
-        p_pct = int((p_completed / p_total) * 100) if p_total > 0 else 0
+        regular_docs = p.documents.filter(is_gold_unit=False)
+        total_req = regular_docs.aggregate(total=Sum('min_annotations_required'))['total'] or 0
+        total_curr = regular_docs.aggregate(total=Sum('current_annotations_count'))['total'] or 0
+        p_pct = int((total_curr / total_req) * 100) if total_req > 0 else 0
+        if p_pct > 100: p_pct = 100
         str_type = p.get_distribution_strategy_display().split('-')[0].strip()
         return {
             'id': p.id,

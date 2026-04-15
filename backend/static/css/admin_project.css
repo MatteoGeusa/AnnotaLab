@@ -1,0 +1,35 @@
+/* Custom styles for Project Admin */
+
+/* Increase gap between field rows */
+.unfold-form-row {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Make dividers actually look like dividers, not field rows */
+[class*="field-divider_"] > div:first-child {
+    display: none !important;
+}
+
+[class*="field-divider_"] > div:last-child {
+    grid-column: span 2 / span 2 !important;
+}
+
+[class*="field-divider_"] .readonly {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+}
+
+.divider-field {
+    border-top: 1px solid rgba(128,128,128,0.12);
+    margin: 2rem 0;
+    width: 100%;
+}
+
+/* Style for field labels to be more robust */
+.unfold-form-row label {
+    font-weight: 600 !important;
+    color: var(--unfold-text-main) !important;
+}

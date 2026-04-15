@@ -90,7 +90,7 @@ class AnnotationAdmin(ModelAdmin):
             return "-"
             
         text = obj.document.text if obj.document else ""
-        spans = obj.result.get('spans', [])
+        spans = obj.result.get('spans') or obj.result.get('span_highlight') or []
         classification = obj.result.get('classification', 'N/A')
         
         # Sort spans by starting index

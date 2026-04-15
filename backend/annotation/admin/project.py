@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.shortcuts import render, get_object_or_404
-from django.db.models import F
+from django.db.models import F, Sum, Min
 from django import forms
 from django.core.exceptions import ValidationError
 from unfold.admin import ModelAdmin, TabularInline
@@ -139,7 +139,7 @@ class ProjectLogInline(TabularInline):
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('name_link', 'simple_status', 'created_at')
+    list_display = ('name_link', 'simple_status', 'completion_progress', 'stats_summary', 'created_at')
     list_filter = ('status', 'is_published', 'created_at')
     search_fields = ('name', 'slug')
     @admin.display(description="Project Name", ordering='name')
@@ -161,6 +161,52 @@ class ProjectAdmin(ModelAdmin):
             '<span style="background: {}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase;">'
             '{}</span>', color, obj.status
         )
+
+    @admin.display(description="Progress", ordering='total_curr')
+    def completion_progress(self, obj):
+        total_req = getattr(obj, 'total_req', 0) or 0
+        total_curr = getattr(obj, 'total_curr', 0) or 0
+        
+        progress = 0
+        if total_req > 0:
+            progress = int((total_curr / total_req) * 100)
+            progress = min(progress, 100)
+            
+        color = "#10b981" if progress == 100 else "#3b82f6"
+        
+        return format_html(
+            '<div style="width: 100px; background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 4px;">'
+            '  <div style="width: {}%; background: {}; height: 100%; transition: width 0.3s;"></div>'
+            '</div>'
+            '<span style="font-size: 11px; font-weight: 700; color: #64748b;">{}% Complete</span>',
+            progress, color, progress
+        )
+
+    @admin.display(description="Stats")
+    def stats_summary(self, obj):
+        docs = getattr(obj, 'doc_count', 0)
+        workers = getattr(obj, 'worker_count', 0)
+        annots = getattr(obj, 'annot_count', 0)
+        return format_html(
+            '<div style="display: flex; gap: 8px; font-size: 11px; font-weight: 600;">'
+            '  <span title="Documents" style="color: #3b82f6;">📄 {}</span>'
+            '  <span title="Annotations" style="color: #10b981;">📝 {}</span>'
+            '  <span title="Workers" style="color: #8b5cf6;">👥 {}</span>'
+            '</div>',
+            docs, annots, workers
+        )
+
+    def get_queryset(self, request):
+        from django.db.models import Sum, Count, Q
+        qs = super().get_queryset(request)
+        qs = qs.annotate(
+            total_req=Sum('documents__min_annotations_required', filter=Q(documents__is_gold_unit=False)),
+            total_curr=Sum('documents__current_annotations_count', filter=Q(documents__is_gold_unit=False)),
+            doc_count=Count('documents', filter=Q(documents__is_gold_unit=False), distinct=True),
+            worker_count=Count('enrollments', distinct=True),
+            annot_count=Count('documents__annotations', distinct=True)
+        )
+        return qs
 
     @admin.display(description="Management")
     def manage_project_link(self, obj):
@@ -256,6 +302,13 @@ class ProjectAdmin(ModelAdmin):
                     ("dataset_text_key", "dataset_id_key"),
                 ),
                 "description": mark_safe(f"""{notice_html}
+<div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
+    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #60a5fa; color:#ddd; border-radius:4px;'>
+        <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task & Data Configuration</b><br>
+        Define the core logic of your annotation task and upload the dataset. This includes labels for highlighting and classification, as well as the input source format.
+    </div>
+</div>
+
 <style>
   .schema-docs summary {{
     list-style: none;
@@ -278,7 +331,7 @@ class ProjectAdmin(ModelAdmin):
                 padding:10px 16px; border-left:4px solid #3B82F6; border-radius:4px;
                 font-size:13px; color:#94a3b8; font-weight:500;">
       <i class="schema-docs-arrow">▶</i>
-      <span style="color:#60a5fa;">⚙️ Annotation Schema</span>
+      <span style="color:#60a5fa;">⚙️ Annotation Schema Documentation</span>
       <span style="color:#475569; font-weight:400; font-size:12px;">— click to view configuration reference</span>
     </div>
   </summary>
@@ -760,10 +813,19 @@ class ProjectAdmin(ModelAdmin):
              'annotations': Annotation.objects.filter(document__project=project).count(),
         }
         
-        # Progress calculation
-        p_total = stats['docs']
-        p_completed = project.documents.filter(current_annotations_count__gte=F('min_annotations_required')).count()
-        progress = int((p_completed / p_total) * 100) if p_total > 0 else 0
+        # Progress calculation: Volume-based for better granularity
+        regular_docs = project.documents.filter(is_gold_unit=False)
+        total_req_annotations = regular_docs.aggregate(total=Sum('min_annotations_required'))['total'] or 0
+        total_curr_annotations = regular_docs.aggregate(total=Sum('current_annotations_count'))['total'] or 0
+        
+        if total_req_annotations > 0:
+            # We use the total volume of annotations to provide a smoother progress bar
+            progress = int((total_curr_annotations / total_req_annotations) * 100)
+            if progress > 100: progress = 100
+        else:
+            progress = 0
+
+        p_completed = regular_docs.filter(current_annotations_count__gte=F('min_annotations_required')).count()
         
         # Action URLs
         action_urls = {
@@ -930,7 +992,7 @@ class ProjectAdmin(ModelAdmin):
         for ann in annotations:
             raw_result = ann.result
             formatted_markers = []
-            raw_spans = raw_result.get('spans', [])
+            raw_spans = raw_result.get('spans') or raw_result.get('span_highlight') or []
             if isinstance(raw_spans, list):
                 for span in raw_spans:
                     formatted_markers.append({
@@ -985,7 +1047,7 @@ class ProjectAdmin(ModelAdmin):
                         onclick="quickUpdateStatus(this, '{update_url}', '{val}', '{label}')"
                         title="Change to {label}"
                         class="status-panel-custom-btn">
-                    <span>{btn_icon}</span> <span class="truncate">{label}</span>
+                    <span>{btn_icon}</span> <span class="truncate">{label if val != 'LIVE' else 'Live (Playground)'}</span>
                 </button>
             '''
         actions_panel = ""
@@ -1074,7 +1136,7 @@ class ProjectAdmin(ModelAdmin):
                     <div style="display: flex; gap: 4px;">
                         <input type="text" id="{}" value="ADMIN_TEST" style="flex: 1; padding: 6px 8px; border: 1px solid #475569; border-radius: 6px; font-size: 11px; background: #0f172a; color: white; outline: none;">
                         <button type="button" onclick="window.openProjectPreview(\'{}\', \'{}\', \'{}\', {})"
-                                style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px;">👁️ Test as Partecipant</button>
+                                style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px;">👁️ Test as Participant</button>
                     </div>
                 </div>
             </div>
@@ -1088,20 +1150,20 @@ class ProjectAdmin(ModelAdmin):
         if not is_new:
             old_status = Project.objects.get(pk=obj.pk).status
             
-        # 1. Salva i dati base del form
+        # 1. Save base form data
         super(ProjectAdmin, self).save_model(request, obj, form, change)
         
-        # 2. Crea i log
+        # 2. Create logs
         if is_new:
             ProjectLogEntry.objects.create(project=obj, action="Project Created", details=f"Project '{obj.name}' initialized.")
         elif old_status != obj.status:
             ProjectLogEntry.objects.create(project=obj, action="Status Changed", details=f"Status changed from {old_status} to {obj.status}.")
 
-        # 3. File uploads (YAML) — Mappatura esplicita Form -> Database
+        # 3. File uploads (YAML) — Explicit mapping Form -> Database
         #
-        # Ordine deliberato: annotation_schema prima, practice_task dopo.
-        # Questo garantisce che quando si valida il practice vs schema,
-        # obj.annotation_schema sia già aggiornato se entrambi vengono caricati insieme.
+        # Deliberate order: annotation_schema first, practice_task after.
+        # This ensures that when practice vs schema is validated,
+        # obj.annotation_schema is already updated if both are uploaded together.
         #
         # upload_task_config   → validate structure as annotation_schema (hard error)
         # practice_task_config → validate gold_solution against schema (hard error → NOT saved)
@@ -1155,7 +1217,7 @@ class ProjectAdmin(ModelAdmin):
             setattr(obj, db_field, parsed)
             obj.save()
 
-        # 4. File uploads (Markdown) - Mappatura esplicita Form -> Database
+        # 4. File uploads (Markdown) - Explicit mapping Form -> Database
         markdown_fields_mapping = {
             'upload_codebook_content': 'codebook_content',
             'upload_instructions_content': 'instructions_content',
@@ -1168,7 +1230,7 @@ class ProjectAdmin(ModelAdmin):
                 setattr(obj, db_field, f.read().decode('utf-8'))
                 obj.save()
 
-        # 5. Processamento Dataset
+        # 5. Dataset processing
         if 'documents_file' in form.changed_data and obj.documents_file:
             process_uploaded_dataset(obj, obj.documents_file)
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
