@@ -471,7 +471,8 @@ function executeCloneAction(buttonElement, url, cloneMode, newName) {
         .then(data => {
             if (data.status === 'success') {
                 window.adminNotify('success', 'Project Cloned!', data.message, 4000);
-                setTimeout(() => window.location.reload(), 1000);
+                console.log("Cloning success, redirecting to project list...");
+                setTimeout(() => window.location.replace('/admin/annotation/project/'), 1000);
             } else {
                 window.adminNotify('error', 'Cloning Failed', data.message || 'Unknown error');
                 if (container) { buttonElement.disabled = false; container.style.opacity = '1'; }

@@ -857,7 +857,8 @@
                 </div>
 
                 <div class="progress-bar-container" style="margin-bottom: 3rem;">
-                    <div class="progress-bar-fill bg-emerald-500 js-progress-bar" data-progress="{{ progress|default:0 }}"></div>
+                    <div class="progress-bar-fill bg-emerald-500 js-progress-bar"
+                        data-progress="{{ progress|default:0 }}"></div>
                 </div>
 
                 <div class="grid-4col">
@@ -958,7 +959,7 @@
                         </svg>
                         <span
                             style="font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #f43f5e;">
-                            Risk Area
+                            Danger Zone
                         </span>
                     </div>
 
@@ -1100,9 +1101,7 @@
                             <button onclick="quickRunMace(this, '{{ action_urls.run_mace }}')" class="btn-amber">
                                 🤖 Calculate Reliability (MACE)
                             </button>
-                            <button 
-                                data-url="{{ action_urls.clone }}" 
-                                data-name="{{ project.name }}" 
+                            <button data-url="{{ action_urls.clone }}" data-name="{{ project.name }}"
                                 data-published="{{ project.is_published|lower }}"
                                 onclick="quickCloneProject(this, this.dataset.url, this.dataset.name, this.dataset.published === 'true')"
                                 class="btn-indigo">
@@ -1110,34 +1109,44 @@
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label class="sim-label" style="font-size: 9px;">Participant Prolific PID</label>
-                        <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value="ADMIN_TEST"
-                            class="sim-input" style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem;">
-                    </div>
-                    <div class="sim-url-inner" style="padding: 0.5rem; border-radius: 0.5rem;">
-                        <code
-                            style="font-size: 10px; color: #6366f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:100 }}...</code>
-                        <button
-                            onclick="navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID='); window.adminNotify('info', 'Link Copied', 'URL copied.')"
-                            class="sim-url-copy-btn" style="padding: 0.25rem;">
-                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                            </svg>
-                        </button>
-                    </div>
+                </div>
+            </div>
+            <div
+                style="background: var(--db-primary-soft); padding: 1rem; border-radius: 1rem; border: 1px solid var(--db-border);">
+                <div style="margin-bottom: 1rem;">
+                    <label class="sim-label"
+                        style="font-size: 9px; margin-bottom: 0.4rem; color: var(--db-primary);">TEST
+                        PARTICIPANT
+                        ID</label>
+                    <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value="ADMIN_TEST"
+                        placeholder="Enter a name to test..." class="sim-input"
+                        style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main);">
+                    <p
+                        style="font-size: 10px; color: var(--db-text-muted); font-weight: 500; margin-top: 0.5rem; line-height: 1.4;">
+                        Enter a unique name to simulate a new worker session and test the annotation flow.
+                    </p>
+                </div>
+
+                <div class="sim-url-inner"
+                    style="padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.75rem; background: var(--db-bg); border: 1px solid var(--db-border);">
+                    <code
+                        style="font-size: 10px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:100 }}...</code>
                     <button
-                        data-frontend="{{ frontend_url }}"
-                        data-slug="{{ project.slug }}"
-                        data-pid-id="preview_pid_sidebar_{{ project.pk }}"
-                        data-published="{{ project.is_published|lower }}"
-                        onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true')"
-                        class="dash-btn dash-btn-primary"
-                        style="width: 100%; justify-content: center; font-size: 11px;">
-                        Open in external window
+                        onclick="navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID='); window.adminNotify('info', 'Link Copied', 'URL copied.')"
+                        class="sim-url-copy-btn" style="padding: 0.25rem;">
+                        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
                     </button>
                 </div>
+                <button data-frontend="{{ frontend_url }}" data-slug="{{ project.slug }}"
+                    data-pid-id="preview_pid_sidebar_{{ project.pk }}" data-published="{{ project.is_published|lower }}"
+                    onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true')"
+                    class="dash-btn dash-btn-primary"
+                    style="width: 100%; justify-content: center; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+                    🚀 Test Annotation
+                </button>
             </div>
         </div><!-- /right-col -->
 
@@ -1146,8 +1155,8 @@
 
 <script>
     // Apply dynamic widths after load to satisfy the IDE linter
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.js-progress-bar').forEach(function(el) {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.js-progress-bar').forEach(function (el) {
             el.style.width = el.getAttribute('data-progress') + '%';
         });
     });

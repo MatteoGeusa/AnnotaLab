@@ -293,7 +293,7 @@ class ProjectAdmin(ModelAdmin):
                     </div>\
                 </div>")
                 }),
-            ("Annotation schema & Dataset configuration", {
+            ("Annotation schema & Dataset upload", {
                 "classes": ("tab", "config"),
                 "fields": (
                     "formatted_annotation_schema",
