@@ -1,6 +1,6 @@
-# Cospiracy Fullstack: Advanced Textual Annotation Platform
+# AnnotaLab: Advanced Textual Annotation Platform
 
-A powerful, flexible, and high-performance fullstack solution designed for researchers to collect high-quality textual annotations from professional annotators (e.g., Prolific).
+A fullstack solution designed for researchers to collect textual annotations from annotators (e.g., Prolific).
 
 ---
 
