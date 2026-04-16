@@ -1,46 +1,47 @@
-# Relazione Tecnica: Piattaforma di Annotazione “Cospiracy Fullstack”
+# Cospiracy Fullstack: Advanced Textual Annotation Platform
 
-Una soluzione avanzata, flessibile e fullstack per la raccolta di annotazioni testuali di alta qualità, progettata per ricercatori e annotatori professionisti (es. Prolific).
+A powerful, flexible, and high-performance fullstack solution designed for researchers to collect high-quality textual annotations from professional annotators (e.g., Prolific).
 
 ---
 
-## 🚀 Guida all’Avvio Rapido (Quickstart)
+## 🚀 Quickstart
 
-### Prerequisiti
+### Prerequisites
 
-- **Docker & Docker Compose** (scelta consigliata)
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL (Supabase o locale)
+- **Docker & Docker Compose** (Recommended)
+- **Python 3.10+**
+- **Node.js 18+**
+- **PostgreSQL** (Supabase or local)
 
-### 🐳 Configurazione Docker
+### 🐳 Docker Configuration
 
-Il progetto include diversi setup Docker in base al tuo ambiente:
+The project provides multiple Docker setups depending on your environment:
 
 ```bash
-# Sviluppo Locale (Solo Database)
+# Local Development (Database Only)
 docker compose -f 'docker-compose-only-db.yaml' up -d --build 'db'
 
 # Fullstack (Database + Backend + Frontend)
 docker compose -f 'docker-compose-fullstack.yaml' up -d --build
 
-# Backend + Frontend (Collegamento a Database Esterno/Supabase)
+# Backend + Frontend (Connected to External/Supabase DB)
 docker compose -f 'docker-compose-supabase-setup.yml' up -d --build
 ```
 
-### 🐍 Backend Setup (Sviluppo Locale)
+### 🐍 Backend Setup (Local Development)
 
 ```bash
 cd backend
 python -m venv venv
-./venv/Scripts/Activate  # Windows
+# Activate on Windows: .\venv\Scripts\Activate
+# Activate on Unix: source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### ⚛️ Frontend Setup (Sviluppo Locale)
+### ⚛️ Frontend Setup (Local Development)
 
 ```bash
 cd frontend
@@ -50,80 +51,67 @@ npm run dev
 
 ---
 
-## 🎯 Panoramica del Sistema
+## 🎯 System Overview
 
-La piattaforma è progettata per gestire diversi tipi di annotazione (Sentiment, NER, Teorie del Complotto) senza dover modificare il codice sorgente. La configurazione dell'interfaccia, delle etichette e della logica di distribuzione avviene dinamicamente a livello di **Progetto** tramite l'Admin Panel.
+The platform enables researchers to manage complex annotation tasks (Sentiment, NER, Conspiracy Theories) without manual code changes. Interface configuration, labels, and distribution logic are defined dynamically per **Project** via the Admin Panel.
 
-### Pipeline dell'Annotatore
+### Annotator Pipeline
 
-Il sistema guida l'utente attraverso un flusso prestabilito:
+The system guides participants through a structured workflow:
 
-1. **Consenso Informato**: Pagina legale obbligatoria.
-2. **Screening (Demographics)**: Raccolta di dati anagrafici e metadati.
-3. **Codebook**: Studio del materiale teorico e delle definizioni (formato Markdown).
-4. **Istruzioni & Practice**: Guida pratica con feedback immediato su task di esempio.
-5. **Annotazione Reale**: Ciclo continuo di documenti con iniezione di **Gold Units** per il controllo qualità.
-6. **Completamento**: Reindirizzamento automatico a Prolific con codice di completamento.
-
----
-
-## 🛠️ Architettura e Tecniche Avanzate
-
-### 1. Configurazione "No-Code" dei Task
-
-I ricercatori possono caricare file JSON o Markdown direttamente dall'Admin per definire:
-
-- **Task Type**: `classification`, `ner`, o `hybrid`.
-- **Interfaccia Dinamica**: Etichette, colori, hover hints e domande a scelta multipla.
-- **Workflow Modulare**: Possibilità di abilitare/disabilitare screening, codebook o training per ogni singolo progetto.
-
-### 2. Strategie di Distribuzione (Redundancy Management)
-
-Il sistema supporta tre modalità di assegnazione dei documenti:
-
-- **STANDARD (Crowdsourcing)**: I documenti vengono pescati casualmente fino al raggiungimento del limite `max_annotations_per_doc`. Ottimo per ottimizzare i costi.
-- **FULL_OVERLAP (Pilot Study)**: Ogni annotatore vede ogni documento del progetto. Ideale per calcolare l'accordo tra esperti.
-- **SAME_ANNOTATORS (Block-based)**: I documenti vengono divisi in blocchi (es. 10 doc). Un blocco viene assegnato a _k_ annotatori fissi. Essenziale per studi di affidabilità controllata.
-
-### 3. Controllo Qualità (QC) & MACE
-
-La piattaforma integra strumenti d'avanguardia per gestire il rumore dei dati:
-
-- **Gold Units Injection**: Iniezione automatica di documenti con soluzione nota per testare l'accuratezza in tempo reale. Se un annotatore scende sotto una soglia (es. 60%), viene automaticamente escluso.
-- **MACE (Multi-Annotator Competence Estimation)**: Algoritmo di inferenza bayesiana che stima la competenza di ogni annotatore e deduce il "vero" label pesando le risposte dei partecipanti più affidabili.
-- **Time Tracking**: Ogni annotazione registra i millisecondi impiegati per identificare bot o "clickers" compulsivi.
-
-### 4. Gestione della Concorrenza (Fetch-then-Lock)
-
-Per evitare che più utenti ricevano lo stesso documento sforando i limiti di ridondanza, il backend adotta un pattern `select_for_update(skip_locked=True)`. Questo garantisce alte prestazioni e coerenza dei dati anche con centinaia di annotatori simultanei.
+1.  **Informed Consent**: Mandatory legal agreement page.
+2.  **Screening (Demographics)**: Real-time validation of participant profile and metadata collection.
+3.  **Codebook**: Theoretical training material and definitions (Markdown supported).
+4.  **Instructions & Practice**: Hands-on guide with immediate feedback on pilot tasks.
+5.  **Real Annotation**: Continuous document stream with integrated **Gold Units** for quality control.
+6.  **Completion**: Automatic redirection to Prolific with completion verification codes.
 
 ---
 
-## 📊 Modelli Dati Principali (`backend/annotation/models.py`)
+## 🛠️ Advanced Features & Architecture
 
-- **`Project`**: Il container della campagna (configurazione UI, strategia, file .jsonl).
-- **`Annotator`**: L'utente (Prolific PID), traccia lo stato globale (consent, screening).
-- **`ProjectEnrollment`**: Traccia il progresso del singolo utente su uno specifico progetto (accuratezza gold, strikes, ranking MACE).
-- **`Document`**: L'unità testuale. Supporta proxy per distinguere tra `Standard Items` e `Gold Units`.
-- **`Annotation`**: Il payload JSON dell'annotazione, inclusi spans (start/end) e tempi di esecuzione.
+### 1. "No-Code" Task Configuration
+
+Researchers can configure projects directly from the Admin to define:
+
+- **Task Type**: Support for Classification, NER, or Hybrid tasks.
+- **Dynamic Interface**: Custom labels, color palettes, hover hints, and multiple-choice questions.
+- **Modular Workflow**: Enable or disable screening, codebook, or practice phases independently for each project.
+
+### 2. Distribution Strategies (Redundant Management)
+
+Three assignment modes to optimize for cost, speed, or reliability:
+
+- **STANDARD**: Documents are pseudo-randomly assigned to annotators until reaching the `max_annotations_per_doc` limit.
+- **FULL_OVERLAP**: Every annotator sees every document in the project. Ideal for inter-annotator agreement (IAA) calculations.
+- **SAME_ANNOTATORS (Block-based)**: Documents are divided into blocks. Each block is assigned to exactly _k_ fixed annotators. Essential for controlled reliability studies.
+
+### 3. Quality Control (QC) & Bayesian Inferencing
+
+State-of-the-art tools to ensure data integrity and manage noise:
+
+- **Gold Units Injection**: Automatic injection of documents with known solutions. Annotators falling below the accuracy threshold (e.g., 60%) are automatically excluded from the pool.
+- **MACE (Multi-Annotator Competence Estimation)**: Integrated Bayesian algorithm that estimates individual competence and deduces the most likely "ground truth" by weighting responses from the most reliable participants.
+- **Time Tracking**: Millisecond-level precision tracking for each annotation to identify bots, "click-spamming," or low-effort contributors.
+
+### 4. High-Concurrency Management
+
+To prevent redundancy violations and "double-assignment" in high-traffic scenarios (e.g., hundreds of workers starting simultaneously), the backend implements a **Fetch-then-Lock** pattern using `select_for_update(skip_locked=True)`. This ensures data consistency and high performance under heavy load.
 
 ---
 
-## 🎨 Admin Interface (Premium experience)
+## 📊 Core Data Models (`backend/annotation/models.py`)
 
-Grazie a `django-unfold`, l'interfaccia di amministrazione offre:
-
-- **Dashboard Organizzate per Tab**: Dettagli, Training, Task Config, Quality, Log e Launch.
-- **Visualizzatore Config**: Rendering colorato dei JSON di configurazione direttamente nel browser.
-- **Inline Statistics**: Visualizzazione immediata di avanzamento, numero di lavoratori attivi e accuratezza media.
-- **Quick Import/Export**: Caricamento dataset via `.jsonl` e download dei risultati pronti per l'analisi.
-
----
-
-## 🔗 Accesso Rapido (Link Utili)
-
-- **Admin Panel**: `http://localhost:8000/admin/`
-- **Link di Test (Project #1)**: `http://localhost:5173/?PROLIFIC_PID=TEST_USER&project_id=1`
-- **Esportazione Risultati**: Disponibile direttamente dalla lista progetti nell'Admin via pulsante `⬇ JSONL`.
+- **`Project`**: The central campaign container (UI config, distribution strategy, dataset metadata).
+- **`Annotator`**: Global participant profile and metadata (e.g., Prolific PID).
+- **`ProjectEnrollment`**: Tracks individual progress, gold accuracy, and MACE competence scores per project.
+- **`Document`**: The atomic unit of text. Supports **Proxies** to distinguish between Standard Items and Gold Units.
+- **`Annotation`**: The final JSON payload containing spans, labels, and execution metrics.
 
 ---
+
+## 🔗 Quick Access
+
+- **Admin Panel**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+- **Testing Link (Project #1)**: [http://localhost:5173/?PROLIFIC_PID=TEST_USER&project_id=1](http://localhost:5173/?PROLIFIC_PID=TEST_USER&project_id=1)
+- **Results Export**: Available directly in the Project List via the `⬇ JSONL` button.
