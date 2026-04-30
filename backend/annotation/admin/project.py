@@ -64,6 +64,29 @@ class ProjectAdminForm(forms.ModelForm):
         documents_file = cleaned_data.get('documents_file')
         status = cleaned_data.get('status')
 
+        # ── CONTROLLO INTEGRITÀ: Impedisce valori negativi per Quality e Distribution ──
+        fields_to_validate_positive = [
+            # Quality / Monitoring
+            'gold_injection_frequency', 
+            'min_accuracy_required', 
+            'min_gold_before_eval',
+            # Distribution & Launch
+            'min_annotations_per_doc', 
+            'max_annotations_per_doc', 
+            'block_size', 
+            'annotators_per_block'
+        ]
+
+        for field in fields_to_validate_positive:
+            val = cleaned_data.get(field)
+            # Controlliamo che il valore sia stato inserito (not None) e che sia un numero negativo
+            if val is not None and val < 0:
+                self.add_error(
+                    field, 
+                    "Invalid input: This parameter cannot be less than 0."
+                )
+        # ───────────────────────────────────────────────────────────────────────────────
+
         # ── LIVE status: requires a dataset ────────────────────────────────
         if status == 'LIVE':
             has_existing_docs = self.instance.documents.filter(is_gold_unit=False).exists() if self.instance.pk else False
