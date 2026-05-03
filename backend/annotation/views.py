@@ -19,6 +19,7 @@ class ProjectContextMixin:
         pid = data.get('prolific_pid') or data.get('pid')
         project_id = data.get('project_id')
         project_slug = data.get('project_slug')
+        is_test_session = str(data.get('is_test', 'false')).lower() == 'true'
 
         if not pid:
             return None, None, None, Response({"error": "Missing PID"}, status=400)
@@ -31,7 +32,13 @@ class ProjectContextMixin:
         else:
             project = get_object_or_404(Project, id=project_id)
 
-        annotator, _ = Annotator.objects.get_or_create(prolific_pid=pid)
+        annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
+        
+        # If explicitly marked as test in this request, update the annotator
+        if is_test_session and not annotator.is_test:
+            annotator.is_test = True
+            annotator.save(update_fields=['is_test'])
+        
         enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)
         
         return project, annotator, enrollment, None

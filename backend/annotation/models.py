@@ -412,6 +412,7 @@ class ProjectLogEntry(models.Model):
 
 class Annotator(models.Model):
     prolific_pid = models.CharField(max_length=255, unique=True, db_index=True)
+    is_test = models.BooleanField(default=False, help_text="If True, this is a test/admin session and should be excluded from metrics.")
     created_at = models.DateTimeField(auto_now_add=True)
     metadata = JSONField(default=dict, blank=True)
     

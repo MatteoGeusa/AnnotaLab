@@ -23,7 +23,7 @@ def update_annotation_count_on_save(sender, instance, created, **kwargs):
         doc = instance.document
         # We count the actual records in the DB to ensure consistency
         # (Safer than blindly incrementing +1)
-        doc.current_annotations_count = doc.annotations.count()
+        doc.current_annotations_count = doc.annotations.filter(annotator__is_test=False).count()
         # We only update the specific field to optimize performance
         doc.save(update_fields=['current_annotations_count'])
 
@@ -37,5 +37,5 @@ def update_annotation_count_on_delete(sender, instance, **kwargs):
     the 'min_annotations_required' threshold.
     """
     doc = instance.document
-    doc.current_annotations_count = doc.annotations.count()
+    doc.current_annotations_count = doc.annotations.filter(annotator__is_test=False).count()
     doc.save(update_fields=['current_annotations_count'])

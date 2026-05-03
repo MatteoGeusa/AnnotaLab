@@ -145,12 +145,12 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS', 
-    'http://localhost:80,http://127.0.0.1:80,http://localhost:5173,http://localhost:8080,https://3mvspn6w-5173.euw.devtunnels.ms'
+    'http://localhost:80,http://127.0.0.1:80,http://localhost:5173,http://localhost:8080'
 ).split(',')
 
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     'CSRF_TRUSTED_ORIGINS', 
-    'http://localhost:8080,http://127.0.0.1:8080,https://3mvspn6w-5173.euw.devtunnels.ms'
+    'http://localhost:8080,http://127.0.0.1:8080'
 ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
@@ -209,7 +209,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 #  FRONTEND CONFIGURATION
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://3mvspn6w-5173.euw.devtunnels.ms/')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

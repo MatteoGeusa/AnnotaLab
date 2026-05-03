@@ -10,7 +10,7 @@ export const UI_STRINGS = {
     task_instruction_header: "Task Instruction",
     default_instruction: "Read the text below and complete the tasks.",
     default_classification_query: "Classify this text:",
-    clear_btn: "Clear",
+    clear_btn: "Clear All",
     submit_btn: "Submit & Next",
     error_no_project: "Fatal Error: No Project ID/Slug found.",
     error_fetch_task: "Error fetching task. Please refresh.",

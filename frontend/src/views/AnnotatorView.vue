@@ -42,19 +42,12 @@
                 <!-- Component-driven blocks -->
                 <template v-for="comp in activeComponents" :key="comp.type">
                     <div class="section" v-if="comp.type === 'span_highlight'">
-                        <SpanHighlightBlock
-                            :ref="el => blockRefs[comp.type] = el"
-                            :text="currentDoc.text"
-                            :config="comp"
-                            v-model="result[comp.type]"
-                        />
+                        <SpanHighlightBlock :ref="el => blockRefs[comp.type] = el" :text="currentDoc.text"
+                            :config="comp" v-model="result[comp.type]" />
                     </div>
                     <div class="section classification-section" v-else-if="comp.type === 'classification'">
-                        <ClassificationBlock
-                            :ref="el => blockRefs[comp.type] = el"
-                            :config="comp"
-                            v-model="result[comp.type]"
-                        />
+                        <ClassificationBlock :ref="el => blockRefs[comp.type] = el" :config="comp"
+                            v-model="result[comp.type]" />
                     </div>
                 </template>
             </div>

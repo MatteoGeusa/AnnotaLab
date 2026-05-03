@@ -316,177 +316,208 @@ class ProjectAdmin(ModelAdmin):
                     </div>\
                 </div>")
                 }),
-            ("Annotation schema & Dataset upload", {
+            ("Dataset Upload", {
                 "classes": ("tab", "config"),
                 "fields": (
-                    "formatted_annotation_schema",
-                    "upload_task_config",
                     "documents_file",
                     ("dataset_text_key", "dataset_id_key"),
                 ),
                 "description": mark_safe(f"""{notice_html}
-<div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
-    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #60a5fa; color:#ddd; border-radius:4px;'>
-        <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task & Data Configuration</b><br>
-        Define the core logic of your annotation task and upload the dataset. This includes labels for highlighting and classification, as well as the input source format.
-    </div>
-</div>
+                <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10b981; color:#ddd; border-radius:4px;'>
+                        <b style='color:#10b981; font-size:1.1em;'>📁 Dataset Upload</b><br>
+                        Upload your source data (JSONL) and specify which fields contain the text to annotate and the unique ID.
+                    </div>
+                </div>""")
+            }),
+            ("Annotation Schema", {
+                "classes": ("tab", "config"),
+                "fields": (
+                    "formatted_annotation_schema",
+                    "upload_task_config",
+                ),
+                "description": mark_safe(f"""
+                <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #60a5fa; color:#ddd; border-radius:4px;'>
+                        <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task Configuration</b><br>
+                        Define the core logic of your annotation task. Upload the configuration JSON or edit the schema directly to set up labels and instructions.
+                    </div>
+                </div>
 
-<style>
-  .schema-docs summary {{
-    list-style: none;
-    cursor: pointer;
-    user-select: none;
-  }}
-  .schema-docs summary::-webkit-details-marker {{ display: none; }}
-  .schema-docs[open] .schema-docs-arrow {{ transform: rotate(90deg); }}
-  .schema-docs-arrow {{
-    display: inline-block;
-    transition: transform 0.2s ease;
-    font-style: normal;
-    margin-right: 6px;
-  }}
-</style>
+                <style>
+                .schema-docs summary {{
+                    list-style: none;
+                    cursor: pointer;
+                    user-select: none;
+                }}
+                .schema-docs summary::-webkit-details-marker {{ display: none; }}
+                .schema-docs[open] .schema-docs-arrow {{ transform: rotate(90deg); }}
+                .schema-docs-arrow {{
+                    display: inline-block;
+                    transition: transform 0.2s ease;
+                    font-style: normal;
+                    margin-right: 6px;
+                }}
+                </style>
 
-<details class="schema-docs" style="margin-top:16px;">
-  <summary>
-    <div style="display:inline-flex; align-items:center; gap:8px; background:#1e293b;
-                padding:10px 16px; border-left:4px solid #3B82F6; border-radius:4px;
-                font-size:13px; color:#94a3b8; font-weight:500;">
-      <i class="schema-docs-arrow">▶</i>
-      <span style="color:#60a5fa;">⚙️ Annotation Schema Documentation</span>
-      <span style="color:#475569; font-weight:400; font-size:12px;">— click to view configuration reference</span>
-    </div>
-  </summary>
+                <details class="schema-docs" style="margin-top:16px;">
+                <summary>
+                    <div style="display:inline-flex; align-items:center; gap:8px; background:#1e293b;
+                                padding:10px 16px; border-left:4px solid #3B82F6; border-radius:4px;
+                                font-size:13px; color:#94a3b8; font-weight:500;">
+                    <i class="schema-docs-arrow">▶</i>
+                    <span style="color:#60a5fa;">⚙️ Annotation Schema Documentation</span>
+                    <span style="color:#475569; font-weight:400; font-size:12px;">— click to view configuration reference</span>
+                    </div>
+                </summary>
 
-  <div style='margin-top:10px; display:flex; flex-direction:column; gap:12px; font-size:13px; color:#cbd5e1;'>
+                <div style='margin-top:10px; display:flex; flex-direction:column; gap:12px; font-size:13px; color:#cbd5e1;'>
 
-    <!-- Overview -->
-    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #3B82F6; border-radius:4px;'>
-      Upload a <code style='background:#0f172a; padding:1px 6px; border-radius:3px; color:#93c5fd;'>.yaml</code> file
-      that defines how annotators interact with each document.
-      The schema drives both the live annotation view and the practice task.
-    </div>
+                    <!-- Overview -->
+                    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #3B82F6; border-radius:4px;'>
+                    Upload a <code style='background:#0f172a; padding:1px 6px; border-radius:3px; color:#93c5fd;'>.yaml</code> file
+                    that defines how annotators interact with each document.
+                    The schema drives both the live annotation view and the practice task.
+                    </div>
 
-    <!-- components[] -->
-    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #8B5CF6; border-radius:4px;'>
-      <b style='color:#a78bfa;'>components <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
-      Ordered list of annotation modules rendered to the annotator. Supported types:
-      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
-        <tr style='border-bottom:1px solid #334155;'>
-          <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>span_highlight</code></td>
-          <td style='padding:4px 0; color:#94a3b8;'>Interactive text highlighter. Requires <code>labels[]</code>.</td>
-        </tr>
-        <tr>
-          <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>classification</code></td>
-          <td style='padding:4px 0; color:#94a3b8;'>Radio / checkbox buttons. Requires <code>options[]</code>.</td>
-        </tr>
-      </table>
-      <div style='margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;'>
-        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
-          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>HYBRID (default)</div>
-          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+                    <!-- components[] -->
+                    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #8B5CF6; border-radius:4px;'>
+                    <b style='color:#a78bfa;'>components <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+                    Ordered list of annotation modules rendered to the annotator. Supported types:
+                    <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+                        <tr style='border-bottom:1px solid #334155;'>
+                        <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>span_highlight</code></td>
+                        <td style='padding:4px 0; color:#94a3b8;'>Interactive text highlighter. Requires <code>labels[]</code>.</td>
+                        </tr>
+                        <tr>
+                        <td style='padding:4px 10px 4px 0; color:#7dd3fc; white-space:nowrap;'><code>classification</code></td>
+                        <td style='padding:4px 0; color:#94a3b8;'>Radio / checkbox buttons. Requires <code>options[]</code>.</td>
+                        </tr>
+                    </table>
+                    <div style='margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;'>
+                        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+                        <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>HYBRID (default)</div>
+                        <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
   - type: span_highlight
     labels: [...]
   - type: classification
     options: [...]</pre>
-        </div>
-        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
-          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>CLASSIFICATION ONLY</div>
-          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+                        </div>
+                        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+                        <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>CLASSIFICATION ONLY</div>
+                        <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
   - type: classification
     options: [...]</pre>
-        </div>
-        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
-          <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>SPAN ONLY</div>
-          <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
+                        </div>
+                        <div style='background:#0f172a; padding:8px 12px; border-radius:4px; border:1px solid #334155;'>
+                        <div style='color:#64748b; font-size:11px; margin-bottom:4px;'>SPAN ONLY</div>
+                        <pre style='margin:0; color:#e2e8f0; font-size:11px;'>components:
   - type: span_highlight
     labels: [...]</pre>
-        </div>
-      </div>
-    </div>
+                        </div>
+                    </div>
+                    </div>
 
-    <!-- span_highlight fields -->
-    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #10B981; border-radius:4px;'>
-      <b style='color:#34d399;'>span_highlight.labels <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
-      Each entry defines one highlight category:
-      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
-        <tr style='border-bottom:1px solid #334155;'>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>name</code></td><td style='color:#94a3b8;'>Label identifier — appears in the result payload</td>
-        </tr>
-        <tr style='border-bottom:1px solid #334155;'>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>color</code></td><td style='color:#94a3b8;'>Hex colour for the highlight badge (e.g. <code>"#FF5733"</code>)</td>
-        </tr>
-        <tr>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip shown on the label button <span style='color:#64748b;'>(optional)</span></td>
-        </tr>
-      </table>
-    </div>
+                    <!-- span_highlight fields -->
+                    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #10B981; border-radius:4px;'>
+                    <b style='color:#34d399;'>span_highlight.labels <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+                    Each entry defines one highlight category:
+                    <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+                        <tr style='border-bottom:1px solid #334155;'>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>name</code></td><td style='color:#94a3b8;'>Label identifier — appears in the result payload</td>
+                        </tr>
+                        <tr style='border-bottom:1px solid #334155;'>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>color</code></td><td style='color:#94a3b8;'>Hex colour for the highlight badge (e.g. <code>"#FF5733"</code>)</td>
+                        </tr>
+                        <tr>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip shown on the label button <span style='color:#64748b;'>(optional)</span></td>
+                        </tr>
+                    </table>
+                    </div>
 
-    <!-- classification fields -->
-    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #F59E0B; border-radius:4px;'>
-      <b style='color:#fbbf24;'>classification.options <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
-      Each entry is one answer option:
-      <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
-        <tr style='border-bottom:1px solid #334155;'>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>label</code></td><td style='color:#94a3b8;'>Display text shown to the annotator</td>
-        </tr>
-        <tr style='border-bottom:1px solid #334155;'>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>value</code></td><td style='color:#94a3b8;'>Machine-readable value stored in the result</td>
-        </tr>
-        <tr>
-          <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip for this option <span style='color:#64748b;'>(optional)</span></td>
-        </tr>
-      </table>
-      Optional component-level fields:
-      <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>question</code> (string) ·
-      <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>multi_select</code> (bool, default false)
-    </div>
+                    <!-- classification fields -->
+                    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #F59E0B; border-radius:4px;'>
+                    <b style='color:#fbbf24;'>classification.options <span style="font-weight:400; color:#94a3b8;">(list, required)</span></b><br>
+                    Each entry is one answer option:
+                    <table style='margin-top:8px; border-collapse:collapse; width:100%;'>
+                        <tr style='border-bottom:1px solid #334155;'>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>label</code></td><td style='color:#94a3b8;'>Display text shown to the annotator</td>
+                        </tr>
+                        <tr style='border-bottom:1px solid #334155;'>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>value</code></td><td style='color:#94a3b8;'>Machine-readable value stored in the result</td>
+                        </tr>
+                        <tr>
+                        <td style='padding:3px 10px 3px 0; color:#7dd3fc;'><code>hover_hint</code></td><td style='color:#94a3b8;'>Tooltip for this option <span style='color:#64748b;'>(optional)</span></td>
+                        </tr>
+                    </table>
+                    Optional component-level fields:
+                    <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>question</code> (string) ·
+                    <code style='background:#0f172a; padding:1px 5px; border-radius:3px; color:#fbbf24;'>multi_select</code> (bool, default false)
+                    </div>
 
-    <!-- Result payload -->
-    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #EC4899; border-radius:4px;'>
-      <b style='color:#f472b6;'>Result payload stored per annotation</b><br>
-      <pre style='margin:8px 0 0; color:#e2e8f0; font-size:11px; background:#0f172a; padding:10px; border-radius:4px;'>{{
-  "span_highlight": [{{"start": 12, "end": 28, "label": "Actor"}}],
+                    <!-- Result payload -->
+                    <div style='background:#1e293b; padding:14px 18px; border-left:4px solid #EC4899; border-radius:4px;'>
+                    <b style='color:#f472b6;'>Result payload stored per annotation</b><br>
+                    <pre style='margin:8px 0 0; color:#e2e8f0; font-size:11px; background:#0f172a; padding:10px; border-radius:4px;'>{{{{
+  "span_highlight": [{{{{"start": 12, "end": 28, "label": "Actor"}}}}],
   "classification": "Yes"
-}}</pre>
-    </div>
+}}}}</pre>
+                    </div>
 
-  </div>
-</details>""")
-
-
+                </div>
+                </details>""")
             }),
-            ("Participant Training", {
+
+            ("Screening Setup", {
                 "classes": ("tab", "training"),
                 "fields": (
                     "enable_screening",
                     "formatted_screening_config",
                     "upload_screening_config",
+                ),
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10B981; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#10B981; font-size:1.1em;'>📋 Screening Setup</b><br>Configure the screening questionnaire (demographics, eligibility criteria, etc.) shown to participants before they begin annotation. Toggle on/off as needed.\
+                    </div>\
+                </div>")
+            }),
+            ("Codebook Setup", {
+                "classes": ("tab", "training"),
+                "fields": (
                     "enable_codebook",
                     "formatted_codebook_content",
                     "upload_codebook_content",
                 ),
-                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10B981; color:#ddd; border-radius:4px;'>\
-                        <b style='color:#10B981; font-size:1.1em;'>📋 Screening & Codebook</b><br>Set participant screening criteria and upload a Codebook (Markdown) to define scientific guidelines. Each module can be toggled on or off as needed.\
+                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #8B5CF6; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#a78bfa; font-size:1.1em;'>📖 Codebook Setup</b><br>Upload a Codebook (Markdown) to define the theoretical and practical guidelines annotators should follow. Toggle on/off as needed.\
                     </div>\
                 </div>")
             }),
-            ("Instructions & Practice", {
+            ("Instructions", {
                 "classes": ("tab", "training"),
                 "fields": (
                     "enable_instructions",
                     "formatted_instructions_content",
                     "upload_instructions_content",
+                ),
+                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #F59E0B; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#f59e0b; font-size:1.1em;'>📝 Instructions</b><br>Upload a Markdown file with detailed task instructions shown to annotators before they start working. Toggle on/off as needed.\
+                    </div>\
+                </div>")
+            }),
+            ("Practice Task", {
+                "classes": ("tab", "training"),
+                "fields": (
                     "enable_practice_task",
                     "formatted_practice_task_config",
                     "upload_practice_task_config",
                     "practice_task_required",
                 ),
-                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #F59E0B; color:#ddd; border-radius:4px;'>\
-                        <b style='color:#f59e0b; font-size:1.1em;'>📝 Instructions & Practice</b><br>Create detailed worker instructions and set up a mandatory training phase with solved examples (Gold). Every step can be toggled on or off based on your needs.\
+                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #EC4899; color:#ddd; border-radius:4px;'>\
+                        <b style='color:#f472b6; font-size:1.1em;'>🎯 Practice Task</b><br>Set up a training exercise with gold-standard examples so annotators can practice before the real task. Toggle on/off and mark as required if needed.\
                     </div>\
                 </div>")
             }),
@@ -832,8 +863,8 @@ class ProjectAdmin(ModelAdmin):
         stats = {
              'docs': project.documents.filter(is_gold_unit=False).count(),
              'gold': project.documents.filter(is_gold_unit=True).count(),
-             'enrollments': project.enrollments.count(),
-             'annotations': Annotation.objects.filter(document__project=project).count(),
+             'enrollments': project.enrollments.filter(annotator__is_test=False).count(),
+             'annotations': Annotation.objects.filter(document__project=project, annotator__is_test=False).count(),
         }
         
         # Progress calculation: Volume-based for better granularity
@@ -1009,7 +1040,8 @@ class ProjectAdmin(ModelAdmin):
 
         annotations = Annotation.objects.filter(
             document__project=project,
-            document__is_gold_unit=False
+            document__is_gold_unit=False,
+            annotator__is_test=False
         ).select_related('document', 'annotator')
 
         for ann in annotations:

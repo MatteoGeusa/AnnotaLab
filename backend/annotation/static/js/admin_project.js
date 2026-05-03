@@ -6,10 +6,20 @@
 /**
  * Open project preview with dynamic participant ID from input
  */
-window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false) {
+window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '') {
+    if (status === 'DRAFT') {
+        window.adminNotify(
+            'warning', 
+            'Action Blocked', 
+            'Attenzione: per accettare annotazioni di test il progetto deve essere impostato in **Playground** (LIVE).', 
+            6000
+        );
+        return;
+    }
+
     const input = document.getElementById(inputId);
     const pid = (input && input.value.trim()) ? input.value.trim() : 'ADMIN_TEST';
-    const url = `${baseUrl}/${slug}?PROLIFIC_PID=${encodeURIComponent(pid)}`;
+    const url = `${baseUrl}/${slug}?PROLIFIC_PID=${encodeURIComponent(pid)}&is_test=true`;
 
     if (isPublished) {
         window.adminConfirm(
