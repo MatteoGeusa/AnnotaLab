@@ -6,13 +6,22 @@
 /**
  * Open project preview with dynamic participant ID from input
  */
-window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '') {
+window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '', updateStatusUrl = '') {
     if (status === 'DRAFT') {
-        window.adminNotify(
-            'warning', 
-            'Action Blocked', 
-            'Attenzione: per accettare annotazioni di test il progetto deve essere impostato in **Playground** (LIVE).', 
-            6000
+        window.adminConfirm(
+            "🚀 Playground Mode Required",
+            "You cannot perform test annotations while the project is in **Draft**.<br><br>Would you like to switch to **Playground** mode now to enable testing?",
+            "📁",
+            "Switch to Playground",
+            "#10b981",
+            () => {
+                // Call the status update logic directly to avoid double confirmation
+                if (window.executeUpdateStatus) {
+                    window.executeUpdateStatus(null, updateStatusUrl, 'LIVE');
+                } else {
+                    console.error("executeUpdateStatus not found");
+                }
+            }
         );
         return;
     }
@@ -237,12 +246,12 @@ window.quickUpdateStatus = function (buttonElement, url, newStatus, statusLabel)
         "⚙️",
         `Yes, set to ${statusLabel}`,
         "#3b82f6",
-        () => executeUpdateStatus(buttonElement, url, newStatus)
+        () => window.executeUpdateStatus(buttonElement, url, newStatus)
     );
 };
 
-function executeUpdateStatus(buttonElement, url, newStatus) {
-    const container = buttonElement.closest('.status-badge-container');
+window.executeUpdateStatus = function (buttonElement, url, newStatus) {
+    const container = buttonElement ? buttonElement.closest('.status-badge-container') : null;
 
     if (buttonElement) buttonElement.disabled = true;
     if (container) container.style.opacity = '0.5';
