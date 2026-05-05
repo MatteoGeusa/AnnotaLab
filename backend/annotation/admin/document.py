@@ -40,11 +40,16 @@ class BaseDocumentAdmin(ModelAdmin, ImportExportModelAdmin):
 
 @admin.register(DocumentProxy)
 class DocumentProxyAdmin(BaseDocumentAdmin):
-    list_display = ('external_id_display', 'short_text', 'project', 'current_annotations_count', 'is_completed', 'mace_gold_display', 'mace_confidence_display')
-    list_filter = ('project',)
+    list_display = ('external_id_display', 'short_text', 'project', 'is_gold_unit_display', 'current_annotations_count', 'is_completed', 'mace_gold_display', 'mace_confidence_display')
+    list_filter = ('project', 'is_gold_unit')
+
+    @admin.display(boolean=True, description="Gold Unit?")
+    def is_gold_unit_display(self, obj):
+        return obj.is_gold_unit
+
     
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(is_gold_unit=False)
+        return super().get_queryset(request)
 
     @admin.display(boolean=True, description="Completed?")
     def is_completed(self, obj):

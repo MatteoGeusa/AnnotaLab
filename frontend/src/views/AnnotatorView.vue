@@ -1,5 +1,5 @@
 <template>
-    <div class="main-container">
+    <div class="main-container" :class="{ 'wide-mode': isWide }">
         <div v-if="loading" class="loading-container">
             <div class="loader"></div>
             <p>{{ UI_STRINGS.loading_task }}</p>
@@ -26,11 +26,15 @@
                 {{ UI_STRINGS.gold_task_banner }}
             </div>
 
-            <div class="card-header highlight-header">
+            <div class="card-header highlight-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div class="instruction-box">
                     <h3>{{ UI_STRINGS.task_instruction_header }}</h3>
                     <p>{{ schema.instruction || UI_STRINGS.default_instruction }}</p>
                 </div>
+                <button @click="toggleWide" class="toggle-wide-btn" :title="isWide ? 'Shrink' : 'Expand'">
+                    <span v-if="!isWide">↔️</span>
+                    <span v-else>🔄</span>
+                </button>
             </div>
 
             <div class="card-body">
@@ -87,6 +91,13 @@ let redirectTimer = null;
 const stopped = ref(false);
 const stopMessage = ref('');
 const isGold = ref(false);
+const isWide = ref(localStorage.getItem('annotator_wide_mode') === 'true');
+
+const toggleWide = () => {
+    isWide.value = !isWide.value;
+    localStorage.setItem('annotator_wide_mode', isWide.value);
+};
+
 
 // Component system
 const blockRefs = ref({});
@@ -200,7 +211,34 @@ const submitTask = async () => {
     padding: 37px;
     font-family: 'Outfit', sans-serif;
     color: #1a1f36;
+    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.main-container.wide-mode {
+    max-width: 1600px;
+}
+
+.toggle-wide-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.toggle-wide-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 
 /* CARDS */
 .task-card,

@@ -79,8 +79,7 @@ const submitConsent = async () => {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
     padding: 50px 20px;
     box-sizing: border-box;
     background-color: #f0f2f5;

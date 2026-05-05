@@ -571,3 +571,7 @@ const renderChunks = computed(() => {
     }
 }
 </style>
+
+<style scoped>
+@import '../assets/shared.css';
+</style>

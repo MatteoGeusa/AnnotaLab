@@ -54,3 +54,24 @@ const isSelected = (val) =>
 const reset = () => { localValue.value = props.config.multi_select ? [] : null; };
 defineExpose({ reset });
 </script>
+
+<style scoped>
+.options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.option-label input {
+  margin-right: 10px;
+}
+</style>
+
+<style scoped>
+@import '../../assets/shared.css';
+</style>

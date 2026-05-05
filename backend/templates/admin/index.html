@@ -153,14 +153,6 @@
     .tracking-tight {
         letter-spacing: -0.025em;
     }
-
-    .tracking-widest {
-        letter-spacing: 0.1em;
-    }
-
-    .uppercase {
-        text-transform: uppercase;
-    }
 </style>
 
 <div class="px-6 py-10 max-w-[1400px] mx-auto" style="color: var(--db-text-main);">
@@ -169,7 +161,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
         <div>
             <h1 class="text-5xl font-black tracking-tight leading-none mb-2">Dashboard</h1>
-            <p class="text-xs font-black uppercase tracking-[0.2em] opacity-40">Global Projects Overview</p>
+            <p class="text-xs font-black tracking-[0.2em] opacity-40">Global Projects Overview</p>
             <br>
             <a href="{% url 'admin:annotation_project_changelist' %}" class="btn-outline">
                 View All Projects
@@ -182,28 +174,16 @@
     </div>
 
     <!-- KPI Bento Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         <!-- Drafts -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-slate-400"
             data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=DRAFT"
             onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Drafts Projects</span>
+                <span class="text-[10px] font-black tracking-widest opacity-60">Drafts Projects</span>
                 <span class="text-slate-400">📝</span>
             </div>
             <div class="text-4xl font-black">{{ draft_projects_count }}</div>
-        </div>
-
-        <!-- Playground -->
-        <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-amber-400"
-            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=0"
-            onclick="window.location.href=this.dataset.url">
-            <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Playground Projects
-                </span>
-                <span class="text-amber-400">🧪</span>
-            </div>
-            <div class="text-4xl font-black text-amber-500">{{ playground_projects_count }}</div>
         </div>
 
         <!-- Launched -->
@@ -211,7 +191,7 @@
             data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=1"
             onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Launched Projects
+                <span class="text-[10px] font-black tracking-widest opacity-60">Launched Projects
                 </span>
                 <span class="text-emerald-500">🚀</span>
             </div>
@@ -223,21 +203,10 @@
             data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=COMPLETED"
             onclick="window.location.href=this.dataset.url">
             <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Completed Projects</span>
+                <span class="text-[10px] font-black tracking-widest opacity-60">Completed Projects</span>
                 <span class="text-blue-500">🏁</span>
             </div>
             <div class="text-4xl font-black text-blue-500">{{ completed_projects_count }}</div>
-        </div>
-
-        <!-- Annotators -->
-        <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-indigo-500"
-            data-url="{% url 'admin:annotation_annotator_changelist' %}"
-            onclick="window.location.href=this.dataset.url">
-            <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Total Annotators</span>
-                <span class="text-indigo-500">👥</span>
-            </div>
-            <div class="text-4xl font-black text-indigo-500">{{ total_annotators }}</div>
         </div>
     </div>
 
@@ -248,21 +217,16 @@
         <div class="lg:col-span-2 flex flex-col gap-6">
             <div class="db-card p-0 overflow-hidden">
                 <div class="px-8 py-5 border-b var(--db-border) bg-[var(--db-bg)] flex justify-between items-center">
-                    <h3 class="text-sm font-black uppercase tracking-widest opacity-60">Recent Activity</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Platform
-                            Alive</span>
-                    </div>
+                    <h3 class="text-sm font-black tracking-widest opacity-60">Recent Activity</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead>
                             <tr class="opacity-40">
-                                <th class="px-8 py-4 text-[10px] font-black uppercase">Study</th>
-                                <th class="px-8 py-4 text-[10px] font-black uppercase">Action</th>
-                                <th class="px-8 py-4 text-[10px] font-black uppercase">Details</th>
-                                <th class="px-8 py-4 text-[10px] font-black uppercase text-right">Time</th>
+                                <th class="px-8 py-4 text-[10px] font-black">Project</th>
+                                <th class="px-8 py-4 text-[10px] font-black">Action</th>
+                                <th class="px-8 py-4 text-[10px] font-black">Details</th>
+                                <th class="px-8 py-4 text-[10px] font-black text-right">Time</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y var(--db-border)">
@@ -271,7 +235,7 @@
                                 onclick="window.location.href='{{ record.project_url }}'">
                                 <td class="px-8 py-4 text-xs font-bold text-blue-500">{{ record.project }}</td>
                                 <td
-                                    class="px-8 py-4 text-xs font-black uppercase {% if record.is_launch %}text-emerald-500{% endif %}">
+                                    class="px-8 py-4 text-xs font-black {% if record.is_launch %}text-emerald-500{% endif %}">
                                     {{ record.action }}
                                 </td>
                                 <td class="px-8 py-4 text-xs font-medium db-text-muted max-w-xs truncate"
@@ -296,16 +260,16 @@
         <div class="flex flex-col gap-8">
             <!-- Launched List -->
             <div class="db-card">
-                <h3 class="text-sm font-black uppercase tracking-widest opacity-60 mb-8">Launched Projects</h3>
+                <h3 class="text-sm font-black tracking-widest opacity-60 mb-8">Launched Projects</h3>
                 <div class="space-y-8">
                     {% for proj in launched_projects %}
                     <div class="group cursor-pointer" onclick="window.location.href='{{ proj.url }}'">
                         <div class="flex justify-between items-center mb-1">
                             <h4 class="text-sm font-bold group-hover:text-emerald-500 transition-colors">{{ proj.name }}
                             </h4>
-                            <span class="text-[10px] font-black uppercase text-emerald-500">{{ proj.progress }}%</span>
+                            <span class="text-[10px] font-black text-emerald-500">{{ proj.progress }}%</span>
                         </div>
-                        <p class="text-[10px] opacity-40 uppercase font-bold truncate max-w-full mb-2">
+                        <p class="text-[10px] opacity-40 font-bold truncate max-w-full mb-2">
                             {{ proj.description|default:"" }}
                         </p>
                         <div class="progress-bar-bg">

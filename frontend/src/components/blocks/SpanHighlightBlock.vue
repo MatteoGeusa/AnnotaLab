@@ -28,3 +28,10 @@ watch(localSpans, (val) => emit('update:modelValue', val), { deep: true });
 const reset = () => { localSpans.value = []; };
 defineExpose({ reset });
 </script>
+
+
+
+<style scoped>
+@import '../../assets/shared.css';
+</style>
+

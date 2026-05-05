@@ -63,7 +63,6 @@
         border-radius: 9999px;
         font-size: 14px;
         font-weight: 800;
-            text-transform: uppercase;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -220,7 +219,7 @@
         color: #3b82f6;
         font-size: 12px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
     }
 
@@ -228,7 +227,7 @@
         color: #10b981;
         font-size: 12px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
     }
 
@@ -236,7 +235,7 @@
         color: #818cf8;
         font-size: 12px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
     }
 
@@ -244,7 +243,7 @@
         color: #f59e0b;
         font-size: 12px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
     }
 
@@ -299,7 +298,7 @@
     .dark-panel-label {
         font-size: 9px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
         color: #64748b;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -311,7 +310,7 @@
     .dark-panel-label-rose {
         font-size: 9px;
         font-weight: 900;
-        text-transform: uppercase;
+        ;
     
         color: #fb7185;
         border-bottom: 1px solid rgba(239, 68, 68, 0.15);
@@ -408,7 +407,6 @@
         border-radius: 0.75rem;
         font-weight: 900;
         font-size: 14px;
-            text-transform: uppercase;
         border: none;
         cursor: pointer;
         background: #10b981;
@@ -428,8 +426,7 @@
         text-align: center;
         font-size: 10px;
         font-weight: 900;
-        text-transform: uppercase;
-            color: rgba(251, 113, 133, 0.7);
+        color: rgba(251, 113, 133, 0.7);
         padding-top: 0.5rem;
         transition: color 0.2s;
     }
@@ -449,8 +446,6 @@
     .shield-label {
         font-size: 12px;
         font-weight: 900;
-        text-transform: uppercase;
-    
         color: #818cf8;
     }
 
@@ -490,8 +485,7 @@
         border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 9999px;
         text-decoration: none;
-        text-transform: uppercase;
-            transition: all 0.2s;
+        transition: all 0.2s;
         display: inline-block;
     }
 
@@ -504,8 +498,7 @@
     .sim-label {
         font-size: 10px;
         font-weight: 900;
-        text-transform: uppercase;
-            color: #6366f1;
+        color: #6366f1;
         display: block;
         margin-bottom: 0.5rem;
     }
@@ -686,8 +679,7 @@
     .breadcrumb-link {
         font-size: 10px;
         font-weight: 900;
-        text-transform: uppercase;
-            color: var(--db-text-muted);
+        color: var(--db-text-muted);
         text-decoration: none;
         transition: color 0.2s;
     }
@@ -755,6 +747,39 @@
         gap: 2rem;
     }
 
+    .lifecycle-transition-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 1rem;
+        background: white;
+        color: var(--db-text-main);
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        text-align: left;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .lifecycle-transition-btn:hover {
+        border-color: var(--db-primary);
+        background: var(--db-primary-soft);
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+
+    .lifecycle-transition-btn .arrow-icon {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .lifecycle-transition-btn:hover .arrow-icon {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+
+
     .page-header {
         display: flex;
         flex-direction: column;
@@ -786,7 +811,7 @@
                 <a href="{% url 'admin:annotation_project_changelist' %}" class="breadcrumb-link">Projects</a>
                 <span class="breadcrumb-sep">/</span>
                 <span class="breadcrumb-current"
-                    style="font-size:15px; font-weight:900; text-transform:uppercase;">Dashboard</span>
+                    style="font-size:15px; font-weight:900">Dashboard</span>
             </div>
 
             <!-- Title row -->
@@ -836,7 +861,7 @@
             <!-- Operations Panel (Side) -->
             <div class="premium-card">
                 <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-                    <h3 style="font-size: 17px; font-weight: 900; text-transform: uppercase; color: var(--db-primary); margin: 0;">
+                    <h3 style="font-size: 17px; font-weight: 900; color: var(--db-primary); margin: 0;">
                         Controls Panel  
                     </h3>
                     <p style="font-size: 14px; color: var(--db-text-muted); line-height: 1.4; margin: 0;">
@@ -847,7 +872,7 @@
                 <!-- Current Status Indicator -->
                 <div style="background: var(--db-primary-soft); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 12px; padding: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--db-primary); opacity: 0.7;">Current Stage</span>
+                        <span style="font-size: 10px; font-weight: 800; color: var(--db-primary); opacity: 0.7;">Current Stage</span>
                         <span style="font-size: 14px; font-weight: 900; color: var(--db-primary);">
                             {% if project.status == 'DRAFT' %}📁 DRAFT MODE
                             {% elif project.status == 'LIVE' %}🚀 LIVE PLAYGROUND
@@ -859,14 +884,17 @@
 
                 <!-- Status Transitions -->
                 <div>
-                    <p style="font-size: 14px; color: var(--db-text-muted); font-weight: 800; margin-bottom: 1rem; text-transform: uppercase;">
+                    <p style="font-size: 14px; color: greenyellow; font-weight: 800; margin-bottom: 1rem;">
                         Available Transitions
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                         {% for trans in status_transitions %}
-                        <div style="position: relative; group">
+                        <div class="group" style="position: relative;">
                             <button
-                                onclick="window.quickUpdateStatus(this, '{{ action_urls.set_status }}', '{{ trans.value }}', '{% if trans.value == 'LIVE' %}Playground{% else %}{{ trans.label }}{% endif %}')"
+                                data-url="{{ action_urls.set_status }}"
+                                data-value="{{ trans.value }}"
+                                data-label="{% if trans.value == 'LIVE' %}Playground{% else %}{{ trans.label }}{% endif %}"
+                                onclick="window.quickUpdateStatus(this, this.dataset.url, this.dataset.value, this.dataset.label)"
                                 class="lifecycle-transition-btn"
                                 style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 1rem; background: var(--db-card-bg); color: var(--db-text-main); border: 1px solid var(--db-border); border-radius: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-align: left;">
                                 
@@ -899,7 +927,7 @@
                 <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--db-border);">
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
                         <span
-                            style="font-size: 17px; font-weight: 900; text-transform: uppercase;color: #f43f5e;">
+                            style="font-size: 17px; font-weight: 900; color: #f43f5e;">
                             Production & Safety
                         </span>
                          <p style="font-size: 14px; color: var(--db-text-muted); line-height: 1.4; margin: 0;">
@@ -933,7 +961,7 @@
                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                         <span style="font-size: 18px;">🛡️</span>
                         <h4
-                            style="font-size: 11px; font-weight: 900; color: #065f46; margin: 0; text-transform: uppercase;">
+                            style="font-size: 11px; font-weight: 900; color: #065f46; margin: 0;">
                             Published</h4>
                     </div>
                     <p style="font-size: 11px; line-height: 1.4; color: #047857; font-weight: 500; margin: 0;">
@@ -952,7 +980,7 @@
             <div class="premium-card">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <h3
-                        style="font-size: 17px; font-weight: 900; text-transform: uppercase; color: var(--db-text-muted); margin: 0;">
+                        style="font-size: 17px; font-weight: 900; color: var(--db-text-muted); margin: 0;">
                         Data Collection</h3>
                     <div
                         style="padding: 0.375rem 1rem; font-size: 12px; font-weight: 700;">
@@ -970,24 +998,23 @@
                     <div class="premium-card stats-card stats-blue" style="padding: 1.25rem;">
                         <div>
                             <span class="label-blue">Total Documents</span>
-                            <div
-                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
-                                {{ stats.docs }}</div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+                                <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
+                                    {{ stats.docs }}
+                                </div>
+                                {% if stats.gold > 0 %}
+                                <div style="font-size: 0.775rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px;" title="Gold Units for Quality Control">
+                                   Of which {{ stats.gold }} gold units
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&o=1"
-                            class="link-blue">Explore Dataset →</a>
-                    </div>
-                    <!-- Gold Units -->
-                    <div class="premium-card stats-card stats-amber" style="padding: 1.25rem;">
-                        <div>
-                            <span class="label-amber">Gold Units</span>
-                            <div
-                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
-                                {{ stats.gold }}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&o=1"
+                                class="link-blue" style="font-size: 13px; font-weight: 800;">Explore Dataset →</a>
                         </div>
-                        <a href="{% url 'admin:annotation_goldunitproxy_changelist' %}?project__id={{ project.id }}&o=1"
-                            class="link-amber">Quality Control →</a>
                     </div>
+
 
 
                     <!-- Workers -->
@@ -999,7 +1026,7 @@
                                 {{ stats.enrollments }}</div>
                         </div>
                         <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}"
-                            class="link-indigo">Manage Workers →</a>
+                            class="link-indigo" style="font-size: 13px; font-weight: 800;">Manage Workers →</a>
                     </div>
 
                     <!-- Annotations -->
@@ -1011,7 +1038,7 @@
                                 {{ stats.annotations }}</div>
                         </div>
                         <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&category=regular"
-                            class="link-emerald">Annotation Data →</a>
+                            class="link-emerald" style="font-size: 13px; font-weight: 800;">Annotation Data →</a>
                     </div>
 
 
@@ -1019,59 +1046,44 @@
                 </div>
             </div>
 
-            <div class="premium-card"; style="padding: 1.25rem; display: flex; flex-direction: row; gap: 1.5rem;" >
-            <!-- Maintenance & Export (Moved from side) -->
-            <div class="premium-card"; border-left: 4px solid var(--db-primary);">
-                <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 2rem;">
-                    <div style="flex: 1;">
-                        <h3 style="font-size: 17px; font-weight: 900; text-transform: uppercase; color: var(--db-text-muted); margin-bottom: 0.5rem;">
-                            Maintenance & Export
-                        </h3>
-                        <p style="font-size: 14px; color: var(--db-text-muted); margin: 0; font-weight: 500;">
-                            Generate final datasets, calculate annotator reliability (MACE), or clone project configurations.
-                        </p>
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: stretch;">
+                
+                <div class="premium-card" style="background: var(--db-primary-soft); border-color: var(--db-border);">
+                    <div style="margin-bottom: 1rem;">
+                        <label class="sim-label"
+                            style="font-size: 17px; font-weight: 900; color: var(--db-primary);">Test Annotation</label>
+                        <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value=""
+                            placeholder="Enter a name to test annotation ..." class="sim-input"
+                            style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main);">
                     </div>
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        <button onclick="quickRunMace(this, '{{ action_urls.run_mace }}')" 
-                            class="dash-btn" style="font-size: 11px; font-weight: 800; padding: 0.75rem 1.25rem; border: 1px solid var(--db-border);">
-                            🤖 RUN MACE
-                        </button>
-                        <button data-url="{{ action_urls.clone }}" data-name="{{ project.name }}"
-                            data-published="{{ project.is_published|lower }}"
-                            onclick="quickCloneProject(this, this.dataset.url, this.dataset.name, this.dataset.published === 'true')"
-                            class="dash-btn" style="font-size: 11px; font-weight: 800; padding: 0.75rem 1.25rem; border: 1px solid var(--db-border);">
-                            📋 CLONE CONFIG
-                        </button>
-                         <button onclick="quickExportProject(this, '{{ action_urls.export }}', '{{ project.name }}')"
-                            class="dash-btn dash-btn-primary" style="font-size: 11px; font-weight: 800; padding: 0.75rem 1.25rem;">
-                            📊 EXPORT .JSONL
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Simulator Hub -->
-            <div class="premium-card" style="background: var(--db-primary-soft); border-color: var(--db-border);">
-                <div style="margin-bottom: 1rem;">
-                    <label class="sim-label"
-                        style="font-size: 17px; font-weight: 900; text-transform: uppercase; color: var(--db-primary);">Test Annotation</label>
-                    <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value="ADMIN_TEST"
-                        placeholder="Enter a name to test..." class="sim-input"
-                        style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main);">
-                </div>
-
-                <div class="sim-url-inner"
-                    style="padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.75rem; background: var(--db-card-bg); border: 1px solid var(--db-border);">
-                    <code
-                        style="font-size: 10px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ frontend_url|truncatechars:30 }}...</code>
-                    <button
-                        onclick="navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID='); window.adminNotify('info', 'Link Copied', 'URL copied.')"
-                        class="sim-url-copy-btn" style="padding: 0.25rem;">
-                        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    <div class="sim-url-inner"
+                        style="padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.75rem; background: var(--db-card-bg); border: 1px solid var(--db-border);">
+                        <code id="preview-url-display-{{ project.pk }}"
+                            style="font-size: 10px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">
+                            {% with full_url=frontend_url|add:"/"|add:project.slug|add:"?PROLIFIC_PID=&is_test=true" %}
+                                {{ full_url|truncatechars:150 }}
+                            {% endwith %}
+                        </code>
+                        <button
+                            onclick="const pid = document.getElementById('preview_pid_sidebar_{{ project.pk }}').value; navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID=' + pid + '&is_test=true'); window.adminNotify('info', 'Link Copied', 'URL copied.')"
+                            class="sim-url-copy-btn" style="padding: 0.25rem;">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                    </button>
-                </div>
+                            </svg>
+                        </button>
+                    </div>
+                
+                    <script>
+                        document.getElementById('preview_pid_sidebar_{{ project.pk }}').addEventListener('input', function (e) {
+                            const pid = e.target.value || '';
+                            const display = document.getElementById('preview-url-display-{{ project.pk }}');
+                            let fullUrl = `{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID=${pid}&is_test=true`;
+                            display.textContent = fullUrl.length > 150 ? fullUrl.substring(0, 147) + '...' : fullUrl;
+                        });
+                    </script>
+
+
                 <button data-frontend="{{ frontend_url }}" data-slug="{{ project.slug }}"
                     data-pid-id="preview_pid_sidebar_{{ project.pk }}" 
                     data-published="{{ project.is_published|lower }}"
@@ -1079,7 +1091,7 @@
                     data-update-status-url="{{ action_urls.set_status }}"
                     onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true', this.dataset.status, this.dataset.updateStatusUrl)"
                     class="dash-btn dash-btn-primary"
-                    style="width: 100%; justify-content: center; font-size: 12px; font-weight: 800; text-transform: uppercase;">
+                    style="width: 100%; justify-content: center; font-size: 12px; font-weight: 800;">
                     🚀 Test Annotation
                 </button>
                 <p
@@ -1088,13 +1100,43 @@
                     <b>automatically excluded</b> from project metrics and dataset exports.
                 </p>
             </div>
+            <!-- Maintenance & Export -->
+            <div class="premium-card" style="padding: 1.25rem; border-left: 4px solid var(--db-primary); display: flex; flex-direction: column; gap: 1.25rem;">
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 900; color: var(--db-text-muted); margin-bottom: 0.25rem;">
+                        Maintenance & Export
+                    </h3>
+                    <p style="font-size: 12px; color: var(--db-text-muted); margin: 0; font-weight: 500; line-height: 1.4;">
+                        Generate final datasets, calculate reliability (MACE), or clone configurations.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: end   ;">
+                    <button onclick="quickRunMace(this, '{{ action_urls.run_mace }}')" 
+                        class="dash-btn" style="font-size: 10px; font-weight: 800; padding: 0.5rem 0.75rem; border: 1px solid var(--db-border);">
+                        🤖 Start MACE Analysis
+                    </button>
+                    <button data-url="{{ action_urls.clone }}" data-name="{{ project.name }}"
+                        data-published="{{ project.is_published|lower }}"
+                        onclick="quickCloneProject(this, this.dataset.url, this.dataset.name, this.dataset.published === 'true')"
+                        class="dash-btn" style="font-size: 10px; font-weight: 800; padding: 0.5rem 0.75rem; border: 1px solid var(--db-border);">
+                        📋 Clone Project
+                    </button>
+                        <button onclick="quickExportProject(this, '{{ action_urls.export }}', '{{ project.name }}')"
+                        class="dash-btn dash-btn-primary" style="font-size: 10px; font-weight: 800; padding: 0.5rem 0.75rem;">
+                        📊 Export .JSONL
+                    </button>
+                </div>
+            </div>
+
+            <!-- Simulator Hub -->
+
             </div>
 
             <!-- Audit Log -->
             <div class="audit-log-card">
                 <div class="audit-log-header">
                     <h3
-                        style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--db-text-muted); margin: 0;">
+                        style="font-size: 11px; font-weight: 700; color: var(--db-text-muted); margin: 0;">
                         Live Audit Log</h3>
                 </div>
                 <div style="overflow-x: auto;">
@@ -1102,13 +1144,13 @@
                         <thead>
                             <tr style="background: var(--db-bg);">
                                 <th
-                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; ; opacity: 0.4; color: var(--db-text-main);">
                                     Timestamp</th>
                                 <th
-                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; ; opacity: 0.4; color: var(--db-text-main);">
                                     Event Action</th>
                                 <th
-                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; text-transform: uppercase; opacity: 0.4; color: var(--db-text-main);">
+                                    style="padding: 1rem 2rem; font-size: 10px; font-weight: 900; ; opacity: 0.4; color: var(--db-text-main);">
                                     Activity Details</th>
                             </tr>
                         </thead>
