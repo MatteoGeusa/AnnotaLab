@@ -875,11 +875,19 @@
                         <span style="font-size: 10px; font-weight: 800; color: var(--db-primary); opacity: 0.7;">Current Stage</span>
                         <span style="font-size: 14px; font-weight: 900; color: var(--db-primary);">
                             {% if project.status == 'DRAFT' %}📁 DRAFT MODE
-                            {% elif project.status == 'LIVE' %}🚀 LIVE PLAYGROUND
+                            {% elif project.status == 'LIVE' %}
+                                {% if project.is_published %}🚀 LIVE / OFFICIAL{% else %}🚀 LIVE PLAYGROUND{% endif %}
+                            {% elif project.status == 'PAUSED' %}⏸️ PAUSED
                             {% elif project.status == 'COMPLETED' %}🏁 COMPLETED{% endif %}
                         </span>
                     </div>
-                    <div class="pulse-indicator" style="width: 10px; height: 10px; background: var(--db-primary); border-radius: 50%; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); animation: pulse 2s infinite;"></div>
+                    <div class="pulse-indicator" 
+                         style="width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite;
+                         {% if project.status == 'LIVE' %}background: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+                         {% elif project.status == 'PAUSED' %}background: #f59e0b; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+                         {% elif project.status == 'COMPLETED' %}background: #6366f1; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+                         {% else %}background: #64748b; box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.4);{% endif %}">
+                    </div>
                 </div>
 
                 <!-- Status Transitions -->
@@ -893,7 +901,7 @@
                             <button
                                 data-url="{{ action_urls.set_status }}"
                                 data-value="{{ trans.value }}"
-                                data-label="{% if trans.value == 'LIVE' %}Playground{% else %}{{ trans.label }}{% endif %}"
+                                data-label="{% if trans.value == 'LIVE' %}{% if project.is_published %}Live / Official{% else %}Playground{% endif %}{% else %}{{ trans.label }}{% endif %}"
                                 onclick="window.quickUpdateStatus(this, this.dataset.url, this.dataset.value, this.dataset.label)"
                                 class="lifecycle-transition-btn"
                                 style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 1rem; background: var(--db-card-bg); color: var(--db-text-main); border: 1px solid var(--db-border); border-radius: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; text-align: left;">
@@ -904,11 +912,16 @@
                                 
                                 <div style="flex: 1;">
                                     <div style="font-size: 13px; font-weight: 800;">
-                                        {% if trans.value == 'LIVE' %}Transition to Playground{% else %}Transition to {{ trans.label }}{% endif %}
+                                        {% if trans.value == 'LIVE' %}
+                                            {% if project.is_published %}Resume Official Collection{% else %}Transition to Playground{% endif %}
+                                        {% else %}
+                                            Transition to {{ trans.label }}
+                                        {% endif %}
                                     </div>
                                     <div style="font-size: 11px; color: var(--db-text-muted); font-weight: 500; margin-top: 2px;">
                                         {% if trans.value == 'DRAFT' %}Edit configuration & datasets
-                                        {% elif trans.value == 'LIVE' %}Enter testing phase and enable participant simulation
+                                        {% elif trans.value == 'LIVE' %}
+                                            {% if project.is_published %}Continue collecting real participant data{% else %}Enter testing phase and enable participant simulation{% endif %}
                                         {% elif trans.value == 'COMPLETED' %}Freeze and finalize results{% endif %}
                                     </div>
                                 </div>
@@ -1037,8 +1050,20 @@
                                 style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
                                 {{ stats.annotations }}</div>
                         </div>
-                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&category=regular"
+                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=0"
                             class="link-emerald" style="font-size: 13px; font-weight: 800;">Annotation Data →</a>
+                    </div>
+
+                    <!-- Test Annotations -->
+                    <div class="premium-card stats-card stats-amber" style="padding: 1.25rem;">
+                        <div>
+                            <span class="label-amber">Test Annotations</span>
+                            <div
+                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
+                                {{ stats.test_annotations }}</div>
+                        </div>
+                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=1"
+                            class="link-amber" style="font-size: 13px; font-weight: 800;">View Test Data →</a>
                     </div>
 
 

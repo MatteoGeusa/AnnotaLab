@@ -78,7 +78,7 @@ import SpanHighlightBlock from '../components/blocks/SpanHighlightBlock.vue';
 import ClassificationBlock from '../components/blocks/ClassificationBlock.vue';
 
 const router = useRouter();
-const { pid, projectSlug, projectId } = useProjectContext();
+const { pid, projectSlug, projectId, isTest } = useProjectContext();
 
 // State
 const loading = ref(true);
@@ -150,7 +150,7 @@ const fetchNextTask = async () => {
     }
     try {
         const res = await api.get('next-task/', {
-            params: { pid, project_id: projectId, project_slug: projectSlug }
+            params: { pid, project_id: projectId, project_slug: projectSlug, is_test: isTest }
         });
 
         if (res.data.status === 'completed') {
@@ -190,6 +190,7 @@ const submitTask = async () => {
         document: currentDoc.value.id,
         result: { ...result.value },
         milliseconds_to_complete: Date.now() - startTime.value,
+        is_test: isTest,
     };
 
     try {

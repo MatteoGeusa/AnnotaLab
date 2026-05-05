@@ -30,18 +30,7 @@ window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = fals
     const pid = (input && input.value.trim()) ? input.value.trim() : 'ADMIN_TEST';
     const url = `${baseUrl}/${slug}?PROLIFIC_PID=${encodeURIComponent(pid)}&is_test=true`;
 
-    if (isPublished) {
-        window.adminConfirm(
-            "⚠️ WARNING: Official Project",
-            "This project is **LIVE/Official**.<br><br>Proceeding with this simulation might **<u>contaminate the official dataset</u>** with test data not relevant to the study.<br><br>If you want to perform risk-free structural tests, we recommend **cloning** the project first.",
-            "🚫",
-            "I understand, proceed anyway",
-            "#f59e0b",
-            () => window.open(url, '_blank')
-        );
-    } else {
-        window.open(url, '_blank');
-    }
+    window.open(url, '_blank');
 };
 
 /**

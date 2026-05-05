@@ -551,6 +551,8 @@ class Annotation(models.Model):
     # How long it took (useful to discard those taking 2 seconds = bot/spam)
     milliseconds_to_complete = models.IntegerField(null=True, blank=True)
     
+    is_test = models.BooleanField(default=False, help_text="If True, this annotation was made in test mode.")
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     objects = models.Manager()

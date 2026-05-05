@@ -23,7 +23,8 @@ def run_mace_for_project(project_id):
     # Exclude gold units, we only use unsupervised MACE on standard instances.
     annotations = Annotation.objects.filter(
         document__project=project,
-        document__is_gold_unit=False
+        document__is_gold_unit=False,
+        is_test=False
     ).select_related('document', 'annotator')
     
     if not annotations.exists():
