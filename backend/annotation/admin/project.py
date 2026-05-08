@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.shortcuts import render, get_object_or_404
-from django.db.models import F, Sum, Min
+from django.db.models import F, Sum, Min, Q
 from django import forms
 from django.core.exceptions import ValidationError
 from unfold.admin import ModelAdmin, TabularInline
@@ -336,7 +336,7 @@ class ProjectAdmin(ModelAdmin):
                     "formatted_annotation_schema",
                     "upload_task_config",
                 ),
-                "description": mark_safe(f"""
+                "description": mark_safe(f"""{notice_html}
                 <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
                     <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #60a5fa; color:#ddd; border-radius:4px;'>
                         <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task Configuration</b><br>
@@ -488,7 +488,7 @@ class ProjectAdmin(ModelAdmin):
                     "formatted_codebook_content",
                     "upload_codebook_content",
                 ),
-                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
                     <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #8B5CF6; color:#ddd; border-radius:4px;'>\
                         <b style='color:#a78bfa; font-size:1.1em;'>📖 Codebook Setup</b><br>Upload a Codebook (Markdown) to define the theoretical and practical guidelines annotators should follow. Toggle on/off as needed.\
                     </div>\
@@ -501,7 +501,7 @@ class ProjectAdmin(ModelAdmin):
                     "formatted_instructions_content",
                     "upload_instructions_content",
                 ),
-                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
                     <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #F59E0B; color:#ddd; border-radius:4px;'>\
                         <b style='color:#f59e0b; font-size:1.1em;'>📝 Instructions</b><br>Upload a Markdown file with detailed task instructions shown to annotators before they start working. Toggle on/off as needed.\
                     </div>\
@@ -515,7 +515,7 @@ class ProjectAdmin(ModelAdmin):
                     "upload_practice_task_config",
                     "practice_task_required",
                 ),
-                "description": mark_safe(f"<div style='display:flex; gap:10px; margin-top:20px;'>\
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
                     <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #EC4899; color:#ddd; border-radius:4px;'>\
                         <b style='color:#f472b6; font-size:1.1em;'>🎯 Practice Task</b><br>Set up a training exercise with gold-standard examples so annotators can practice before the real task. Toggle on/off and mark as required if needed.\
                     </div>\
@@ -860,10 +860,14 @@ class ProjectAdmin(ModelAdmin):
         project = get_object_or_404(Project, slug=slug)
         
         # Gather stats
+        # A worker is considered 'test' if is_test is True OR if metadata has {"is_test": "true"}
+        test_q = Q(annotator__is_test=True) | Q(annotator__metadata__is_test="true")
+        
         stats = {
              'docs': project.documents.filter(is_gold_unit=False).count(),
              'gold': project.documents.filter(is_gold_unit=True).count(),
-             'enrollments': project.enrollments.filter(annotator__is_test=False).count(),
+             'enrollments': project.enrollments.exclude(test_q).count(),
+             'test_enrollments': project.enrollments.filter(test_q).count(),
              'annotations': Annotation.objects.filter(document__project=project, is_test=False).count(),
              'test_annotations': Annotation.objects.filter(document__project=project, is_test=True).count(),
         }

@@ -34,12 +34,17 @@ class ProjectContextMixin:
 
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
-        # FORCE test mode if project is NOT officially published (Playground phase)
-        # or if explicitly requested via URL
-        should_be_test = is_test_session or (not project.is_published)
+        # 1. Check if the worker is permanently marked as test in their metadata
+        # Note: metadata stores it as a string "true" according to user requirements
+        is_permanent_test = str(annotator.metadata.get('is_test', 'false')).lower() == 'true'
         
-        if should_be_test and not annotator.is_test:
-            annotator.is_test = True
+        # 2. FORCE test mode if project is NOT officially published (Playground phase)
+        # or if explicitly requested via URL, or if they are a permanent test user
+        should_be_test = is_test_session or (not project.is_published) or is_permanent_test
+        
+        # Sync the is_test boolean field with the calculated status
+        if annotator.is_test != should_be_test:
+            annotator.is_test = should_be_test
             annotator.save(update_fields=['is_test'])
         
         enrollment, _ = ProjectEnrollment.objects.get_or_create(project=project, annotator=annotator)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
@@ -8,10 +8,34 @@ from ..models import ProjectEnrollment
 from .utils import HighlightMedia
 
 
+class WorkerTypeFilter(admin.SimpleListFilter):
+    title = 'Worker Type'
+    parameter_name = 'worker_type'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('real', 'Real Workers'),
+            ('test', 'Test Workers'),
+        )
+
+    def queryset(self, request, queryset):
+        from django.db.models import Q
+        val = self.value()
+        # A worker is test if is_test=True OR metadata has {"is_test": "true"}
+        test_q = Q(annotator__is_test=True) | Q(annotator__metadata__is_test="true")
+        
+        if val == 'real':
+            return queryset.exclude(test_q)
+        if val == 'test':
+            return queryset.filter(test_q)
+        return queryset
+
+
 @admin.register(ProjectEnrollment)
 class ProjectEnrollmentAdmin(ModelAdmin):
     list_display = (
         'annotator',
+        'worker_type_badge',
         'project',
         'status_badge',
         'gold_tasks_completed_display',
@@ -20,7 +44,7 @@ class ProjectEnrollmentAdmin(ModelAdmin):
         'exclude_from_distribution',
         'created_at',
     )
-    list_filter = ('status', 'project', 'exclude_from_distribution')
+    list_filter = ('status', 'project', WorkerTypeFilter, 'exclude_from_distribution')
     search_fields = ('annotator__prolific_pid', 'project__name')
     list_select_related = ('annotator', 'project')
 
@@ -57,6 +81,22 @@ class ProjectEnrollmentAdmin(ModelAdmin):
 
     # CSS/JS for Highlight.js syntax highlighting
     Media = HighlightMedia
+
+    @admin.display(description="Type")
+    def worker_type_badge(self, obj):
+        annotator = obj.annotator
+        is_test = annotator.is_test or str(annotator.metadata.get('is_test', 'false')).lower() == 'true'
+        if is_test:
+            return mark_safe(
+                '<span style="background:#0891b2; color:white; padding:2px 8px; '
+                'border-radius:4px; font-size:11px; font-weight:600;">'
+                'Tester</span>'
+            )
+        return mark_safe(
+            '<span style="background:#2563eb; color:white; padding:2px 8px; '
+            'border-radius:4px; font-size:11px; font-weight:600;">'
+            'Worker</span>'
+        )
 
     @admin.display(description="Status")
     def status_badge(self, obj):

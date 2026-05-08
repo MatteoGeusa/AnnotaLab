@@ -233,20 +233,20 @@
                             {% for record in recent_logs %}
                             <tr class="table-row cursor-pointer"
                                 onclick="window.location.href='{{ record.project_url }}'">
-                                <td class="px-8 py-4 text-xs font-bold text-blue-500">{{ record.project }}</td>
+                                <td class="py-4 text-xs font-bold text-blue-500">{{ record.project }}</td>
                                 <td
-                                    class="px-8 py-4 text-xs font-black {% if record.is_launch %}text-emerald-500{% endif %}">
+                                    class="py-4 text-xs font-black {% if record.is_launch %}text-emerald-500{% endif %}">
                                     {{ record.action }}
                                 </td>
-                                <td class="px-8 py-4 text-xs font-medium db-text-muted max-w-xs truncate"
+                                <td class="py-4 text-xs font-medium db-text-muted max-w-xs truncate"
                                     title="{{ record.details }}">
                                     {{ record.details }}
                                 </td>
-                                <td class="px-8 py-4 text-xs font-mono opacity-40 text-right">{{ record.time_ago }}</td>
+                                <td class="py-4 text-xs font-mono opacity-40">{{ record.time_ago }}</td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="px-8 py-20 text-center text-xs font-bold italic opacity-40">Quiet
+                                <td colspan="4" class="py-20 text-center text-xs font-bold italic opacity-40">Quiet
                                     day... no recent events.</td>
                             </tr>
                             {% endfor %}

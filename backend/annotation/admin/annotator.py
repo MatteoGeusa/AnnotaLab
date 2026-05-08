@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.db.models import ProtectedError
@@ -8,9 +8,34 @@ import json
 from ..models import Annotator
 from .utils import HighlightMedia
 
+
+class WorkerTypeFilter(admin.SimpleListFilter):
+    title = 'Worker Type'
+    parameter_name = 'worker_type'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('real', 'Real Workers'),
+            ('test', 'Test Workers'),
+        )
+
+    def queryset(self, request, queryset):
+        from django.db.models import Q
+        val = self.value()
+        # A worker is test if is_test=True OR metadata has {"is_test": "true"}
+        test_q = Q(is_test=True) | Q(metadata__is_test="true")
+        
+        if val == 'real':
+            return queryset.exclude(test_q)
+        if val == 'test':
+            return queryset.filter(test_q)
+        return queryset
+
+
 @admin.register(Annotator)
 class AnnotatorAdmin(ModelAdmin):
-    list_display = ('prolific_pid', 'created_at', 'view_work_link')
+    list_display = ('prolific_pid', 'annotator_type', 'created_at', 'view_work_link')
+    list_filter = (WorkerTypeFilter, 'created_at')
     search_fields = ('prolific_pid',)
     
     # created_at is read-only to prevent editing
@@ -29,6 +54,21 @@ class AnnotatorAdmin(ModelAdmin):
     
     # CSS/JS for Highlight.js syntax highlighting
     Media = HighlightMedia
+
+    @admin.display(description="Type")
+    def annotator_type(self, obj):
+        is_test = obj.is_test or str(obj.metadata.get('is_test', 'false')).lower() == 'true'
+        if is_test:
+            return mark_safe(
+                '<span style="background:#f59e0b; color:white; padding:2px 8px; '
+                'border-radius:4px; font-size:11px; font-weight:600;">'
+                '🧪 Test</span>'
+            )
+        return mark_safe(
+            '<span style="background:#059669; color:white; padding:2px 8px; '
+            'border-radius:4px; font-size:11px; font-weight:600;">'
+            '👥 Real</span>'
+        )
 
     @admin.display(description="Metadata (JSON)")
     def formatted_metadata(self, obj):

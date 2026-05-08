@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "admin/index.html" %}
 {% load i18n admin_urls static %}
 
 {% block extrahead %}
@@ -168,13 +168,7 @@
         transform: translateX(2px);
         color: var(--db-primary);
     }
-
-    @keyframes pulse {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-    }
-
+    
     .gradient-text {
         background: linear-gradient(135deg, #3b82f6, #6366f1);
         -webkit-background-clip: text;
@@ -881,13 +875,6 @@
                             {% elif project.status == 'COMPLETED' %}🏁 COMPLETED{% endif %}
                         </span>
                     </div>
-                    <div class="pulse-indicator" 
-                         style="width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite;
-                         {% if project.status == 'LIVE' %}background: #10b981; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-                         {% elif project.status == 'PAUSED' %}background: #f59e0b; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
-                         {% elif project.status == 'COMPLETED' %}background: #6366f1; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-                         {% else %}background: #64748b; box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.4);{% endif %}">
-                    </div>
                 </div>
 
                 <!-- Status Transitions -->
@@ -1007,71 +994,86 @@
                 </div>
 
                 <div class="grid-4col">
-                    <!-- Total Docs -->
+                    <!-- Total Documents -->
                     <div class="premium-card stats-card stats-blue" style="padding: 1.25rem;">
                         <div>
-                            <span class="label-blue">Total Documents</span>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem;">
+                            <span class="label-blue">Project Documents</span>
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.25rem;">
                                 <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
-                                    {{ stats.docs }}
+                                    {{ stats.docs|add:stats.gold }}
                                 </div>
-                                {% if stats.gold > 0 %}
-                                <div style="font-size: 0.775rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px;" title="Gold Units for Quality Control">
-                                   Of which {{ stats.gold }} gold units
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="font-size: 10px; font-weight: 800; color: #3b82f6; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.docs }} normal
+                                    </div>
+                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.gold }} gold
+                                    </div>
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                            <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&o=1"
-                                class="link-blue" style="font-size: 13px; font-weight: 800;">Explore Dataset →</a>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&is_gold_unit__exact=0"
+                                class="link-blue" style="font-size: 12px; font-weight: 800;">Normal Docs →</a>
+                            <a href="{% url 'admin:annotation_goldunitproxy_changelist' %}?project__id={{ project.id }}"
+                                class="link-amber" style="font-size: 12px; font-weight: 800;">Gold Units →</a>
                         </div>
                     </div>
-
-
 
                     <!-- Workers -->
                     <div class="premium-card stats-card stats-indigo" style="padding: 1.25rem;">
                         <div>
                             <span class="label-indigo">Enrolled Workers</span>
-                            <div
-                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
-                                {{ stats.enrollments }}</div>
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.25rem;">
+                                <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
+                                    {{ stats.enrollments|add:stats.test_enrollments }}
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="font-size: 10px; font-weight: 800; color: #818cf8; background: rgba(129, 140, 248, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.enrollments }} real
+                                    </div>
+                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.test_enrollments }} test
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}"
-                            class="link-indigo" style="font-size: 13px; font-weight: 800;">Manage Workers →</a>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=real"
+                                class="link-indigo" style="font-size: 12px; font-weight: 800;">Real Workers →</a>
+                            <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=test"
+                                class="link-amber" style="font-size: 12px; font-weight: 800;">Test Workers →</a>
+                        </div>
                     </div>
 
                     <!-- Annotations -->
                     <div class="premium-card stats-card stats-emerald" style="padding: 1.25rem;">
                         <div>
-                            <span class="label-emerald">Annotations</span>
-                            <div
-                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
-                                {{ stats.annotations }}</div>
+                            <span class="label-emerald">Project Annotations</span>
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.25rem;">
+                                <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
+                                    {{ stats.annotations|add:stats.test_annotations }}
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.annotations }} production
+                                    </div>
+                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
+                                        {{ stats.test_annotations }} test
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=0"
-                            class="link-emerald" style="font-size: 13px; font-weight: 800;">Annotation Data →</a>
-                    </div>
-
-                    <!-- Test Annotations -->
-                    <div class="premium-card stats-card stats-amber" style="padding: 1.25rem;">
-                        <div>
-                            <span class="label-amber">Test Annotations</span>
-                            <div
-                                style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main); margin-top: 0.25rem;">
-                                {{ stats.test_annotations }}</div>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=0"
+                                class="link-emerald" style="font-size: 12px; font-weight: 800;">Production Ann. →</a>
+                            <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=1"
+                                class="link-amber" style="font-size: 12px; font-weight: 800;">Test Ann. →</a>
                         </div>
-                        <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=1"
-                            class="link-amber" style="font-size: 13px; font-weight: 800;">View Test Data →</a>
                     </div>
-
-
-
                 </div>
-            </div>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: stretch;">
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: stretch; margin-top: 1.5rem;">
                 
                 <div class="premium-card" style="background: var(--db-primary-soft); border-color: var(--db-border);">
                     <div style="margin-bottom: 1rem;">
@@ -1082,16 +1084,16 @@
                             style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main);">
                     </div>
                     <div class="sim-url-inner"
-                        style="padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.75rem; background: var(--db-card-bg); border: 1px solid var(--db-border);">
+                        style="padding: 0.5rem 0.75rem; border-radius: 0.75rem; margin-bottom: 0.75rem; background: var(--db-card-bg); border: 1px solid var(--db-border); display: flex; align-items: center; gap: 0.75rem;">
                         <code id="preview-url-display-{{ project.pk }}"
-                            style="font-size: 10px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">
+                            style="font-size: 11px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace;">
                             {% with full_url=frontend_url|add:"/"|add:project.slug|add:"?PROLIFIC_PID=&is_test=true" %}
                                 {{ full_url|truncatechars:150 }}
                             {% endwith %}
                         </code>
                         <button
                             onclick="const pid = document.getElementById('preview_pid_sidebar_{{ project.pk }}').value; navigator.clipboard.writeText('{{ frontend_url }}/{{ project.slug }}?PROLIFIC_PID=' + pid + '&is_test=true'); window.adminNotify('info', 'Link Copied', 'URL copied.')"
-                            class="sim-url-copy-btn" style="padding: 0.25rem;">
+                            class="sim-url-copy-btn" style="padding: 0.35rem; display: flex; align-items: center; justify-content: center; background: var(--db-primary-soft); color: var(--db-primary); border-radius: 6px; border: none; cursor: pointer;">
                             <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -1153,12 +1155,11 @@
                 </div>
             </div>
 
-            <!-- Simulator Hub -->
 
-            </div>
+        </div>
 
-            <!-- Audit Log -->
-            <div class="audit-log-card">
+                    <!-- Audit Log -->
+            <div class="audit-log-card" style="margin-top: 2rem;">
                 <div class="audit-log-header">
                     <h3
                         style="font-size: 11px; font-weight: 700; color: var(--db-text-muted); margin: 0;">
@@ -1218,11 +1219,6 @@
                     </table>
                 </div>
             </div>
-
-
-        </div>
-
-      
         
 
     </div>
