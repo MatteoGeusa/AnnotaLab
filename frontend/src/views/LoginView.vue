@@ -44,10 +44,13 @@ const startSession = async () => {
         delete metadata.project_slug;
         delete metadata.PROLIFIC_PID;
 
+        const isTest = route.query.is_test === 'true';
+
         const response = await api.post('session/', {
             prolific_pid: prolificPid.value,
             project_id: projectId.value,
             project_slug: projectSlug.value,
+            is_test: isTest,
             metadata: metadata
         });
 
@@ -55,6 +58,8 @@ const startSession = async () => {
         localStorage.setItem('prolific_pid', prolificPid.value);
         if (projectId.value) localStorage.setItem('project_id', projectId.value);
         if (projectSlug.value) localStorage.setItem('project_slug', projectSlug.value);
+        if (isTest) localStorage.setItem('is_test', 'true');
+        else localStorage.removeItem('is_test');
 
         // Routing
         const step = response.data.step;

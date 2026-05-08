@@ -864,7 +864,8 @@ class ProjectAdmin(ModelAdmin):
              'docs': project.documents.filter(is_gold_unit=False).count(),
              'gold': project.documents.filter(is_gold_unit=True).count(),
              'enrollments': project.enrollments.filter(annotator__is_test=False).count(),
-             'annotations': Annotation.objects.filter(document__project=project, annotator__is_test=False).count(),
+             'annotations': Annotation.objects.filter(document__project=project, is_test=False).count(),
+             'test_annotations': Annotation.objects.filter(document__project=project, is_test=True).count(),
         }
         
         # Progress calculation: Volume-based for better granularity
@@ -1041,7 +1042,7 @@ class ProjectAdmin(ModelAdmin):
         annotations = Annotation.objects.filter(
             document__project=project,
             document__is_gold_unit=False,
-            annotator__is_test=False
+            is_test=False
         ).select_related('document', 'annotator')
 
         for ann in annotations:
@@ -1097,12 +1098,16 @@ class ProjectAdmin(ModelAdmin):
             if obj.is_published and val == 'DRAFT': continue
             _, btn_icon = status_colors.get(val, ('#64748b', str(val[0])))
             update_url = reverse('admin:project_set_status', args=[obj.pk])
+            label_display = label
+            if val == 'LIVE':
+                label_display = 'Live / Official' if obj.is_published else 'Live (Playground)'
+                
             buttons_html += f'''
                 <button type="button" 
                         onclick="quickUpdateStatus(this, '{update_url}', '{val}', '{label}')"
                         title="Change to {label}"
                         class="status-panel-custom-btn">
-                    <span>{btn_icon}</span> <span class="truncate">{label if val != 'LIVE' else 'Live (Playground)'}</span>
+                    <span>{btn_icon}</span> <span class="truncate">{label_display}</span>
                 </button>
             '''
         actions_panel = ""
@@ -1161,14 +1166,14 @@ class ProjectAdmin(ModelAdmin):
 
     @admin.display(description="Annotations", ordering='-created_at')
     def annotations_link(self, obj):
-        count = Annotation.objects.filter(document__project=obj).count()
+        count = Annotation.objects.filter(document__project=obj, is_test=False).count()
         url = reverse("admin:annotation_annotation_changelist") + "?" + urlencode({"document__project__id": f"{obj.id}", "o": "1", "category": "regular"})
         bg = "#10b981" if count > 0 else "#64748b"
         return format_html('<a href="{}" style="background:{}; color:white; padding:7px 14px; border-radius:10px; font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; min-width:140px;" title="Manage Annotations"><span style="font-size:14px;">📊</span> <span>({}) Annotations</span></a>', url, bg, count)
 
     @admin.display(description="Workers")
     def enrollments_link(self, obj):
-        count = obj.enrollments.count()
+        count = obj.enrollments.filter(annotator__is_test=False).count()
         url = reverse("admin:annotation_projectenrollment_changelist") + "?" + urlencode({"project__id": f"{obj.id}"})
         return format_html('<a href="{}" style="background:#8b5cf6; color:white; padding:6px 14px; border-radius:10px; font-size:11px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; min-width:140px;" title="Manage Workers"><span style="font-size:14px;">👥</span> <span>({}) Workers</span></a>', url, count)
 

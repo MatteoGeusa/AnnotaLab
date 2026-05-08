@@ -34,8 +34,11 @@ class ProjectContextMixin:
 
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
-        # If explicitly marked as test in this request, update the annotator
-        if is_test_session and not annotator.is_test:
+        # FORCE test mode if project is NOT officially published (Playground phase)
+        # or if explicitly requested via URL
+        should_be_test = is_test_session or (not project.is_published)
+        
+        if should_be_test and not annotator.is_test:
             annotator.is_test = True
             annotator.save(update_fields=['is_test'])
         
@@ -215,24 +218,28 @@ class SubmitAnnotation(ProjectContextMixin, APIView):
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    annotation = serializer.save(annotator=annotator)
+                    annotation = serializer.save(
+                        annotator=annotator,
+                        is_test=annotator.is_test
+                    )
                     document = annotation.document
                     
                     if document.is_gold_unit:
-                        enrollment.gold_tasks_completed += 1
-                        is_correct = check_gold_correctness(request.data.get('result', {}), document.gold_solution)
-                        
-                        from .gold_strategies import get_strategy
-                        strategy = get_strategy()
-                        gold_cfg = {
-                            'min_accuracy_required': project.min_accuracy_required,
-                            'min_gold_before_eval': project.min_gold_before_eval,
-                        }
-                        
-                        should_exclude, _ = strategy(enrollment, gold_cfg, is_correct)
-                        if should_exclude:
-                            enrollment.status = 'EXCLUDED'
-                        enrollment.save()
+                        if not annotator.is_test:
+                            enrollment.gold_tasks_completed += 1
+                            is_correct = check_gold_correctness(request.data.get('result', {}), document.gold_solution)
+                            
+                            from .gold_strategies import get_strategy
+                            strategy = get_strategy()
+                            gold_cfg = {
+                                'min_accuracy_required': project.min_accuracy_required,
+                                'min_gold_before_eval': project.min_gold_before_eval,
+                            }
+                            
+                            should_exclude, _ = strategy(enrollment, gold_cfg, is_correct)
+                            if should_exclude:
+                                enrollment.status = 'EXCLUDED'
+                            enrollment.save()
 
                 return Response({"status": "saved"}, status=status.HTTP_201_CREATED)
             except Exception as e:

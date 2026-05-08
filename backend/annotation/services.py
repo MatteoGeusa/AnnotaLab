@@ -389,11 +389,11 @@ class DistributionService:
 
             base_qs = base_qs.filter(block_id=enrollment.assigned_block_id)
 
-        base_qs = base_qs.exclude(annotations__annotator=annotator).annotate(num_anns=Count('annotations'))
+        base_qs = base_qs.exclude(annotations__annotator=annotator)
         
         if project.distribution_strategy in ['STANDARD', 'SAME_ANNOTATORS']:
-            candidates = base_qs.filter(num_anns__lt=project.max_annotations_per_doc)
-            order = 'num_anns' if project.prioritize_unannotated else '?'
+            candidates = base_qs.filter(current_annotations_count__lt=project.max_annotations_per_doc)
+            order = 'current_annotations_count' if project.prioritize_unannotated else '?'
             candidates = candidates.order_by(order)
         else: # FULL_OVERLAP
             candidates = base_qs.order_by('?')

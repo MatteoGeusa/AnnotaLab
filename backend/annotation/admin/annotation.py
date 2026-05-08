@@ -30,7 +30,7 @@ class HideGoldFilter(admin.SimpleListFilter):
 @admin.register(Annotation)
 class AnnotationAdmin(ModelAdmin):
     list_display = ('short_id', 'annotation_type', 'document_link', 'annotator_link', 'created_at', 'seconds_to_complete')
-    list_filter = (HideGoldFilter, 'document__project', 'created_at', 'annotator')
+    list_filter = (HideGoldFilter, 'is_test', 'document__project', 'created_at', 'annotator')
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
     readonly_fields = ('created_at', 'formatted_result')
     exclude = ('result',)
@@ -39,8 +39,14 @@ class AnnotationAdmin(ModelAdmin):
     def short_id(self, obj):
         return str(obj.id)[:8] + '...'
 
-    @admin.display(description="Type", ordering='document__is_gold_unit')
+    @admin.display(description="Type", ordering='is_test')
     def annotation_type(self, obj):
+        if obj.is_test:
+            return mark_safe(
+                '<span style="background:#f59e0b; color:white; padding:2px 8px; '
+                'border-radius:4px; font-size:11px; font-weight:600;">'
+                '🧪 Test</span>'
+            )
         if obj.document and obj.document.is_gold_unit:
             return mark_safe(
                 '<span style="background:#fbbf24; color:#1f2937; padding:2px 8px; '
