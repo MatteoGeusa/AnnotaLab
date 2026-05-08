@@ -104,8 +104,13 @@ class AnnotationAdmin(ModelAdmin):
         
         # Get colors from project configuration
         try:
-            project_labels = obj.document.project.annotation_schema.get('span_labels', [])
-            color_map = {label['name']: label.get('color', '#fbbf24') for label in project_labels}
+            schema = obj.document.project.annotation_schema or {}
+            components = schema.get('components', [])
+            color_map = {}
+            for comp in components:
+                if comp.get('type') == 'span_highlight':
+                    for label in comp.get('labels', []):
+                        color_map[label['name']] = label.get('color', '#fbbf24')
         except Exception:
             color_map = {}
             

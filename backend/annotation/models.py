@@ -18,38 +18,46 @@ def get_default_configuration_for_task_type():
         except (yaml.YAMLError, IOError):
             pass
     return {
-        "span_labels": [
-                {
-                "name": "Actor",
-                "color": "#FF5733",
-                "hover_hint": "Who is allegedly responsible for a malicious action or agenda?"
-                },
-                {
-                "name": "Action",
-                "color": "#33FF57",
-                "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
-                },
-                {
-                "name": "Victim",
-                "color": "#3357FF",
-                "hover_hint": "Who is negatively affected by the actor's agenda?"
-                },
-                {
-                "name": "Threat",
-                "color": "#FF33F6",
-                "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
-                },
-                {
-                "name": "Evidence",
-                "color": "#FFA500",
-                "hover_hint": "Which arguments or expressions does the writer of the text use to support his claims?"
-                }
-            ],
-            "class_labels": [
-                { "label": "Conspiracy", "value": "Yes" },
-                { "label": "Not Conspiracy", "value": "No" },
-                { "label": "Ambiguous", "value": "Can't tell" }
-            ]
+        "components": [
+            {
+                "type": "span_highlight",
+                "labels": [
+                    {
+                    "name": "Actor",
+                    "color": "#FF5733",
+                    "hover_hint": "Who is allegedly responsible for a malicious action or agenda?"
+                    },
+                    {
+                    "name": "Action",
+                    "color": "#33FF57",
+                    "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
+                    },
+                    {
+                    "name": "Victim",
+                    "color": "#3357FF",
+                    "hover_hint": "Who is negatively affected by the actor's agenda?"
+                    },
+                    {
+                    "name": "Threat",
+                    "color": "#FF33F6",
+                    "hover_hint": "What is the actor doing or planning to do to cause negative outcomes?"
+                    },
+                    {
+                    "name": "Evidence",
+                    "color": "#FFA500",
+                    "hover_hint": "Which arguments or expressions does the writer of the text use to support his claims?"
+                    }
+                ]
+            },
+            {
+                "type": "classification",
+                "options": [
+                    { "label": "Conspiracy", "value": "Yes" },
+                    { "label": "Not Conspiracy", "value": "No" },
+                    { "label": "Ambiguous", "value": "Can't tell" }
+                ]
+            }
+        ]
     }
 
 

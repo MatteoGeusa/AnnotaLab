@@ -64,13 +64,12 @@ class ProjectAdminForm(forms.ModelForm):
         documents_file = cleaned_data.get('documents_file')
         status = cleaned_data.get('status')
 
-        # ── CONTROLLO INTEGRITÀ: Impedisce valori negativi per Quality e Distribution ──
         fields_to_validate_positive = [
-            # Quality / Monitoring
             'gold_injection_frequency', 
             'min_accuracy_required', 
             'min_gold_before_eval',
-            # Distribution & Launch
+        ]
+        fields_to_validate_strictly_positive = [
             'min_annotations_per_doc', 
             'max_annotations_per_doc', 
             'block_size', 
@@ -79,13 +78,27 @@ class ProjectAdminForm(forms.ModelForm):
 
         for field in fields_to_validate_positive:
             val = cleaned_data.get(field)
-            # Controlliamo che il valore sia stato inserito (not None) e che sia un numero negativo
             if val is not None and val < 0:
                 self.add_error(
                     field, 
                     "Invalid input: This parameter cannot be less than 0."
                 )
-        # ───────────────────────────────────────────────────────────────────────────────
+                
+        for field in fields_to_validate_strictly_positive:
+            val = cleaned_data.get(field)
+            if val is not None and val <= 0:
+                self.add_error(
+                    field, 
+                    "Invalid input: This parameter must be strictly greater than 0."
+                )
+
+        min_annot = cleaned_data.get('min_annotations_per_doc')
+        max_annot = cleaned_data.get('max_annotations_per_doc')
+        if min_annot and max_annot and max_annot < min_annot:
+            self.add_error(
+                'max_annotations_per_doc',
+                "Hard Cap (Max) cannot be lower than the Target (Min) annotations per document."
+            )
 
         # ── LIVE status: requires a dataset ────────────────────────────────
         if status == 'LIVE':

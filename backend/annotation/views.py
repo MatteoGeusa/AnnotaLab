@@ -32,6 +32,10 @@ class ProjectContextMixin:
         else:
             project = get_object_or_404(Project, id=project_id)
 
+        if not project.can_accept_annotations:
+            msg = f"This project is currently {project.status.lower()} and not accepting new sessions."
+            return None, None, None, Response({"error": msg}, status=status.HTTP_404_NOT_FOUND)
+
         annotator, created = Annotator.objects.get_or_create(prolific_pid=pid)
         
         # 1. Check if the worker is permanently marked as test in their metadata
@@ -55,10 +59,6 @@ class InitializeSession(ProjectContextMixin, APIView):
     def post(self, request):
         project, annotator, enrollment, error_response = self.get_context(request)
         if error_response: return error_response
-
-        if not project.can_accept_annotations:
-            msg = "This project is still in DRAF phase and not yet open." if project.status == 'DRAFT' else f"Project is currently {project.status.lower()}"
-            return Response({"error": msg}, status=404)
 
         # Metadata extraction
         metadata = request.data.get('metadata', {})

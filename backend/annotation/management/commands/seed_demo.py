@@ -73,16 +73,23 @@ LABELS = ["Yes", "No", "Can't tell"]
 TASK_CONFIG = {
     "question": "Does this text describe or promote a conspiracy theory?",
     "instruction": "Read the text carefully and: (1) highlight the key elements using the span labels, (2) select the overall classification.",
-    "span_labels": [
-        {"name": "Actor", "color": "#ef4444", "hover_hint": "Who is allegedly responsible?"},
-        {"name": "Action", "color": "#3b82f6", "hover_hint": "What are they doing?"},
-        {"name": "Victim", "color": "#8b5cf6", "hover_hint": "Who is being harmed?"},
-        {"name": "Evidence", "color": "#f59e0b", "hover_hint": "What proof is cited?"},
-    ],
-    "class_labels": [
-        {"label": "Conspiracy", "value": "Yes"},
-        {"label": "Not a Conspiracy", "value": "No"},
-        {"label": "Ambiguous", "value": "Can't tell"},
+    "components": [
+        {
+            "type": "span_highlight",
+            "labels": [
+                {"name": "Actor", "color": "#ef4444", "hover_hint": "Who is responsible?"},
+                {"name": "Action", "color": "#f59e0b", "hover_hint": "What did they do?"},
+                {"name": "Target", "color": "#3b82f6", "hover_hint": "Who is the victim?"}
+            ]
+        },
+        {
+            "type": "classification",
+            "options": [
+                {"label": "Conspiracy", "value": "Yes"},
+                {"label": "Not Conspiracy", "value": "No"},
+                {"label": "Ambiguous", "value": "Can't tell"}
+            ]
+        }
     ]
 }
 
