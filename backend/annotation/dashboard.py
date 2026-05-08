@@ -26,7 +26,7 @@ def custom_dashboard_callback(request, context):
             'project_url': reverse('admin:project_dashboard', args=[log.project.slug]),
             'action': log.action,
             'details': log.details[:50] + '...' if len(log.details) > 50 else log.details,
-            'time_ago': timesince(log.timestamp) + ' ago' if log.timestamp else 'Just now',
+            'time_ago': (timesince(log.timestamp).split(',')[0] + ' ago') if log.timestamp else 'Just now',
             'is_launch': 'Launch' in log.action or 'Live' in log.action
         })
 

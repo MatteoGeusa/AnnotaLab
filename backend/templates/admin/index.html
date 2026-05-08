@@ -211,7 +211,7 @@
     </div>
 
     <!-- Bottom Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
 
         <!-- Logs -->
         <div class="lg:col-span-2 flex flex-col gap-6">
@@ -252,34 +252,6 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Side Lists -->
-        <div class="flex flex-col gap-8">
-            <!-- Launched List -->
-            <div class="db-card">
-                <h3 class="text-sm font-black tracking-widest opacity-60 mb-8">Launched Projects</h3>
-                <div class="space-y-8">
-                    {% for proj in launched_projects %}
-                    <div class="group cursor-pointer" onclick="window.location.href='{{ proj.url }}'">
-                        <div class="flex justify-between items-center mb-1">
-                            <h4 class="text-sm font-bold group-hover:text-emerald-500 transition-colors">{{ proj.name }}
-                            </h4>
-                            <span class="text-[10px] font-black text-emerald-500">{{ proj.progress }}%</span>
-                        </div>
-                        <p class="text-[10px] opacity-40 font-bold truncate max-w-full mb-2">
-                            {{ proj.description|default:"" }}
-                        </p>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill bg-emerald-500 js-progress-bar"
-                                data-progress="{{ proj.progress|default:0 }}"></div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-center py-6 text-xs font-bold italic opacity-40">No campaigns launched.</p>
-                    {% endfor %}
                 </div>
             </div>
         </div>
