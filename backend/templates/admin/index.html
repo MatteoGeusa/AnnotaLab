@@ -158,23 +158,44 @@
 <div class="px-6 py-10 max-w-[1400px] mx-auto" style="color: var(--db-text-main);">
 
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
         <div>
             <h1 class="text-5xl font-black tracking-tight leading-none mb-2">Dashboard</h1>
             <p class="text-xs font-black tracking-[0.2em] opacity-40">Global Projects Overview</p>
-            <br>
-            <a href="{% url 'admin:annotation_project_changelist' %}" class="btn-outline">
-                View All Projects
-            </a>
-            <a href="/admin/annotation/project/add/" class="btn-primary">
-                + Create New Project
-            </a>
+        </div>
+    </div>
 
+    <!-- Main Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="db-card db-card-clickable md:col-span-2 flex justify-between items-center group"
+            style="background: var(--db-primary); color: white; border: none;"
+            data-url="{% url 'admin:annotation_project_changelist' %}" onclick="window.location.href=this.dataset.url">
+            <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-black tracking-widest uppercase opacity-70">Directory</span>
+                <h2 class="text-4xl font-black">View All Projects</h2>
+                <p class="text-sm opacity-90 max-w-md">Browse and filter the complete database of all your active,
+                    draft, and completed experiments.</p>
+            </div>
+            <div class="text-5xl opacity-80" style="transition: transform 0.3s;"
+                onmouseover="this.style.transform='scale(1.1) translateX(-10px)'"
+                onmouseout="this.style.transform='scale(1) translateX(0)'">
+                📚
+            </div>
+        </div>
+
+        <div class="db-card db-card-clickable flex justify-between items-center group"
+            style="border: 2px dashed var(--db-border); background: transparent;"
+            data-url="/admin/annotation/project/add/" onclick="window.location.href=this.dataset.url">
+            <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-black tracking-widest uppercase opacity-60">New</span>
+                <h2 class="text-3xl font-black db-text-primary">+ Create</h2>
+                <p class="text-xs db-text-muted">Start a new project from scratch.</p>
+            </div>
         </div>
     </div>
 
     <!-- KPI Bento Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <!-- Drafts -->
         <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-slate-400"
             data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=DRAFT"
@@ -184,6 +205,17 @@
                 <span class="text-slate-400">📝</span>
             </div>
             <div class="text-4xl font-black">{{ draft_projects_count }}</div>
+        </div>
+
+        <!-- Playground -->
+        <div class="db-card db-card-clickable flex flex-col gap-4 border-l-4 border-amber-500"
+            data-url="{% url 'admin:annotation_project_changelist' %}?status__exact=LIVE&is_published__exact=0"
+            onclick="window.location.href=this.dataset.url">
+            <div class="flex justify-between items-center">
+                <span class="text-[10px] font-black tracking-widest opacity-60">Playground Projects</span>
+                <span class="text-amber-500">🧪</span>
+            </div>
+            <div class="text-4xl font-black text-amber-500">{{ playground_projects_count }}</div>
         </div>
 
         <!-- Launched -->
@@ -210,49 +242,45 @@
         </div>
     </div>
 
-    <!-- Bottom Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
 
-        <!-- Logs -->
-        <div class="lg:col-span-2 flex flex-col gap-6">
-            <div class="db-card p-0 overflow-hidden">
-                <div class="py-5 border-b bg-[var(--db-bg)] flex justify-between items-center">
-                    <h3 class="text-sm font-black tracking-widest opacity-60">Recent Activity</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="opacity-40">
-                                <th class="py-4 text-[10px] font-black">Project</th>
-                                <th class="py-4 text-[10px] font-black">Action</th>
-                                <th class="py-4 text-[10px] font-black">Details</th>
-                                <th class="py-4 text-[10px] font-black">Time</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y var(--db-border)">
-                            {% for record in recent_logs %}
-                            <tr class="table-row cursor-pointer"
-                                onclick="window.location.href='{{ record.project_url }}'">
-                                <td class="py-4 text-xs font-bold text-blue-500">{{ record.project }}</td>
-                                <td
-                                    class="py-4 text-xs font-black {% if record.is_launch %}text-emerald-500{% endif %}">
-                                    {{ record.action }}
-                                </td>
-                                <td class="py-4 text-xs font-medium db-text-muted max-w-xs truncate"
-                                    title="{{ record.details }}">
-                                    {{ record.details }}
-                                </td>
-                                <td class="py-4 text-xs font-mono opacity-40">{{ record.time_ago }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="py-20 text-center text-xs font-bold italic opacity-40">Quiet
-                                    day... no recent events.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <!-- Logs Section -->
+    <div class="mb-10">
+        <h2 class="text-xl font-black tracking-tight mb-6">System Logs</h2>
+        <div class="db-card p-0 overflow-hidden">
+            <div class="py-5 border-b bg-[var(--db-bg)] flex justify-between items-center">
+                <h3 class="text-sm font-black tracking-widest opacity-60">Recent Activity</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="opacity-40">
+                            <th class="py-4 text-[10px] font-black">Project</th>
+                            <th class="py-4 text-[10px] font-black">Action</th>
+                            <th class="py-4 text-[10px] font-black">Details</th>
+                            <th class="py-4 text-[10px] font-black">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y var(--db-border)">
+                        {% for record in recent_logs %}
+                        <tr class="table-row cursor-pointer" onclick="window.location.href='{{ record.project_url }}'">
+                            <td class="py-4 text-xs font-bold text-blue-500">{{ record.project }}</td>
+                            <td class="py-4 text-xs font-black {% if record.is_launch %}text-emerald-500{% endif %}">
+                                {{ record.action }}
+                            </td>
+                            <td class="py-4 text-xs font-medium db-text-muted max-w-xs truncate"
+                                title="{{ record.details }}">
+                                {{ record.details }}
+                            </td>
+                            <td class="py-4 text-xs font-mono opacity-40">{{ record.time_ago }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="py-20 text-center text-xs font-bold italic opacity-40">Quiet
+                                day... no recent events.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

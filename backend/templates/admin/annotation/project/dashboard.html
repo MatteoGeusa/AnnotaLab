@@ -54,7 +54,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
         min-height: 140px;
     }
 
@@ -909,7 +909,9 @@
                                         {% if trans.value == 'DRAFT' %}Edit configuration & datasets
                                         {% elif trans.value == 'LIVE' %}
                                             {% if project.is_published %}Continue collecting real participant data{% else %}Enter testing phase and enable participant simulation{% endif %}
-                                        {% elif trans.value == 'COMPLETED' %}Freeze and finalize results{% endif %}
+                                        {% elif trans.value == 'COMPLETED' %}Freeze and finalize results
+                                        {% elif trans.value == 'PAUSED' %}Pause data collection
+                                        {% endif %}
                                     </div>
                                 </div>
 
@@ -1002,21 +1004,19 @@
                                 <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
                                     {{ stats.docs|add:stats.gold }}
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <div style="font-size: 10px; font-weight: 800; color: #3b82f6; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.docs }} normal
-                                    </div>
-                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.gold }} gold
-                                    </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&is_gold_unit__exact=0"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #3b82f6; background: rgba(59, 130, 246, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.docs }} normal</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
+                                    <a href="{% url 'admin:annotation_goldunitproxy_changelist' %}?project__id={{ project.id }}"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.gold }} gold</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
                                 </div>
                             </div>
-                        </div>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                            <a href="{% url 'admin:annotation_documentproxy_changelist' %}?project__id={{ project.id }}&is_gold_unit__exact=0"
-                                class="link-blue" style="font-size: 12px; font-weight: 800;">Normal Docs →</a>
-                            <a href="{% url 'admin:annotation_goldunitproxy_changelist' %}?project__id={{ project.id }}"
-                                class="link-amber" style="font-size: 12px; font-weight: 800;">Gold Units →</a>
                         </div>
                     </div>
 
@@ -1028,21 +1028,19 @@
                                 <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
                                     {{ stats.enrollments|add:stats.test_enrollments }}
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <div style="font-size: 10px; font-weight: 800; color: #818cf8; background: rgba(129, 140, 248, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.enrollments }} real
-                                    </div>
-                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.test_enrollments }} test
-                                    </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=real"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #818cf8; background: rgba(129, 140, 248, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.enrollments }} real</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
+                                    <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=test"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.test_enrollments }} test</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
                                 </div>
                             </div>
-                        </div>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                            <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=real"
-                                class="link-indigo" style="font-size: 12px; font-weight: 800;">Real Workers →</a>
-                            <a href="{% url 'admin:annotation_projectenrollment_changelist' %}?project__id={{ project.id }}&worker_type=test"
-                                class="link-amber" style="font-size: 12px; font-weight: 800;">Test Workers →</a>
                         </div>
                     </div>
 
@@ -1054,40 +1052,38 @@
                                 <div style="font-size: 2.5rem; font-weight: 900; color: var(--db-text-main);">
                                     {{ stats.annotations|add:stats.test_annotations }}
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <div style="font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.annotations }} production
-                                    </div>
-                                    <div style="font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 6px;">
-                                        {{ stats.test_annotations }} test
-                                    </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=0"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.annotations }} production</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
+                                    <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=1"
+                                        style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; min-width: 110px; transition: opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                                        <span>{{ stats.test_annotations }} test</span>
+                                        <span style="font-size: 12px;">→</span>
+                                    </a>
                                 </div>
                             </div>
-                        </div>
-                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                            <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=0"
-                                class="link-emerald" style="font-size: 12px; font-weight: 800;">Production Ann. →</a>
-                            <a href="{% url 'admin:annotation_annotation_changelist' %}?document__project__id={{ project.id }}&o=1&is_test=1"
-                                class="link-amber" style="font-size: 12px; font-weight: 800;">Test Ann. →</a>
                         </div>
                     </div>
                 </div>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: stretch; margin-top: 1.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
                 
-                <div class="premium-card" style="background: var(--db-primary-soft); border-color: var(--db-border);">
+                <div class="premium-card" style="background: var(--db-primary-soft); border-color: var(--db-border); min-width: 0;">
                     <div style="margin-bottom: 1rem;">
                         <label class="sim-label"
                             style="font-size: 17px; font-weight: 900; color: var(--db-primary);">Test Annotation</label>
-                        <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value=""
+                        <input type="text" id="preview_pid_sidebar_{{ project.pk }}" value="TESTER"
                             placeholder="Enter a name to test annotation ..." class="sim-input"
-                            style="padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main);">
+                            style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; font-size: 0.9rem; border-radius: 0.75rem; background: var(--db-bg); border: 2px solid var(--db-border); color: var(--db-text-main); text-overflow: ellipsis;">
                     </div>
                     <div class="sim-url-inner"
                         style="padding: 0.5rem 0.75rem; border-radius: 0.75rem; margin-bottom: 0.75rem; background: var(--db-card-bg); border: 1px solid var(--db-border); display: flex; align-items: center; gap: 0.75rem;">
                         <code id="preview-url-display-{{ project.pk }}"
                             style="font-size: 11px; color: var(--db-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace;">
-                            {% with full_url=frontend_url|add:"/"|add:project.slug|add:"?PROLIFIC_PID=&is_test=true" %}
+                            {% with full_url=frontend_url|add:"/"|add:project.slug|add:"?PROLIFIC_PID=TESTER&is_test=true" %}
                                 {{ full_url|truncatechars:150 }}
                             {% endwith %}
                         </code>
