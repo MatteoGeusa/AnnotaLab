@@ -1269,13 +1269,13 @@ class ProjectAdmin(ModelAdmin):
                     <label style="font-size: 10px; font-weight: 700; color: #cbd5e1; text-transform: uppercase;">Simulation Prolific PID</label>
                     <div style="display: flex; gap: 4px;">
                         <input type="text" id="{}" value="ADMIN_TEST" style="flex: 1; padding: 6px 8px; border: 1px solid #475569; border-radius: 6px; font-size: 11px; background: #0f172a; color: white; outline: none;">
-                        <button type="button" onclick="window.openProjectPreview(\'{}\', \'{}\', \'{}\', {})"
+                        <button type="button" onclick="window.openProjectPreview(\'{}\', \'{}\', \'{}\', {}, \'{}\', \'{}\')"
                                 style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 11px;">👁️ Test as Participant</button>
                     </div>
                 </div>
             </div>
             ''',
-            full_url, full_url, input_id, base_url, obj.slug, input_id, is_pub_js
+            full_url, full_url, input_id, base_url, obj.slug, input_id, is_pub_js, obj.status, reverse('admin:project_set_status', args=[obj.pk])
         )
 
     def save_model(self, request, obj, form, change):

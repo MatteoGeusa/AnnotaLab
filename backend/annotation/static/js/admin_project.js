@@ -7,15 +7,31 @@
  * Open project preview with dynamic participant ID from input
  */
 window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '', updateStatusUrl = '') {
-    if (status === 'DRAFT') {
+    if (status !== 'LIVE') {
+        let title = "Playground Mode Required";
+        let msg = "You cannot perform test annotations while the project is in **Draft**.<br><br>Would you like to switch to **Playground** mode now to enable testing?";
+        let btn = "Switch to Playground";
+        let emoji = "📁";
+
+        if (status === 'PAUSED') {
+            title = "⏸️ Collection Paused";
+            msg = "This project is currently **Paused**. To perform test annotations and verify the configuration, you must return to **Live** mode.<br><br>Would you like to resume now?";
+            btn = "Resume to Live";
+            emoji = "⏸️";
+        } else if (status === 'COMPLETED') {
+            title = "🏁 Project Completed";
+            msg = "This project is marked as **Completed**. To perform additional test annotations, you must return it to **Live** mode.<br><br>Would you like to resume now?";
+            btn = "Resume to Live";
+            emoji = "🏁";
+        }
+
         window.adminConfirm(
-            "🚀 Playground Mode Required",
-            "You cannot perform test annotations while the project is in **Draft**.<br><br>Would you like to switch to **Playground** mode now to enable testing?",
-            "📁",
-            "Switch to Playground",
+            `🚀 ${title}`,
+            msg,
+            emoji,
+            btn,
             "#10b981",
             () => {
-                // Call the status update logic directly to avoid double confirmation
                 if (window.executeUpdateStatus) {
                     window.executeUpdateStatus(null, updateStatusUrl, 'LIVE');
                 } else {
