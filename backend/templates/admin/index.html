@@ -185,7 +185,11 @@
 
         <div class="db-card db-card-clickable flex justify-between items-center group"
             style="border: 2px dashed var(--db-border); background: transparent;"
-            data-url="/admin/annotation/project/add/" onclick="window.location.href=this.dataset.url">
+            {% if perms.annotation.add_project %}
+            data-url="/admin/annotation/project/add/" onclick="window.location.href=this.dataset.url"
+            {% else %}
+            onclick="if(window.adminAlert) window.adminAlert('Access Restricted', 'Your account is configured as a **Collaborator**. You can manage assigned projects, but you do not have permissions to create new ones.', '⚠️', 'I Understand', '#3b82f6')"
+            {% endif %}>
             <div class="flex flex-col gap-2">
                 <span class="text-[10px] font-black tracking-widest uppercase opacity-60">New</span>
                 <h2 class="text-3xl font-black db-text-primary">+ Create</h2>
@@ -193,6 +197,9 @@
             </div>
         </div>
     </div>
+
+    {% load static %}
+    <script src="{% static 'js/admin_project.js' %}"></script>
 
     <!-- KPI Bento Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

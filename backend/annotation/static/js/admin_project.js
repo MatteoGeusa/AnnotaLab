@@ -380,6 +380,48 @@ window.adminConfirm = function (title, message, emojis, confirmText, confirmColo
 };
 
 /**
+ * Custom Modal Alert (Informational only, based on adminConfirm style)
+ */
+window.adminAlert = function (title, message, emojis, btnText = "Understood", btnColor = "#3b82f6") {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0';
+    overlay.style.width = '100vw'; overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.7)'; overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+    overlay.style.backdropFilter = 'blur(4px)';
+
+    const modal = document.createElement('div');
+    modal.style.background = '#1e293b'; modal.style.color = '#f8fafc';
+    modal.style.padding = '32px 24px'; modal.style.borderRadius = '16px';
+    modal.style.width = '90%'; modal.style.maxWidth = '420px';
+    modal.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1)';
+    modal.style.fontFamily = 'system-ui, -apple-system, sans-serif'; modal.style.textAlign = 'center';
+
+    modal.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 16px; line-height: 1;">${emojis}</div>
+        <h2 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">${title}</h2>
+        <p style="margin: 0 0 28px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">${window._parseAdminMarkdown(message)}</p>
+        <div style="display: flex; justify-content: center;">
+            <button id="modal-close-btn" style="width: 100%; padding: 12px 16px; border-radius: 8px; border: none; background: ${btnColor}; color: white; cursor: pointer; font-weight: 700; font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">${btnText}</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    modal.animate([
+        { transform: 'scale(0.9)', opacity: 0 },
+        { transform: 'scale(1)', opacity: 1 }
+    ], { duration: 200, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+
+    const close = () => {
+        overlay.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150 }).onfinish = () => overlay.remove();
+    };
+
+    document.getElementById('modal-close-btn').onclick = close;
+};
+
+/**
  * Specific modal for Project Cloning choice
  */
 window.adminCloneChoice = function (projectName, url, onClone, isPublished = false) {

@@ -4,7 +4,7 @@ from django.utils.html import format_html, mark_safe
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from ..models import ProjectEnrollment
+from ..models import ProjectEnrollment, Project
 from .utils import HighlightMedia
 
 
@@ -47,6 +47,17 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     list_filter = ('status', 'project', WorkerTypeFilter, 'exclude_from_distribution')
     search_fields = ('annotator__prolific_pid', 'project__name')
     list_select_related = ('annotator', 'project')
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        from django.db.models import Q
+        return qs.filter(
+            project__in=Project.objects.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            )
+        ).distinct()
 
     readonly_fields = (
         'annotator',
@@ -80,7 +91,15 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     )
 
     # CSS/JS for Highlight.js syntax highlighting
-    Media = HighlightMedia
+    class Media:
+        js = ('js/admin_project.js',)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None and not request.user.is_superuser:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this enrollment.")
+        return obj
 
     @admin.display(description="Type")
     def worker_type_badge(self, obj):

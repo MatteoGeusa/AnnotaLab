@@ -7,7 +7,7 @@ from unfold.admin import ModelAdmin, TabularInline
 from django.utils.html import format_html, mark_safe
 from django.urls import reverse, path
 from django.utils.http import urlencode
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.contrib import messages
 from django.conf import settings
 import json
@@ -927,7 +927,12 @@ class ProjectAdmin(ModelAdmin):
         return self._render_config_block(obj, obj.practice_task_config, 'Practice Task', '🎯')
 
     def dashboard_view(self, request, slug):
-        project = get_object_or_404(Project, slug=slug)
+        # Fetch only projects that the user has access to
+        project = self.get_queryset(request).filter(slug=slug).first()
+        if not project:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this project's dashboard.")
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
         
         # Gather stats
         # A worker is considered 'test' if is_test is True OR if metadata has {"is_test": "true"}
@@ -1034,6 +1039,10 @@ class ProjectAdmin(ModelAdmin):
         if request.method != 'POST':
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
+        project = self.get_object(request, object_id)
+        if project is None:
+            return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
         try:
             data = json.loads(request.body)
             new_status = data.get('status')
@@ -1049,6 +1058,10 @@ class ProjectAdmin(ModelAdmin):
         if request.method != 'POST':
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
+        project = self.get_object(request, object_id)
+        if project is None:
+            return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
         try:
             message = ProjectService.nuke_project_data(object_id, user=request.user)
             return JsonResponse({'status': 'success', 'message': message})
@@ -1061,6 +1074,10 @@ class ProjectAdmin(ModelAdmin):
         if request.method != 'POST':
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
+        project = self.get_object(request, object_id)
+        if project is None:
+            return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
         try:
             message = ProjectService.launch_project(object_id, user=request.user)
             return JsonResponse({'status': 'success', 'message': message})
@@ -1076,6 +1093,11 @@ class ProjectAdmin(ModelAdmin):
         if request.method != 'POST':
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
+        # Verify user has access to the project being cloned
+        project = self.get_object(request, object_id)
+        if project is None:
+            return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
         try:
             data = json.loads(request.body)
             clone_mode = data.get('clone_mode')
@@ -1098,6 +1120,10 @@ class ProjectAdmin(ModelAdmin):
         if request.method != 'POST':
             return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
         
+        project = self.get_object(request, object_id)
+        if project is None:
+            return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
         try:
             result = run_mace_for_project(object_id)
             if result.get("status") == "success":
@@ -1109,6 +1135,10 @@ class ProjectAdmin(ModelAdmin):
 
     def download_export_view(self, request, object_id):
         project = self.get_object(request, object_id)
+        if project is None:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to export data from this project.")
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
         response = HttpResponse(content_type='application/x-jsonlines')
         filename = f"{project.name.replace(' ', '_').lower()}_annotations.jsonl"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -1277,6 +1307,31 @@ class ProjectAdmin(ModelAdmin):
             ''',
             full_url, full_url, input_id, base_url, obj.slug, input_id, is_pub_js, obj.status, reverse('admin:project_set_status', args=[obj.pk])
         )
+
+    class Media:
+        js = ('js/admin_project.js',)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None and not request.user.is_superuser:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this project.")
+        return obj
+
+    def add_view(self, request, form_url='', extra_context=None):
+        if not self.has_add_permission(request):
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to create new projects.")
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
+        return super().add_view(request, form_url, extra_context)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        if not self.has_delete_permission(request, obj):
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to delete this project.")
+            return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
+        return super().delete_view(request, object_id, extra_context)
 
     def save_model(self, request, obj, form, change):
         is_new = not obj.pk

@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 import json
-from ..models import Annotation
+from ..models import Annotation, Project
 
 
 class HideGoldFilter(admin.SimpleListFilter):
@@ -34,10 +34,31 @@ class AnnotationAdmin(ModelAdmin):
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
     readonly_fields = ('created_at', 'formatted_result')
     exclude = ('result',)
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        from django.db.models import Q
+        return qs.filter(
+            document__project__in=Project.objects.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            )
+        ).distinct()
 
     @admin.display(description="ID")
     def short_id(self, obj):
         return str(obj.id)[:8] + '...'
+
+    class Media:
+        js = ('js/admin_project.js',)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None and not request.user.is_superuser:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this annotation.")
+        return obj
 
     @admin.display(description="Type", ordering='is_test')
     def annotation_type(self, obj):

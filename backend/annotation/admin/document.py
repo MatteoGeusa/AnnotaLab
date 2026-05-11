@@ -8,7 +8,7 @@ from django.db.models.functions import Cast
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from ..models import Document, DocumentProxy, GoldUnitProxy
+from ..models import Document, DocumentProxy, GoldUnitProxy, Project
 
 class DocumentResource(resources.ModelResource):
     class Meta:
@@ -23,6 +23,16 @@ class BaseDocumentAdmin(ModelAdmin, ImportExportModelAdmin):
     @admin.display(description="Text Preview")
     def short_text(self, obj):
         return obj.text[:80] + "..." if len(obj.text) > 80 else obj.text
+
+    class Media:
+        js = ('js/admin_project.js',)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None and not request.user.is_superuser:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this document.")
+        return obj
 
     @admin.display(description="External ID", ordering="external_id")
     def external_id_display(self, obj):
@@ -49,7 +59,15 @@ class DocumentProxyAdmin(BaseDocumentAdmin):
 
     
     def get_queryset(self, request):
-        return super().get_queryset(request)
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        from django.db.models import Q
+        return qs.filter(
+            project__in=Project.objects.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            )
+        ).distinct()
 
     @admin.display(boolean=True, description="Completed?")
     def is_completed(self, obj):
@@ -93,7 +111,15 @@ class GoldUnitProxyAdmin(BaseDocumentAdmin):
     list_filter = ('project',)
     
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(is_gold_unit=True)
+        qs = super().get_queryset(request).filter(is_gold_unit=True)
+        if request.user.is_superuser:
+            return qs
+        from django.db.models import Q
+        return qs.filter(
+            project__in=Project.objects.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            )
+        ).distinct()
 
     @admin.display(description="Gold Solution")
     def gold_preview(self, obj):

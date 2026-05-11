@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.db.models import ProtectedError
 import json
-from ..models import Annotator
+from ..models import Annotator, Project
 from .utils import HighlightMedia
 
 
@@ -41,6 +41,17 @@ class AnnotatorAdmin(ModelAdmin):
     # created_at is read-only to prevent editing
     readonly_fields = ('created_at', 'formatted_metadata')
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        from django.db.models import Q
+        return qs.filter(
+            enrollments__project__in=Project.objects.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            )
+        ).distinct()
+
     fieldsets = (
         ("Annotator Profile", {
             "fields": ("prolific_pid", "created_at")
@@ -53,7 +64,22 @@ class AnnotatorAdmin(ModelAdmin):
     )
     
     # CSS/JS for Highlight.js syntax highlighting
-    Media = HighlightMedia
+    class Media:
+        css = {
+            'all': ('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/stackoverflow-light.min.css',)
+        }
+        js = (
+            'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
+            'js/admin_highlight_init.js',
+            'js/admin_project.js', # For popups
+        )
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None and not request.user.is_superuser:
+            from django.contrib import messages
+            messages.error(request, "⚠️ Access Denied: You do not have permissions to view this worker's profile.")
+        return obj
 
     @admin.display(description="Type")
     def annotator_type(self, obj):
