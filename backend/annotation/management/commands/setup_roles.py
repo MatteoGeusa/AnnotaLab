@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from annotation.models import Project, Annotator, Document, Annotation, ProjectEnrollment
+from annotation.models import Project, Annotator, Document, Annotation, ProjectEnrollment, DocumentProxy, GoldUnitProxy
 
 class Command(BaseCommand):
     help = 'Setup default roles (Collaborator and Owner) with appropriate permissions'
@@ -14,6 +14,8 @@ class Command(BaseCommand):
                 ('change', Project),
                 ('view', Annotator),
                 ('view', Document),
+                ('view', DocumentProxy),
+                ('view', GoldUnitProxy),
                 ('view', Annotation),
                 ('view', ProjectEnrollment),
             ],
@@ -27,6 +29,12 @@ class Command(BaseCommand):
                 ('view', Document),
                 ('change', Document),
                 ('delete', Document),
+                ('view', DocumentProxy),
+                ('change', DocumentProxy),
+                ('delete', DocumentProxy),
+                ('view', GoldUnitProxy),
+                ('change', GoldUnitProxy),
+                ('delete', GoldUnitProxy),
                 ('view', Annotation),
                 ('view', ProjectEnrollment),
                 ('add', ProjectEnrollment),
@@ -46,7 +54,7 @@ class Command(BaseCommand):
             group.permissions.clear()
 
             for action, model in perms_list:
-                content_type = ContentType.objects.get_for_model(model)
+                content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
                 codename = f'{action}_{model._meta.model_name}'
                 try:
                     permission = Permission.objects.get(content_type=content_type, codename=codename)

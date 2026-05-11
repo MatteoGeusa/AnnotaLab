@@ -619,6 +619,7 @@ class DocumentProxy(Document):
         proxy = True
         verbose_name = "Annotation Document"
         verbose_name_plural = "Annotation Documents"
+        default_permissions = ('add', 'change', 'delete', 'view')
 
 class GoldUnitProxy(Document):
     """Proxy model for Quality Control Units (Gold Injection)."""
@@ -626,3 +627,4 @@ class GoldUnitProxy(Document):
         proxy = True
         verbose_name = "Gold Unit"
         verbose_name_plural = "Gold Units"
+        default_permissions = ('add', 'change', 'delete', 'view')

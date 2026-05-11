@@ -838,12 +838,19 @@
             
             <!-- Tools Group: Clone & Export -->
             <div style="display: flex; align-items: center; background: var(--db-card-bg); border: 1px solid var(--db-border); border-radius: 0.75rem; overflow: hidden;">
+                {% if perms.annotation.add_project %}
                 <button data-url="{{ action_urls.clone }}" data-name="{{ project.name }}"
                     data-published="{{ project.is_published|lower }}"
                     onclick="quickCloneProject(this, this.dataset.url, this.dataset.name, this.dataset.published === 'true')"
                     class="dash-btn-glass" style="border: none; border-radius: 0; padding: 0.75rem 1rem; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; border-right: 1px solid var(--db-border);">
                     📋 Clone
                 </button>
+                {% else %}
+                <button onclick="if(window.adminAlert) window.adminAlert('Access Restricted', 'Your account is configured as a **Collaborator**. You can manage assigned projects, but you do not have permissions to clone them or create new ones.', '⚠️', 'I Understand', '#3b82f6')"
+                    class="dash-btn-glass" style="border: none; border-radius: 0; padding: 0.75rem 1rem; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; border-right: 1px solid var(--db-border);">
+                    📋 Clone
+                </button>
+                {% endif %}
                 <button onclick="quickExportProject(this, '{{ action_urls.export }}', '{{ project.name }}')"
                     class="dash-btn-glass" style="border: none; border-radius: 0; padding: 0.75rem 1rem; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s;">
                     📊 Export
@@ -953,17 +960,31 @@
 
                     <div style="display: flex; flex-direction: column; gap: 1rem;">
                         <div>
+                            {% if request.user == project.owner or request.user.is_superuser %}
                             <button onclick="quickLaunchProject(this, '{{ action_urls.launch }}')" class="btn-launch"
                                 style="width: 100%; background: #10b981; font-size:13px;">
                                 🚀 Launch to Production
                             </button>
+                            {% else %}
+                            <button onclick="if(window.adminAlert) window.adminAlert('Access Restricted', 'Only the **Project Owner** can launch a project to production.', '🛡️', 'I Understand', '#10b981')" class="btn-launch"
+                                style="width: 100%; background: #64748b; font-size:13px; opacity: 0.6; cursor: not-allowed;">
+                                🚀 Launch to Production
+                            </button>
+                            {% endif %}
                         </div>
 
                         <div>
+                            {% if request.user == project.owner or request.user.is_superuser %}
                             <button onclick="quickNukeProject(this, '{{ action_urls.nuke }}')" class="btn-nuke"
                                 style="width: 100%; border: 1px solid rgba(244, 63, 94, 0.2); padding: 0.6rem; border-radius: 0.75rem; font-size: 13px;">
                                 ☢️ Destroy Playground Annotations
                             </button>
+                            {% else %}
+                            <button onclick="if(window.adminAlert) window.adminAlert('Access Restricted', 'Only the **Project Owner** can perform data destruction actions.', '☢️', 'I Understand', '#f43f5e')" class="btn-nuke"
+                                style="width: 100%; border: 1px solid rgba(244, 63, 94, 0.2); padding: 0.6rem; border-radius: 0.75rem; font-size: 13px; opacity: 0.6; cursor: not-allowed;">
+                                ☢️ Destroy Playground Annotations
+                            </button>
+                            {% endif %}
                             <p
                                 style="font-size: 11px; font-weight: 500; color: var(--db-text-muted); margin-top: 0.5rem; line-height: 1.4;">
                                 Delete all annotations and participants from the <b>test environment</b>.

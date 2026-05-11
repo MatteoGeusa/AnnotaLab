@@ -337,6 +337,12 @@ class ProjectAdmin(ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
+        
+        # Only superusers can transfer project ownership
+        if not request.user.is_superuser:
+            if 'owner' not in readonly:
+                readonly.append('owner')
+
         if obj and (obj.is_published or obj.status == 'LIVE'):
             locked = ['name', 'slug', 'description', 'informed_consent_config', 'dataset_text_key', 'dataset_id_key', 'enable_screening', 'enable_codebook', 'enable_instructions', 'enable_practice_task', 'practice_task_required', 'enable_gold_units', 'gold_injection_frequency', 'min_accuracy_required', 'min_gold_before_eval', 'distribution_strategy', 'min_annotations_per_doc', 'max_annotations_per_doc', 'block_size', 'annotators_per_block', 'prioritize_unannotated', 'documents_file', 'gold_units_file', 'prolific_completion_code']
             for f in locked:
@@ -1062,6 +1068,10 @@ class ProjectAdmin(ModelAdmin):
         if project is None:
             return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
 
+        # High-risk action: only owner or superuser
+        if not request.user.is_superuser and project.owner != request.user:
+            return JsonResponse({'status': 'error', 'message': '⚠️ Access Denied: Only the project owner can destroy playground data.'}, status=403)
+
         try:
             message = ProjectService.nuke_project_data(object_id, user=request.user)
             return JsonResponse({'status': 'success', 'message': message})
@@ -1077,6 +1087,10 @@ class ProjectAdmin(ModelAdmin):
         project = self.get_object(request, object_id)
         if project is None:
             return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
+        # High-risk action: only owner or superuser
+        if not request.user.is_superuser and project.owner != request.user:
+            return JsonResponse({'status': 'error', 'message': '⚠️ Access Denied: Only the project owner can launch the project to production.'}, status=403)
 
         try:
             message = ProjectService.launch_project(object_id, user=request.user)
@@ -1097,6 +1111,10 @@ class ProjectAdmin(ModelAdmin):
         project = self.get_object(request, object_id)
         if project is None:
             return JsonResponse({'status': 'error', 'message': 'Project not found or access denied'}, status=404)
+
+        # Verify user has permission to CREATE new projects (clone)
+        if not self.has_add_permission(request):
+            return JsonResponse({'status': 'error', 'message': '⚠️ Access Denied: You do not have permissions to create/clone projects.'}, status=403)
 
         try:
             data = json.loads(request.body)
