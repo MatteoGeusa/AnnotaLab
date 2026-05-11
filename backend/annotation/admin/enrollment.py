@@ -47,6 +47,15 @@ class ProjectEnrollmentAdmin(ModelAdmin):
     list_filter = ('status', 'project', WorkerTypeFilter, 'exclude_from_distribution')
     search_fields = ('annotator__prolific_pid', 'project__name')
     list_select_related = ('annotator', 'project')
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
