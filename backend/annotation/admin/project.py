@@ -13,7 +13,7 @@ from django.conf import settings
 import json
 import yaml
 import re
-from ..models import Project, Annotation, ProjectLogEntry
+from ..models import Project, Annotation, ProjectLogEntry, ProjectMembership
 from ..services import parse_json_upload, parse_yaml_upload, process_uploaded_dataset, ProjectService
 from ..schema_validator import validate_gold_solution
 from ..mace_service import run_mace_for_project
@@ -172,10 +172,38 @@ class ProjectLogInline(TabularInline):
     def has_add_permission(self, request, obj=None):
         return False
 
+
+class ProjectMembershipInline(TabularInline):
+    """Allows project owners to invite collaborators from the project edit page."""
+    model = ProjectMembership
+    extra = 1
+    fields = ('user', 'role', 'added_at')
+    readonly_fields = ('added_at',)
+    tab = True
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Show all memberships including owner
+        return qs
+
+    def has_change_permission(self, request, obj=None):
+        # Only the owner (or superuser) can manage members
+        if obj is None:
+            return True
+        if request.user.is_superuser:
+            return True
+        return obj.owner == request.user
+
+    def has_delete_permission(self, request, obj=None):
+        return self.has_change_permission(request, obj)
+
+    def has_add_permission(self, request, obj=None):
+        return self.has_change_permission(request, obj)
+
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
     # Columns visible in the project list view
-    list_display = ('name_link', 'simple_status', 'completion_progress', 'stats_summary', 'created_at')
+    list_display = ('name_link', 'simple_status', 'owner_display', 'completion_progress', 'stats_summary', 'created_at')
     list_filter = ('status', 'is_published', 'created_at')
     search_fields = ('name', 'slug')
     @admin.display(description="Project Name", ordering='name')
@@ -235,14 +263,44 @@ class ProjectAdmin(ModelAdmin):
     def get_queryset(self, request):
         from django.db.models import Sum, Count, Q
         qs = super().get_queryset(request)
+        # Superusers see everything; regular staff see only their own projects
+        if not request.user.is_superuser:
+            qs = qs.filter(
+                Q(owner=request.user) | Q(memberships__user=request.user)
+            ).distinct()
+        test_q_enrollment = Q(enrollments__annotator__is_test=True) | Q(enrollments__annotator__metadata__has_key='is_test', enrollments__annotator__metadata__is_test="true")
+        test_q_annotation = Q(documents__annotations__is_test=True)
+
         qs = qs.annotate(
             total_req=Sum('documents__min_annotations_required', filter=Q(documents__is_gold_unit=False)),
             total_curr=Sum('documents__current_annotations_count', filter=Q(documents__is_gold_unit=False)),
             doc_count=Count('documents', filter=Q(documents__is_gold_unit=False), distinct=True),
-            worker_count=Count('enrollments', distinct=True),
-            annot_count=Count('documents__annotations', distinct=True)
+            worker_count=Count('enrollments', filter=~test_q_enrollment, distinct=True),
+            annot_count=Count('documents__annotations', filter=~test_q_annotation, distinct=True)
         )
         return qs
+
+    def save_model(self, request, obj, form, change):
+        """Auto-assign owner on creation and create the OWNER membership record."""
+        if not change and obj.owner is None:
+            obj.owner = request.user
+        super().save_model(request, obj, form, change)
+        # Ensure an OWNER membership record exists
+        if not change:
+            ProjectMembership.objects.get_or_create(
+                project=obj,
+                user=obj.owner,
+                defaults={'role': 'OWNER'},
+            )
+
+    @admin.display(description="Owner")
+    def owner_display(self, obj):
+        if obj.owner:
+            return format_html(
+                '<span style="font-size: 12px; font-weight: 700; color: var(--db-text-muted);">👤 {}</span>',
+                obj.owner.username
+            )
+        return mark_safe('<span style="color: #94a3b8; font-size: 11px;">—</span>')
 
     @admin.display(description="Management")
     def manage_project_link(self, obj):
@@ -275,7 +333,7 @@ class ProjectAdmin(ModelAdmin):
         ("log", "Activity Log"),
     ]
 
-    inlines = [ProjectLogInline]
+    inlines = [ProjectMembershipInline, ProjectLogInline]
 
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
@@ -873,7 +931,7 @@ class ProjectAdmin(ModelAdmin):
         
         # Gather stats
         # A worker is considered 'test' if is_test is True OR if metadata has {"is_test": "true"}
-        test_q = Q(annotator__is_test=True) | Q(annotator__metadata__is_test="true")
+        test_q = Q(annotator__is_test=True) | Q(annotator__metadata__has_key='is_test', annotator__metadata__is_test="true")
         
         stats = {
              'docs': project.documents.filter(is_gold_unit=False).count(),

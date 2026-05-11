@@ -7,6 +7,7 @@ import uuid
 import os
 from django.conf import settings
 import yaml
+from django.contrib.auth import get_user_model
 
 def get_default_configuration_for_task_type():
     config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_annotation_schema.yaml')
@@ -385,10 +386,56 @@ class Project(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='owned_projects',
+        help_text="The staff user who created and owns this project."
+    )
+
+    members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='ProjectMembership',
+        related_name='member_projects',
+        blank=True,
+    )
+
     objects = models.Manager()
 
     def __str__(self):
         return self.name
+
+
+class ProjectMembership(models.Model):
+    """
+    Links a Django staff user to a project as a collaborator.
+    The owner is also stored here (role='OWNER') for unified querying.
+    """
+    ROLE_CHOICES = [
+        ('OWNER', 'Owner'),
+        ('COLLABORATOR', 'Collaborator'),
+    ]
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='project_memberships',
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='COLLABORATOR')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        unique_together = ('project', 'user')
+        verbose_name = "Project Member"
+        verbose_name_plural = "Project Members"
+
+    def __str__(self):
+        return f"{self.user} → {self.project} ({self.role})"
+
 
 class ProjectLogEntry(models.Model):
     """

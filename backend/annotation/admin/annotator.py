@@ -23,7 +23,7 @@ class WorkerTypeFilter(admin.SimpleListFilter):
         from django.db.models import Q
         val = self.value()
         # A worker is test if is_test=True OR metadata has {"is_test": "true"}
-        test_q = Q(is_test=True) | Q(metadata__is_test="true")
+        test_q = Q(is_test=True) | Q(metadata__has_key='is_test', metadata__is_test="true")
         
         if val == 'real':
             return queryset.exclude(test_q)

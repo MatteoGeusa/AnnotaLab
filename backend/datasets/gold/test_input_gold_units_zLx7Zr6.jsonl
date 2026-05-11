@@ -1,0 +1,10 @@
+{"text": "The moon landing was faked by the government.", "gold_solution": {"classification": "Yes"}}
+{"text": "Vaccines are safe and effective.", "gold_solution": {"classification": "No"}}
+{"text": "Birds aren't real, they are government drones.", "gold_solution": {"classification": "Yes"}}
+{"text": "Water boils at 100 degrees Celsius.", "gold_solution": {"classification": "No"}}
+{"text": "Aliens built the pyramids.", "gold_solution": {"classification": "Yes"}}
+{"text": "The earth is flat.", "gold_solution": {"classification": "Yes"}}
+{"text": "Some say the government adds chemicals to contrails from planes to control the population, but the evidence is unclear.", "gold_solution": {"classification": "Can't tell"}}
+{"text": "Apples are a type of fruit.", "gold_solution": {"classification": "No"}}
+{"text": "Lizard people run the government.", "gold_solution": {"classification": "Yes"}}
+{"text": "The sun rises in the east.", "gold_solution": {"classification": "No"}}
