@@ -171,12 +171,26 @@ class ProjectEnrollmentAdmin(ModelAdmin):
             color, formatted_score
         )
 
+    change_list_template = 'admin/annotation/mace_changelist.html'
+
     def changelist_view(self, request, extra_context=None):
-        """Redirect if no project filter is active."""
-        if 'project__id__exact' not in request.GET and 'project__id' not in request.GET:
+        """Redirect if no project filter is active and inject MACE URL."""
+        project_id = request.GET.get('project__id__exact') or request.GET.get('project__id')
+        
+        if not project_id:
             self.message_user(request, "Select a project first to view assignments.", messages.WARNING)
             return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
         
+        extra_context = extra_context or {}
+        try:
+            project = Project.objects.get(pk=project_id)
+            extra_context['mace_run_url'] = reverse('admin:project_run_mace', args=[project_id])
+            extra_context['mace_project_name'] = project.name
+            print(f"DEBUG: MACE URL for project {project_id}: {extra_context['mace_run_url']}")
+        except (Project.DoesNotExist, ValueError) as e:
+            print(f"DEBUG: Failed to get project {project_id}: {e}")
+            pass
+
         return super().changelist_view(request, extra_context=extra_context)
 
     def has_module_permission(self, request):

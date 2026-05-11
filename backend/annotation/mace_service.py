@@ -20,12 +20,19 @@ def run_mace_for_project(project_id):
     project = Project.objects.get(id=project_id)
     
     # 1. Fetch Annotations
-    # Exclude gold units, we only use unsupervised MACE on standard instances.
-    annotations = Annotation.objects.filter(
-        document__project=project,
-        document__is_gold_unit=False,
-        is_test=False
-    ).select_related('document', 'annotator')
+    # Contextual Logic: If project is officially PUBLISHED, we ignore test data. 
+    # If in Draft or Playground (not published), we include everything for testing.
+    if project.is_published:
+        annotations = Annotation.objects.filter(
+            document__project=project,
+            document__is_gold_unit=False,
+            is_test=False
+        ).select_related('document', 'annotator')
+    else:
+        annotations = Annotation.objects.filter(
+            document__project=project,
+            document__is_gold_unit=False
+        ).select_related('document', 'annotator')
     
     if not annotations.exists():
         return {"status": "error", "message": "No annotations found to run MACE."}

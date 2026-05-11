@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% if mace_run_url %}
+        <script>
+            window.MACE_RUN_URL = '{{ mace_run_url|safe }}';
+            console.log("MACE_RUN_URL set to:", window.MACE_RUN_URL);
+        </script>
+    {% endif %}
+{% endblock %}

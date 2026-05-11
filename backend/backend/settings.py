@@ -54,7 +54,11 @@ UNFOLD = {
     "SITE_HEADER": "Panel Admin",
     
     # Link quando clicchi sul logo/titolo (di solito la homepage del sito o la dashboard)
-    "SITE_URL": "/",
+    "SITE_URL": None,
+
+    "LOGIN": {
+        "show_link_to_site": False,
+    },
 
     # Colori della sidebar (opzionale)
     "COLORS": {
@@ -78,7 +82,7 @@ UNFOLD = {
         "show_all_applications": False,
         "navigation": [
             {
-                "title": "Navigazione",
+                "title": "Navigation",
                 "items": [
                     {
                         "title": "Home",

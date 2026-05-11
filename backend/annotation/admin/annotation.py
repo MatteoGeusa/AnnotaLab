@@ -29,9 +29,10 @@ class HideGoldFilter(admin.SimpleListFilter):
 
 @admin.register(Annotation)
 class AnnotationAdmin(ModelAdmin):
-    list_display = ('short_id', 'annotation_type', 'document_link', 'annotator_link', 'created_at', 'seconds_to_complete')
+    list_display = ('short_id', 'annotation_type', 'document_link', 'annotator_link', 'worker_answer_display', 'mace_consensus_display', 'annotator_reliability_display', 'created_at')
     list_filter = (HideGoldFilter, 'is_test', 'document__project', 'created_at', 'annotator')
     search_fields = ('document__text', 'annotator__prolific_pid', 'result')
+    list_select_related = ('document', 'annotator', 'document__project')
     readonly_fields = ('created_at', 'formatted_result')
     exclude = ('result',)
     
@@ -48,7 +49,7 @@ class AnnotationAdmin(ModelAdmin):
 
     @admin.display(description="ID")
     def short_id(self, obj):
-        return str(obj.id)[:8] + '...'
+        return str(obj.id)[:4] + '..'
 
     class Media:
         js = ('js/admin_project.js',)
@@ -86,16 +87,20 @@ class AnnotationAdmin(ModelAdmin):
             return "-"
         if obj.document.is_gold_unit:
             url = reverse("admin:annotation_goldunitproxy_change", args=[obj.document.id])
+            label = f"🏆 {str(obj.document.id)[:4]}.."
         else:
             url = reverse("admin:annotation_documentproxy_change", args=[obj.document.id])
-        return format_html('<a href="{}">{}</a>', url, str(obj.document))
+            label = f"📄 {str(obj.document.id)[:4]}.."
+        return format_html('<a href="{}" title="{}">{}</a>', url, str(obj.document), label)
 
     @admin.display(description="Annotator")
     def annotator_link(self, obj):
         if not obj.annotator:
             return "-"
         url = reverse("admin:annotation_annotator_change", args=[obj.annotator.id])
-        return format_html('<a href="{}">{}</a>', url, str(obj.annotator))
+        pid = obj.annotator.prolific_pid
+        short_pid = (pid[:8] + "..") if len(pid) > 10 else pid
+        return format_html('<a href="{}" title="{}">{}</a>', url, pid, short_pid)
 
     @admin.display(description="Time")
     def seconds_to_complete(self, obj):
@@ -110,6 +115,38 @@ class AnnotationAdmin(ModelAdmin):
             '<span style="color: #22c55e;">{}ms</span>',
             obj.milliseconds_to_complete
         )
+
+    @admin.display(description="Worker Answer")
+    def worker_answer_display(self, obj):
+        if not obj.result:
+            return "-"
+        val = obj.result.get('classification')
+        if not val:
+            return "-"
+        return val
+
+    @admin.display(description="MACE Consensus")
+    def mace_consensus_display(self, obj):
+        if not obj.document or not obj.document.mace_gold_label:
+            return "-"
+        return obj.document.mace_gold_label
+
+    @admin.display(description="Worker Reliability")
+    def annotator_reliability_display(self, obj):
+        from ..models import ProjectEnrollment
+        try:
+            enrollment = ProjectEnrollment.objects.get(
+                project=obj.document.project,
+                annotator=obj.annotator
+            )
+            score = enrollment.mace_competence_score
+            if score is None: return "-"
+            
+            color = "#10b981" if score >= 0.6 else ("#f59e0b" if score >= 0.3 else "#ef4444")
+            return format_html('<span style="color:{}; font-weight:bold;">{}</span>', color, format(score, ".2f"))
+        except ProjectEnrollment.DoesNotExist:
+            return "-"
+
 
     @admin.display(description="Annotated Results Visualization")
     def formatted_result(self, obj):
@@ -243,13 +280,25 @@ class AnnotationAdmin(ModelAdmin):
         )
         
         return mark_safe("".join(html_parts))
+    
+    change_list_template = 'admin/annotation/mace_changelist.html'
 
     def changelist_view(self, request, extra_context=None):
-        """Redirect if no project filter is active."""
-        if 'document__project__id__exact' not in request.GET and 'document__project__id' not in request.GET:
+        """Redirect if no project filter is active and inject MACE URL."""
+        project_id = request.GET.get('document__project__id__exact') or request.GET.get('document__project__id')
+        
+        if not project_id:
             self.message_user(request, "Select a project first to view its annotations.", messages.WARNING)
             return HttpResponseRedirect(reverse('admin:annotation_project_changelist'))
         
+        extra_context = extra_context or {}
+        try:
+            project = Project.objects.get(pk=project_id)
+            extra_context['mace_run_url'] = reverse('admin:project_run_mace', args=[project_id])
+            extra_context['mace_project_name'] = project.name
+        except (Project.DoesNotExist, ValueError):
+            pass
+
         return super().changelist_view(request, extra_context=extra_context)
 
     def has_module_permission(self, request):

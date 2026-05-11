@@ -3,6 +3,77 @@
  * Optimized field visibility and drag-and-drop for Project Admin
  */
 
+(function() {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #admin-popup-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            pointer-events: none;
+        }
+
+        .admin-popup {
+            pointer-events: auto;
+            background: #1e293b;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            min-width: 320px;
+            max-width: 450px;
+            animation: popupSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popupSlideIn {
+            from { transform: translateX(100%) scale(0.9); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        .admin-popup.closing {
+            animation: popupSlideOut 0.3s forwards;
+        }
+
+        @keyframes popupSlideOut {
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .admin-popup-title {
+            font-weight: 800;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-popup-message {
+            font-size: 0.8125rem;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .admin-popup-close {
+            cursor: pointer;
+            opacity: 0.5;
+            margin-left: auto;
+        }
+
+        .admin-popup-close:hover { opacity: 1; }
+
+        .admin-popup.success { border-left: 4px solid #10b981; }
+        .admin-popup.error { border-left: 4px solid #ef4444; }
+        .admin-popup.warning { border-left: 4px solid #f59e0b; }
+        .admin-popup.info { border-left: 4px solid #3b82f6; }
+    `;
+    document.head.appendChild(style);
+})();
+
 /**
  * Open project preview with dynamic participant ID from input
  */
@@ -152,6 +223,71 @@ document.addEventListener("DOMContentLoaded", function () {
     // Capture potential late renders (Unfold characteristics)
     sync();
     [50, 200, 500, 1000].forEach(delay => setTimeout(sync, delay));
+
+    // --- MACE Button Injection for Changelist ---
+    const injectMaceButton = () => {
+        let maceUrl = window.MACE_RUN_URL;
+
+        // Fallback: Try to parse project ID from current URL if not provided by template
+        if (!maceUrl) {
+            const params = new URLSearchParams(window.location.search);
+            const pid = params.get('project__id') || 
+                        params.get('project__id__exact') || 
+                        params.get('document__project__id') || 
+                        params.get('document__project__id__exact');
+            
+            if (pid && !isNaN(pid)) {
+                maceUrl = `/admin/annotation/project/${pid}/run-mace/`;
+                console.log("MACE: Fallback URL generated:", maceUrl);
+            }
+        }
+
+        if (!maceUrl || document.getElementById('mace-injected-btn')) return;
+
+        // Try to find the filters button using various strategies
+        let filtersBtn = document.querySelector('a[x-on\\:click*="filterOpen"]') ||
+                         document.querySelector('.unfold-filters-button') || 
+                         document.querySelector('[data-unfold-filters]') ||
+                         document.querySelector('.unfold-filter-container button');
+        
+        // Final fallback: Find by text content
+        if (!filtersBtn) {
+            filtersBtn = Array.from(document.querySelectorAll('a, button'))
+                .find(el => el.textContent.trim().includes('Filters') && el.offsetParent !== null);
+        }
+        
+        if (filtersBtn) {
+            const btn = document.createElement('button');
+            btn.id = 'mace-injected-btn';
+            btn.type = 'button';
+            btn.innerHTML = '<span style="margin-right: 6px;">🤖</span> Run MACE Analysis';
+            
+            // Match Unfold's primary button style (Emerald/Blue)
+            btn.className = 'bg-primary-600 border-none flex font-bold items-center justify-center leading-none px-4 py-2 rounded-md text-white text-xs whitespace-nowrap cursor-pointer hover:bg-primary-700 transition-colors shadow-sm';
+            btn.style.height = '38px'; 
+            btn.style.marginLeft = '12px'; 
+            
+            // Insert BEFORE the filters button
+            filtersBtn.parentNode.insertBefore(btn, filtersBtn);
+            btn.onclick = () => window.quickRunMace(btn, maceUrl);
+        } else {
+            // If still not found, try to append to toolbar as last resort
+            const toolbar = document.querySelector('#toolbar') || document.querySelector('.changelist-form-container');
+            if (toolbar && !document.getElementById('mace-injected-btn')) {
+                const btn = document.createElement('button');
+                btn.id = 'mace-injected-btn';
+                btn.type = 'button';
+                btn.innerHTML = '🤖 Run MACE';
+                btn.className = 'bg-primary-600 border-none px-4 py-2 rounded-md text-white text-xs font-bold ml-auto cursor-pointer';
+                toolbar.appendChild(btn);
+                btn.onclick = () => window.quickRunMace(btn, maceUrl);
+            }
+        }
+    };
+
+    injectMaceButton();
+    setTimeout(injectMaceButton, 500);
+    setTimeout(injectMaceButton, 1500);
 
     // Drag and Drop (Compact)
     document.querySelectorAll('input[type="file"]').forEach(input => {
@@ -555,9 +691,12 @@ function executeCloneAction(buttonElement, url, cloneMode, newName) {
  * Handles quick "Run MACE Analysis" action from the operations panel
  */
 window.quickRunMace = function (buttonElement, url) {
+    const isLive = document.body.classList.contains('project-is-live'); // Optional: check if we can detect status
+    
     window.adminConfirm(
         "MACE ANALYSIS",
-        "This will calculate the most likely correct labels and annotator reliability scores based on gathered data.\n\nContinue?",
+        "This will calculate the most likely correct labels and annotator reliability scores.\n\n" +
+        "ℹ️ **Note:** Since this project is in development, all annotations (including test ones) will be used. Once the project is **LIVE**, only production data will be considered.",
         "🤖",
         "Run Analysis",
         "#8b5cf6", // Purple
