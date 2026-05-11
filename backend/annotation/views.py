@@ -8,7 +8,10 @@ from .serializers import DocumentSerializer, AnnotationSerializer
 from .gold_strategies import check_gold_correctness
 from .services import DistributionService
 
-PROLIFIC_COMPLETION_URL = "https://app.prolific.com/submissions/complete?cc=TUO_CODICE_PROLIFIC"
+# Fallback Prolific completion URL used when no project-level code is configured.
+# Override per-project via Project.prolific_completion_code.
+PROLIFIC_COMPLETION_URL = "https://app.prolific.com/submissions/complete?cc=COMPLETION_CODE_NOT_SET"
+
 
 class ProjectContextMixin:
     """
@@ -219,7 +222,7 @@ class SubmitAnnotation(ProjectContextMixin, APIView):
         project, annotator, enrollment, error_response = self.get_context(request)
         if error_response: return error_response
         
-        serializer = AnnotationSerializer(data=request.data)
+        serializer = AnnotationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
                 with transaction.atomic():

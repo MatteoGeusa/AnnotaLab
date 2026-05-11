@@ -276,6 +276,11 @@ class ProjectService:
             raise ValueError("Project is already launched.")
 
         with transaction.atomic():
+            # Safety check BEFORE mutating state
+            has_docs = project.documents.filter(is_gold_unit=False).exists()
+            if not has_docs:
+                raise ValueError("Cannot Launch: No documents found in database.")
+
             # Nuke existing data before launch
             annotation_count = Annotation.objects.filter(document__project=project).delete()[0]
             enrollment_count = ProjectEnrollment.objects.filter(project=project).delete()[0]
@@ -284,12 +289,7 @@ class ProjectService:
             project.is_published = True
             project.status = 'LIVE'
             project.launched_at = timezone.now()
-            project.save() # Triggers model validation
-
-            # Safety check
-            has_docs = project.documents.filter(is_gold_unit=False).exists()
-            if not has_docs:
-                raise ValueError("Cannot Launch: No documents found in database.")
+            project.save()  # Triggers model validation
 
             msg = f"Cleaned {annotation_count} annotations, {enrollment_count} workers. Project officially Launched!"
             ProjectLogEntry.objects.create(
@@ -298,6 +298,7 @@ class ProjectService:
                 details=f"{msg} Action by {user.username if user else 'System'}."
             )
         return msg
+
 
 class DistributionService:
     @staticmethod

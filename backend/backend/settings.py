@@ -51,7 +51,7 @@ UNFOLD = {
     "SITE_TITLE": "Annotation Portal",
     
     # Sottotitolo o header
-    "SITE_HEADER": "Pannel Admin",
+    "SITE_HEADER": "Panel Admin",
     
     # Link quando clicchi sul logo/titolo (di solito la homepage del sito o la dashboard)
     "SITE_URL": "/",

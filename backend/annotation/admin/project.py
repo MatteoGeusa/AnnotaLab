@@ -756,7 +756,6 @@ class ProjectAdmin(ModelAdmin):
             )
         return ""
 
-    @admin.display(description="Task Config")
     @admin.display(description="Annotation Schema")
     def formatted_annotation_schema(self, obj):
         return self._render_config_block(obj, obj.annotation_schema, 'Annotation Schema', '⚙️')
@@ -1313,14 +1312,3 @@ class ProjectAdmin(ModelAdmin):
         if 'gold_units_file' in form.changed_data and obj.gold_units_file:
             process_uploaded_dataset(obj, obj.gold_units_file)
 
-
-    def render_change_form(self, request, context, add=False, change=False, form_url='', obj=None):
-        return super().render_change_form(request, context, add, change, form_url, obj)
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly = list(super().get_readonly_fields(request, obj))
-        if obj and (obj.is_published or obj.status == 'LIVE'):
-            locked = ['name', 'slug', 'description', 'informed_consent_config', 'dataset_text_key', 'dataset_id_key', 'enable_screening', 'enable_codebook', 'enable_instructions', 'enable_practice_task', 'practice_task_required', 'enable_gold_units', 'gold_injection_frequency', 'min_accuracy_required', 'min_gold_before_eval', 'distribution_strategy', 'min_annotations_per_doc', 'max_annotations_per_doc', 'block_size', 'annotators_per_block', 'prioritize_unannotated', 'documents_file', 'gold_units_file', 'prolific_completion_code']
-            for f in locked:
-                if f not in readonly: readonly.append(f)
-        return readonly

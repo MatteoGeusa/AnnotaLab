@@ -376,12 +376,6 @@ class Project(models.Model):
         help_text="The JSON key for the ID. If empty or not found, it will use the row number."
     )
 
-    # If a document has 2 annotations and others have 0, should unannotated ones be prioritized?
-    prioritize_unannotated = models.BooleanField(
-        default=True,
-        help_text="If True, the system will try to finish unannotated documents first."
-    )
-
     documents_file = models.FileField(
         upload_to='datasets/documents/',
         blank=True,
