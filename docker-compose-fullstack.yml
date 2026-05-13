@@ -8,18 +8,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      # --- Database (override .env for Docker networking) ---
+      - POSTGRES_HOST=db
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      # --- Django ---
       - DEBUG=${DEBUG}
       - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      # --- CORS & CSRF (required for production) ---
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
+      - FRONTEND_URL=${FRONTEND_URL}
     expose:
       - 8000
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   nginx:
     build:
@@ -29,6 +37,7 @@ services:
       - "80:80"
     volumes:
       - static_volume:/app/staticfiles
+    restart: unless-stopped
     depends_on:
       - backend
 
@@ -46,6 +55,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   static_volume:
