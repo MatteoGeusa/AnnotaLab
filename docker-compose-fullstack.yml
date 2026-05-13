@@ -3,25 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    env_file:
+      - .env.prod
     volumes:
       - static_volume:/app/staticfiles
-    ports:
-      - "8000:8000"
     environment:
-      # --- Database (override .env for Docker networking) ---
       - POSTGRES_HOST=db
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      # --- Django ---
-      - DEBUG=${DEBUG}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      # --- CORS & CSRF (required for production) ---
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
-      - FRONTEND_URL=${FRONTEND_URL}
     expose:
       - 8000
     restart: unless-stopped

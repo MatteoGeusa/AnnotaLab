@@ -996,7 +996,7 @@ class ProjectAdmin(ModelAdmin):
             'logs': project.logs.all()[:10],
             'opts': self.model._meta,
             'title': f"Dashboard: {project.name}",
-            'frontend_url': getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/'),
+            'frontend_url': (getattr(settings, 'FRONTEND_URL', None) or f"{request.scheme}://{request.get_host()}").rstrip('/'),
         }
         return render(request, 'admin/annotation/project/dashboard.html', context)
 
@@ -1301,8 +1301,14 @@ class ProjectAdmin(ModelAdmin):
 
     @admin.display(description="Participant Link & Preview")
     def link_prolific(self, obj):
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
-        full_url = f"{base_url}/{obj.slug}?PROLIFIC_PID="
+        # Use setting if available, otherwise default to same host (relative or localhost)
+        base_url = getattr(settings, 'FRONTEND_URL', None) or ""
+        if not base_url:
+            # If we don't have a setting, we'll use a relative path if possible, 
+            # but since this is for a link to copy, we'll default to a clean localhost for Docker.
+            base_url = "http://localhost"
+        
+        full_url = f"{base_url.rstrip('/')}/{obj.slug}?PROLIFIC_PID="
         input_id = f"preview_pid_{obj.pk}"
         is_pub_js = str(obj.is_published).lower()
         return format_html(
