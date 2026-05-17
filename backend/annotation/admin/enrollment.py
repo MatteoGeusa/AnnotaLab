@@ -4,6 +4,7 @@ from django.utils.html import format_html, mark_safe
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from ..models import ProjectEnrollment, Project
 from .utils import HighlightMedia
 
@@ -187,7 +188,7 @@ class ProjectEnrollmentAdmin(ModelAdmin):
             extra_context['mace_run_url'] = reverse('admin:project_run_mace', args=[project_id])
             extra_context['mace_project_name'] = project.name
             print(f"DEBUG: MACE URL for project {project_id}: {extra_context['mace_run_url']}")
-        except (Project.DoesNotExist, ValueError) as e:
+        except (ObjectDoesNotExist, ValueError) as e:
             print(f"DEBUG: Failed to get project {project_id}: {e}")
             pass
 

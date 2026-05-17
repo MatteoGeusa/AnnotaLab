@@ -994,7 +994,7 @@ class ProjectAdmin(ModelAdmin):
             'action_urls': action_urls,
             'status_transitions': status_transitions,
             'logs': project.logs.all()[:10],
-            'opts': self.model._meta,
+            'opts': getattr(self.model, '_meta'),
             'title': f"Dashboard: {project.name}",
             'frontend_url': (getattr(settings, 'FRONTEND_URL', None) or f"{request.scheme}://{request.get_host()}").rstrip('/'),
         }

@@ -17,23 +17,25 @@ Usage:
         raise ValueError("\\n".join(errors))
 """
 
+from typing import Any
+
 # ── Component specifications ─────────────────────────────────────────────────
 # Each spec entry:
 #   required  – fields that MUST be present
 #   optional  – fields that MAY be present
 #   (any field not in required ∪ optional is forbidden)
 
-_SPAN_LABEL_SPEC = {
+_SPAN_LABEL_SPEC: dict[str, Any] = {
     "required": {"name", "color"},
     "optional": {"hover_hint"},
 }
 
-_CLASS_OPTION_SPEC = {
+_CLASS_OPTION_SPEC: dict[str, Any] = {
     "required": {"label", "value"},
     "optional": {"hover_hint"},
 }
 
-_COMPONENT_SPECS = {
+_COMPONENT_SPECS: dict[str, Any] = {
     "span_highlight": {
         "required": {"type", "labels"},
         "optional": set(),
@@ -55,7 +57,7 @@ SUPPORTED_TYPES = set(_COMPONENT_SPECS.keys())
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _check_fields(obj: dict, spec: dict, path: str) -> list[str]:
+def _check_fields(obj: dict[Any, Any], spec: dict[str, Any], path: str) -> list[str]:
     """
     Validate a single dict against required/optional spec.
     Returns a list of error strings.
@@ -77,7 +79,7 @@ def _check_fields(obj: dict, spec: dict, path: str) -> list[str]:
     return errors
 
 
-def _validate_component(comp: dict, index: int) -> list[str]:
+def _validate_component(comp: Any, index: int) -> list[str]:
     """Validate a single component entry."""
     errors = []
     path = f"components[{index}]"
@@ -123,7 +125,7 @@ def _validate_component(comp: dict, index: int) -> list[str]:
 
 # ── Public API ───────────────────────────────────────────────────────────────
 
-def validate_annotation_schema(data: dict) -> list[str]:
+def validate_annotation_schema(data: Any) -> list[str]:
     """
     Validate a parsed annotation_schema dict.
 
@@ -178,7 +180,7 @@ def validate_annotation_schema(data: dict) -> list[str]:
 
 # ── Gold Solution Validator ───────────────────────────────────────────────────
 
-def _extract_schema_constraints(schema: dict) -> dict:
+def _extract_schema_constraints(schema: dict[str, Any]) -> dict[str, Any]:
     """
     Extract validation constraints from a parsed annotation_schema.
 
@@ -189,7 +191,7 @@ def _extract_schema_constraints(schema: dict) -> dict:
             'span_highlight':  {'valid_labels':  {'Actor', 'Action', ...}},
         }
     """
-    constraints = {'active_types': set()}
+    constraints: dict[str, Any] = {'active_types': set()}
 
     for comp in schema.get('components', []):
         comp_type = comp.get('type')
@@ -219,7 +221,7 @@ def _extract_schema_constraints(schema: dict) -> dict:
     return constraints
 
 
-def validate_gold_solution(gold_sol: dict, schema: dict) -> tuple[list[str], list[str]]:
+def validate_gold_solution(gold_sol: Any, schema: dict[str, Any]) -> tuple[list[str], list[str]]:
     """
     Validate a gold_solution dict against the project's annotation_schema.
 
@@ -311,11 +313,13 @@ def validate_gold_solution(gold_sol: dict, schema: dict) -> tuple[list[str], lis
                     "'span_highlight' in gold_solution is an empty list — "
                     "any annotator answer (including no spans) will pass this check."
                 )
-            for i, span in enumerate(spans):
+            for i, span_raw in enumerate(spans):
 
-                if not isinstance(span, dict):
+                if not isinstance(span_raw, dict):
                     errors.append(f"span_highlight[{i}] must be a dict.")
                     continue
+                
+                span: dict[Any, Any] = span_raw
 
                 # Required fields
                 for req in ('start', 'end', 'label'):
