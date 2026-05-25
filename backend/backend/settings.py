@@ -235,3 +235,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# =========================================================
+#  FILE UPLOAD LIMITS
+# =========================================================
+# Allow uploading large JSONL datasets (up to 100 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104_857_600  # 100 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104_857_600  # 100 MB

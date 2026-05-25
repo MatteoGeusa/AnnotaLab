@@ -280,18 +280,6 @@ class ProjectAdmin(ModelAdmin):
         )
         return qs
 
-    def save_model(self, request, obj, form, change):
-        """Auto-assign owner on creation and create the OWNER membership record."""
-        if not change and obj.owner is None:
-            obj.owner = request.user
-        super().save_model(request, obj, form, change)
-        # Ensure an OWNER membership record exists
-        if not change:
-            ProjectMembership.objects.get_or_create(
-                project=obj,
-                user=obj.owner,
-                defaults={'role': 'OWNER'},
-            )
 
     @admin.display(description="Owner")
     def owner_display(self, obj):
@@ -1362,13 +1350,23 @@ class ProjectAdmin(ModelAdmin):
         old_status = None
         if not is_new:
             old_status = Project.objects.get(pk=obj.pk).status
-            
+        else:
+            # Auto-assign owner on creation
+            if obj.owner is None:
+                obj.owner = request.user
+
         # 1. Save base form data
         super(ProjectAdmin, self).save_model(request, obj, form, change)
-        
+
         # 2. Create logs
         if is_new:
             ProjectLogEntry.objects.create(project=obj, action="Project Created", details=f"Project '{obj.name}' initialized.")
+            # Ensure creator always has an OWNER membership record
+            ProjectMembership.objects.get_or_create(
+                project=obj,
+                user=obj.owner,
+                defaults={'role': 'OWNER'},
+            )
         elif old_status != obj.status:
             ProjectLogEntry.objects.create(project=obj, action="Status Changed", details=f"Status changed from {old_status} to {obj.status}.")
 

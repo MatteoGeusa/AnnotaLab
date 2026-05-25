@@ -226,6 +226,15 @@ class ProjectService:
                 action="Project Cloned",
                 details=f"Cloned from '{old_name}' (Mode: {clone_mode}) by {user.username if user else 'System'}."
             )
+
+            # Ensure the owner is always a ProjectMembership record on the new project
+            if user:
+                from .models import ProjectMembership
+                ProjectMembership.objects.get_or_create(
+                    project=new_project,
+                    user=new_project.owner,
+                    defaults={'role': 'OWNER'},
+                )
         return new_project, message
 
     @staticmethod
