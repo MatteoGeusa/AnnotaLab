@@ -20,27 +20,27 @@
 
         <div class="text-card-area" ref="textRef" @mouseup="handleSelection">
             <template v-for="(chunk, index) in renderChunks" :key="index">
-                <span class="chunk-span" :class="{ 'has-highlights': chunk.spans.length > 0 }">
+                <span class="chunk-span"
+                      :class="{ 'has-highlights': chunk.spans.length > 0 }"
+                      :ref="el => registerChunkRef(el, chunk)"
+                      @mouseover.stop="chunk.spans.length > 0 && setHoveredPos(chunk.start)"
+                      @mouseleave="chunk.spans.length > 0 && clearHoveredPos()">
                     <span class="chunk-text" :style="getChunkTextStyle(chunk)">{{ chunk.text }}</span>
-                    <div class="chunk-highlights" v-if="chunk.spans.length > 0"
-                        :style="{ height: (maxLevels * 18) + 'px' }">
-                        <div v-for="level in maxLevels" :key="level" class="highlight-level">
-                            <template v-for="span in chunk.spansByLevel[level - 1]" :key="span.id">
-                                <div class="span-bar" :style="{
-                                    backgroundColor: getLabelColor(span.label),
-                                    opacity: hoveredSpanId && hoveredSpanId !== span.id ? 0.3 : 1
-                                }" @mouseover="hoveredSpanId = span.id" @mouseleave="hoveredSpanId = null">
-                                    <span class="span-label-hint" v-if="chunk.isStartOfSpan[span.id]">
-                                        {{ span.label }}
-                                        <button class="remove-chip-btn-mini"
-                                            @click.stop="removeSpan(span.id)">×</button>
-                                    </span>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
                 </span>
             </template>
+
+            <!-- Chip overlay: positioned by JS using getClientRects()[0] of the first line -->
+            <div class="chip-overlay" aria-hidden="true">
+                <span v-for="chip in chipPositions" :key="chip.spanId"
+                    v-show="hoveredCharPos !== null && chip.start <= hoveredCharPos && chip.end > hoveredCharPos"
+                    class="span-label-hint"
+                    :style="{ top: chip.y + 'px', left: chip.x + 'px', background: chip.color }"
+                    @mouseover="setHoveredPos(chip.start)"
+                    @mouseleave="clearHoveredPos()">
+                    {{ chip.label }}
+                    <button class="remove-chip-btn-mini" @click.stop="removeSpan(chip.spanId)">×</button>
+                </span>
+            </div>
         </div>
 
         <div v-if="showPopup" class="popup-overlay" @click.self="closePopup">
@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, onUnmounted, nextTick } from 'vue';
 
 const props = defineProps({
     text: String,
@@ -70,10 +70,71 @@ const emit = defineEmits(['update:spans']);
 const selectedLabel = ref(null);
 const textRef = ref(null);
 
+// Chip overlay positioning (JS-measured via getClientRects)
+const chunkRefMap = {};       // chunk.start (char offset) -> DOM element
+const chipPositions = ref([]); // [{ spanId, label, color, y }]
+
+const registerChunkRef = (el, chunk) => {
+    if (el) {
+        chunkRefMap[chunk.start] = el;
+    } else {
+        delete chunkRefMap[chunk.start];
+    }
+};
+
+const updateChipPositions = () => {
+    if (!textRef.value) return;
+    const containerRect = textRef.value.getBoundingClientRect();
+    const positions = [];
+
+    for (const chunk of renderChunks.value) {
+        const chipsHere = chunk.spans.filter(s => chunk.isStartOfSpan[s.id]);
+        if (!chipsHere.length) continue;
+
+        const el = chunkRefMap[chunk.start];
+        if (!el) continue;
+
+        // getClientRects() returns one DOMRect per visual line box.
+        // rects[0] is the FIRST line of the span — we anchor the chip there.
+        const rects = Array.from(el.getClientRects());
+        if (!rects.length) continue;
+
+        const lineBottom = rects[0].bottom - containerRect.top;
+        const lineLeft   = rects[0].left   - containerRect.left;
+
+        chipsHere.forEach(span => {
+            positions.push({
+                spanId: span.id,
+                label: span.label,
+                color: getLabelColor(span.label),
+                x: lineLeft,
+                y: lineBottom + span.level * 22 + 2,
+                start: span.start,  // needed for hover visibility check
+                end: span.end,
+            });
+        });
+    }
+
+    chipPositions.value = positions;
+};
+
 // Popup State
 const showPopup = ref(false);
 const popupMessage = ref("");
-const hoveredSpanId = ref(null);
+
+// hoveredCharPos: character offset in text currently under the mouse.
+// Used to show/hide chips and apply hover background tint.
+// A 100ms clear-delay prevents flicker when moving from text to chip.
+const hoveredCharPos = ref(null);
+let clearHoverTimer = null;
+
+const setHoveredPos = (charPos) => {
+    if (clearHoverTimer) { clearTimeout(clearHoverTimer); clearHoverTimer = null; }
+    hoveredCharPos.value = charPos;
+};
+const clearHoveredPos = () => {
+    clearHoverTimer = setTimeout(() => { hoveredCharPos.value = null; }, 100);
+};
 
 const openPopup = (msg) => {
     popupMessage.value = msg;
@@ -99,10 +160,16 @@ const handleKeydown = (e) => {
 
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown);
+    window.addEventListener('resize', updateChipPositions);
+    nextTick(updateChipPositions);
 });
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown);
+    window.removeEventListener('resize', updateChipPositions);
+    if (clearHoverTimer) clearTimeout(clearHoverTimer);
+    // Remove selection color override on unmount
+    document.documentElement.style.removeProperty('--text-selection-color');
 });
 
 watch(() => props.labels, (newLabels) => {
@@ -110,6 +177,24 @@ watch(() => props.labels, (newLabels) => {
         selectedLabel.value = newLabels[0].name;
     }
 }, { immediate: true });
+
+// Re-measure chip positions after spans or text change (DOM must update first)
+watch(() => props.spans, () => nextTick(updateChipPositions), { deep: true });
+watch(() => props.text, () => nextTick(updateChipPositions));
+
+// Sync the browser's text-selection highlight color with the active label.
+// NOTE: getLabelColor is defined later, so we inline the lookup to avoid TDZ.
+watchEffect(() => {
+    const label = props.labels?.find(x => x.name === selectedLabel.value);
+    const color = (label?.color || '#3b82f6').replace('#', '');
+    const r = parseInt(color.slice(0, 2), 16);
+    const g = parseInt(color.slice(2, 4), 16);
+    const b = parseInt(color.slice(4, 6), 16);
+    document.documentElement.style.setProperty(
+        '--text-selection-color',
+        `rgba(${r}, ${g}, ${b}, 0.45)`
+    );
+});
 
 
 const getGlobalOffset = (root, targetNode, targetOffset) => {
@@ -233,15 +318,45 @@ const getLabelColor = (labelName) => {
 };
 
 const getChunkTextStyle = (chunk) => {
-    if (!hoveredSpanId.value) return {};
-    const activeSpan = chunk.spans.find(s => s.id === hoveredSpanId.value);
-    if (!activeSpan) return { transition: 'background-color 0.2s' };
-
-    return {
-        backgroundColor: getLabelColor(activeSpan.label) + '44', // ~25% opacity
-        borderRadius: '2px',
-        transition: 'background-color 0.2s'
+    // box-decoration-break: clone makes background gradients repeat on EVERY visual line
+    // when the inline element wraps — this is the fix for the multi-line underline bug.
+    const styles = {
+        WebkitBoxDecorationBreak: 'clone',
+        boxDecorationBreak: 'clone',
     };
+
+    if (chunk.spans.length > 0) {
+        const sortedByLevel = [...chunk.spans].sort((a, b) => a.level - b.level);
+
+        // One 4px colored stripe per span level, stacked bottom-up.
+        // Each stripe: 4px bar + 2px gap between levels.
+        const stripes = sortedByLevel.map((s, i) => {
+            const color = getLabelColor(s.label);
+            const offset = i * 6; // px from bottom edge
+            return `linear-gradient(${color}, ${color}) left calc(100% - ${offset}px) / 100% 4px no-repeat`;
+        });
+
+        // Hover tint = color of the most recently added span covering THIS chunk.
+        // We find the span in chunk.spans that appears last in props.spans (insertion order).
+        if (hoveredCharPos.value !== null
+            && chunk.start <= hoveredCharPos.value
+            && hoveredCharPos.value < chunk.end) {
+            const lastLocalSpan = chunk.spans.reduce((latest, sp) => {
+                const idx = props.spans.findIndex(s => s.id === sp.id);
+                const latestIdx = latest ? props.spans.findIndex(s => s.id === latest.id) : -1;
+                return idx > latestIdx ? sp : latest;
+            }, null);
+            const hoverColor = (lastLocalSpan ? getLabelColor(lastLocalSpan.label) : '#94a3b8') + '44';
+            stripes.unshift(`linear-gradient(${hoverColor}, ${hoverColor}) 0 0 / 100% 100% no-repeat`);
+            styles.borderRadius = '2px';
+        }
+
+        styles.background = stripes.join(', ');
+        // Enough bottom padding to show all stacked stripes without clipping
+        styles.paddingBottom = `${(sortedByLevel.length * 6) + 2}px`;
+    }
+
+    return styles;
 };
 
 const spansWithLevels = computed(() => {
@@ -402,6 +517,7 @@ const renderChunks = computed(() => {
 }
 
 .text-card-area {
+    position: relative; /* needed for the chip-overlay absolute positioning */
     font-size: 1.3rem;
     line-height: 3.0;
     /* Balanced line height for labels and readability */
@@ -412,6 +528,12 @@ const renderChunks = computed(() => {
     background-color: #fdfdfd;
     color: #1e293b;
     /* Darker, higher contrast text */
+}
+
+/* Selection highlight color = active label color (set via --text-selection-color CSS var) */
+.text-card-area ::selection {
+    background-color: var(--text-selection-color, rgba(59, 130, 246, 0.4));
+    color: inherit;
 }
 
 .normal-text {
@@ -429,55 +551,35 @@ const renderChunks = computed(() => {
     z-index: 5;
 }
 
-.chunk-highlights {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    z-index: 10;
-    pointer-events: none;
-    margin-top: 4px;
-}
-
-.highlight-level {
-    height: 18px;
-    width: 100%;
-    display: flex;
-    position: relative;
-    align-items: center;
-}
-
-.span-bar {
-    height: 4px;
-    width: 100%;
-    position: relative;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: all 0.2s;
-    border-radius: 2px;
-}
-
-.span-label-hint {
+/* Chip overlay: renders chips absolutely positioned inside text-card-area */
+.chip-overlay {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.span-label-hint {
+    /* top and left are both set inline by JS (getClientRects) */
+    position: absolute;
     font-size: 0.65rem;
     font-weight: 700;
     color: white;
-    background: inherit;
     padding: 0 6px;
     border-radius: 4px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
-    height: 16px;
-    line-height: 16px;
+    height: 18px;
+    line-height: 18px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transform: translateY(-3px);
     letter-spacing: 0.4px;
+    pointer-events: auto;
+    cursor: default;
     font-family: '__robotoCondensed_9f41a4', '__robotoCondensed_Fallback_9f41a4', 'Arial Narrow', 'Arial', sans-serif;
 }
 

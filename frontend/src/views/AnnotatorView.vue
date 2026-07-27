@@ -66,6 +66,25 @@
             <p v-if="errorMsg" class="error-toast">{{ errorMsg }}</p>
         </div>
     </div>
+
+    <!-- ── DEBUG PANEL ── shows the exact JSON that will be sent to /submit/ -->
+    <transition name="debug-slide">
+        <div v-if="debugOpen" class="debug-panel">
+            <div class="debug-header">
+                <span class="debug-title">🛠 Payload JSON → /api/submit/</span>
+                <div class="debug-controls">
+                    <span class="debug-badge">LIVE</span>
+                    <button class="debug-close" @click="debugOpen = false">✕</button>
+                </div>
+            </div>
+            <pre class="debug-body">{{ JSON.stringify(debugPayload, null, 2) }}</pre>
+        </div>
+    </transition>
+
+    <!-- Floating toggle button -->
+    <button class="debug-toggle" @click="debugOpen = !debugOpen" :class="{ active: debugOpen }" title="Toggle debug panel">
+        {{ debugOpen ? '🙈' : '🛠' }}
+    </button>
 </template>
 
 <script setup>
@@ -97,7 +116,6 @@ const toggleWide = () => {
     isWide.value = !isWide.value;
     localStorage.setItem('annotator_wide_mode', isWide.value);
 };
-
 
 // Component system
 const blockRefs = ref({});
@@ -201,6 +219,19 @@ const submitTask = async () => {
         loading.value = false;
     }
 };
+
+// ── Debug panel ──
+const debugOpen = ref(false);
+
+const debugPayload = computed(() => ({
+    pid,
+    project_id: projectId,
+    project_slug: projectSlug,
+    document: currentDoc.value?.id ?? null,
+    result: { ...result.value },
+    milliseconds_to_complete: currentDoc.value ? (Date.now() - startTime.value) : 0,
+    is_test: isTest,
+}));
 </script>
 
 <style scoped>
@@ -239,7 +270,6 @@ const submitTask = async () => {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-
 
 /* CARDS */
 .task-card,
@@ -305,5 +335,126 @@ const submitTask = async () => {
     border-left: 6px solid #306ee8;
     text-align: left;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* ── DEBUG PANEL ── */
+.debug-panel {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    width: 440px;
+    max-height: 60vh;
+    background: rgba(13, 17, 23, 0.97);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(99, 110, 123, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.debug-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(99, 110, 123, 0.3);
+    flex-shrink: 0;
+}
+
+.debug-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #8b949e;
+    letter-spacing: 0.5px;
+}
+
+.debug-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.debug-badge {
+    background: #28a745;
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.debug-close {
+    background: none;
+    border: none;
+    color: #6e7681;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.15s;
+}
+.debug-close:hover { color: #e6edf3; }
+
+.debug-body {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+    padding: 14px;
+    font-size: 0.73rem;
+    line-height: 1.65;
+    color: #e6edf3;
+    white-space: pre;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99,110,123,0.4) transparent;
+}
+
+.debug-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 110, 123, 0.5);
+    background: rgba(13, 17, 23, 0.92);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transition: all 0.2s;
+}
+.debug-toggle:hover {
+    border-color: #58a6ff;
+    background: rgba(88, 166, 255, 0.15);
+    transform: scale(1.08);
+}
+.debug-toggle.active {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.15);
+}
+
+/* Slide-up animation */
+.debug-slide-enter-active, .debug-slide-leave-active {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s;
+}
+.debug-slide-enter-from, .debug-slide-leave-to {
+    transform: translateY(20px);
+    opacity: 0;
 }
 </style>
