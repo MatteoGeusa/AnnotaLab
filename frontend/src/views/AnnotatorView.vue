@@ -26,7 +26,8 @@
                 {{ UI_STRINGS.gold_task_banner }}
             </div>
 
-            <div class="card-header highlight-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="card-header highlight-header"
+                style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div class="instruction-box">
                     <h3>{{ UI_STRINGS.task_instruction_header }}</h3>
                     <p>{{ schema.instruction || UI_STRINGS.default_instruction }}</p>
@@ -66,25 +67,6 @@
             <p v-if="errorMsg" class="error-toast">{{ errorMsg }}</p>
         </div>
     </div>
-
-    <!-- ── DEBUG PANEL ── shows the exact JSON that will be sent to /submit/ -->
-    <transition name="debug-slide">
-        <div v-if="debugOpen" class="debug-panel">
-            <div class="debug-header">
-                <span class="debug-title">🛠 Payload JSON → /api/submit/</span>
-                <div class="debug-controls">
-                    <span class="debug-badge">LIVE</span>
-                    <button class="debug-close" @click="debugOpen = false">✕</button>
-                </div>
-            </div>
-            <pre class="debug-body">{{ JSON.stringify(debugPayload, null, 2) }}</pre>
-        </div>
-    </transition>
-
-    <!-- Floating toggle button -->
-    <button class="debug-toggle" @click="debugOpen = !debugOpen" :class="{ active: debugOpen }" title="Toggle debug panel">
-        {{ debugOpen ? '🙈' : '🛠' }}
-    </button>
 </template>
 
 <script setup>
@@ -261,14 +243,14 @@ const debugPayload = computed(() => ({
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .toggle-wide-btn:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* CARDS */
@@ -348,7 +330,7 @@ const debugPayload = computed(() => ({
     backdrop-filter: blur(12px);
     border: 1px solid rgba(99, 110, 123, 0.5);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
     z-index: 9999;
@@ -361,7 +343,7 @@ const debugPayload = computed(() => ({
     align-items: center;
     justify-content: space-between;
     padding: 10px 14px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid rgba(99, 110, 123, 0.3);
     flex-shrink: 0;
 }
@@ -391,8 +373,15 @@ const debugPayload = computed(() => ({
 }
 
 @keyframes pulse-badge {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .debug-close {
@@ -405,7 +394,10 @@ const debugPayload = computed(() => ({
     line-height: 1;
     transition: color 0.15s;
 }
-.debug-close:hover { color: #e6edf3; }
+
+.debug-close:hover {
+    color: #e6edf3;
+}
 
 .debug-body {
     flex: 1;
@@ -417,7 +409,7 @@ const debugPayload = computed(() => ({
     color: #e6edf3;
     white-space: pre;
     scrollbar-width: thin;
-    scrollbar-color: rgba(99,110,123,0.4) transparent;
+    scrollbar-color: rgba(99, 110, 123, 0.4) transparent;
 }
 
 .debug-toggle {
@@ -436,24 +428,29 @@ const debugPayload = computed(() => ({
     align-items: center;
     justify-content: center;
     z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     transition: all 0.2s;
 }
+
 .debug-toggle:hover {
     border-color: #58a6ff;
     background: rgba(88, 166, 255, 0.15);
     transform: scale(1.08);
 }
+
 .debug-toggle.active {
     border-color: #28a745;
     background: rgba(40, 167, 69, 0.15);
 }
 
 /* Slide-up animation */
-.debug-slide-enter-active, .debug-slide-leave-active {
+.debug-slide-enter-active,
+.debug-slide-leave-active {
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s;
 }
-.debug-slide-enter-from, .debug-slide-leave-to {
+
+.debug-slide-enter-from,
+.debug-slide-leave-to {
     transform: translateY(20px);
     opacity: 0;
 }

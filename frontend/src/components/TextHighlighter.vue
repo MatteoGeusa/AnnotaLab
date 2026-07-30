@@ -8,8 +8,11 @@
             <div class="label-chips">
                 <button v-for="(label, idx) in labels" :key="label.name" :style="{
                     backgroundColor: selectedLabel === label.name ? label.color : 'white',
-                    color: selectedLabel === label.name ? 'white' : '#4f566b',
-                    borderColor: selectedLabel === label.name ? 'transparent' : '#e3e8ee'
+                    color: selectedLabel === label.name ? 'white' : '#1e293b',
+                    borderColor: label.color,
+                    boxShadow: selectedLabel === label.name
+                        ? `0 3px 10px ${label.color}66`
+                        : `3px 3px 0px 0px ${label.color}`
                 }" class="label-chip" @click="selectedLabel = label.name"
                     :class="{ active: selectedLabel === label.name }" :title="label.hover_hint">
                     <span class="chip-name">{{ label.name }}</span>
@@ -480,6 +483,7 @@ const renderChunks = computed(() => {
 .label-chips {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .label-chip {
@@ -488,16 +492,24 @@ const renderChunks = computed(() => {
     gap: 6px;
     padding: 6px 14px;
     border-radius: 50px;
-    border: 1px solid;
+    border: 1.5px solid;
     cursor: pointer;
     font-weight: 600;
     font-size: 0.85rem;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     background: white;
 }
 
+.label-chip:hover:not(.active) {
+    transform: translateY(-1px);
+}
+
+.label-chip:active {
+    transform: translateY(1px);
+}
+
 .chip-key {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.08);
     width: 18px;
     height: 18px;
     display: flex;
@@ -505,10 +517,10 @@ const renderChunks = computed(() => {
     justify-content: center;
     border-radius: 4px;
     font-size: 0.7rem;
+    font-weight: 700;
 }
 
 .label-chip.active {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
 }
 
