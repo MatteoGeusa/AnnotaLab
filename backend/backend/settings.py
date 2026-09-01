@@ -131,6 +131,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'import_export',
     'annotation',
+    'django_extensions',
 ]
 
 

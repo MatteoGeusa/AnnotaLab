@@ -3,7 +3,7 @@ from unfold.admin import ModelAdmin
 from django.utils.html import format_html, mark_safe
 from django.urls import reverse
 from django.utils.http import urlencode
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Count
 import json
 from ..models import Annotator, Project
 from .utils import HighlightMedia
@@ -52,6 +52,9 @@ class AnnotatorAdmin(ModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
+        # Annotate each annotator with their annotation count in a single SQL query,
+        # avoiding an N+1 problem from view_work_link calling obj.annotations.count().
+        qs = qs.annotate(annotation_count=Count('annotations'))
         if request.user.is_superuser:
             return qs
         from django.db.models import Q
@@ -128,14 +131,16 @@ class AnnotatorAdmin(ModelAdmin):
         # Safety check: don't show link if the object has no ID yet (e.g. during creation)
         if not obj or not obj.id:
             return "-"
-            
-        count = obj.annotations.count()
-        
+
+        # Use the pre-annotated count from get_queryset to avoid an N+1 query
+        # (obj.annotations.count() would fire a separate SQL COUNT per row)
+        count = getattr(obj, 'annotation_count', obj.annotations.count())
+
         # Generazione URL sicura
         base_url = reverse("admin:annotation_annotation_changelist")
         query_string = urlencode({"annotator__id": f"{obj.id}"})
         full_url = f"{base_url}?{query_string}"
-        
+
         return format_html('<a href="{}" style="font-weight:bold;">View {} Tasks</a>', full_url, count)
 
     def delete_model(self, request, obj):
