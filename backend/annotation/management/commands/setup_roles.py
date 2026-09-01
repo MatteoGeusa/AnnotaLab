@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from annotation.models import Project, Annotator, Document, Annotation, ProjectEnrollment, DocumentProxy, GoldUnitProxy
 
 class Command(BaseCommand):
@@ -55,11 +56,12 @@ class Command(BaseCommand):
 
             for action, model in perms_list:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
-                codename = f'{action}_{model._meta.model_name}'
+                meta = getattr(model, '_meta')
+                codename = f'{action}_{meta.model_name}'
                 try:
                     permission = Permission.objects.get(content_type=content_type, codename=codename)
                     group.permissions.add(permission)
-                except Permission.DoesNotExist:
-                    self.stdout.write(self.style.WARNING(f'Permission {codename} not found for {model._meta.model_name}'))
+                except ObjectDoesNotExist:
+                    self.stdout.write(self.style.WARNING(f'Permission {codename} not found for {meta.model_name}'))
 
         self.stdout.write(self.style.SUCCESS('Role setup completed successfully.'))

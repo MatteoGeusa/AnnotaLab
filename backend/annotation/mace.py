@@ -45,6 +45,7 @@ import argparse
 import time
 import numpy as np
 from scipy.special import digamma
+from typing import Any
 
 VERSION = "0.5"
 
@@ -79,6 +80,29 @@ class MACE:
         >>> predictions = mace.decode(threshold=1.0)
     """
     
+    continuous: bool
+    num_instances: int
+    num_annotators: int
+    num_labels: int
+    labels: list[Any]
+    who_labeled: list[Any]
+    continuous_values: Any
+    string2int: dict[str, int]
+    int2string: list[str]
+    hash_counter: int
+    
+    gold_label_marginals: Any
+    strategy_expected_counts: Any
+    knowing_expected_counts: Any
+    spamming: Any
+    thetas: Any
+    
+    theta_priors: Any
+    strategy_priors: Any
+    label_priors: Any
+    
+    log_marginal_likelihood: float
+
     def __init__(self, csv_file, continuous=False):
         """
         Initialize MACE model from CSV file.
@@ -750,7 +774,7 @@ class MACE:
                         if item:
                             annotators_on_item.append(annotator_number)
                             
-                            if self.continuous:
+                            if continuous_vals is not None:
                                 # Validate that it's a number
                                 try:
                                     numeric_value = float(item)

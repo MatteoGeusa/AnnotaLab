@@ -1,6 +1,9 @@
 {% extends "admin/index.html" %}
 {% load i18n admin_urls static %}
 
+{# Suppress the default Unfold breadcrumb — this page renders its own in the page header #}
+{% block breadcrumbs %}{% endblock %}
+
 {% block extrahead %}
 <!-- beautify ignore:start -->
 {{ block.super }}
@@ -1155,7 +1158,8 @@
                     data-published="{{ project.is_published|lower }}"
                     data-status="{{ project.status }}"
                     data-update-status-url="{{ action_urls.set_status }}"
-                    onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true', this.dataset.status, this.dataset.updateStatusUrl)"
+                    data-settings-url="{{ action_urls.settings }}"
+                    onclick="window.openProjectPreview(this.dataset.frontend, this.dataset.slug, this.dataset.pidId, this.dataset.published === 'true', this.dataset.status, this.dataset.updateStatusUrl, this.dataset.settingsUrl)"
                     class="dash-btn dash-btn-primary"
                     style="width: 100%; justify-content: center; font-size: 12px; font-weight: 800;">
                     🚀 Test Annotation

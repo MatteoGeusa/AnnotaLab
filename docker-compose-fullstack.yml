@@ -3,23 +3,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    env_file:
+      - .env.prod
     volumes:
       - static_volume:/app/staticfiles
-    ports:
-      - "8000:8000"
     environment:
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      - DEBUG=${DEBUG}
-      - SECRET_KEY=${SECRET_KEY}
+      - POSTGRES_HOST=db
     expose:
       - 8000
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   nginx:
     build:
@@ -29,6 +24,7 @@ services:
       - "80:80"
     volumes:
       - static_volume:/app/staticfiles
+    restart: unless-stopped
     depends_on:
       - backend
 
@@ -46,6 +42,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   static_volume:

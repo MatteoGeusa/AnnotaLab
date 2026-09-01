@@ -261,10 +261,10 @@ class Command(BaseCommand):
 
         annotators = []
         for spec in annotator_specs:
-            pid = spec["pid"]
-            accuracy = spec["accuracy"]
-            n_docs = spec["n_docs"]
-            status = spec["status"]
+            pid = str(spec["pid"])
+            accuracy = float(spec["accuracy"])
+            n_docs = int(spec["n_docs"])
+            status = str(spec["status"])
 
             ann, _ = Annotator.objects.get_or_create(
                 prolific_pid=pid,
@@ -278,8 +278,8 @@ class Command(BaseCommand):
             annotators.append((ann, spec))
 
             # Enrollment
-            gold_tasks = 1 if n_docs >= 5 else 0  # type: ignore[unsupported-operator]
-            gold_acc = accuracy if n_docs >= 5 else None  # type: ignore[unsupported-operator]
+            gold_tasks = 1 if n_docs >= 5 else 0
+            gold_acc = accuracy if n_docs >= 5 else None
 
             ProjectEnrollment.objects.get_or_create(
                 project=project,

@@ -147,16 +147,22 @@ MIDDLEWARE = [
 ]
 
 #  CORS & CSRF CONFIGURATION
+# Automatically derive origins from ALLOWED_HOSTS if not explicitly set
+_cors_env = os.environ.get('CORS_ALLOWED_ORIGINS')
+if _cors_env:
+    CORS_ALLOWED_ORIGINS = _cors_env.split(',')
+else:
+    CORS_ALLOWED_ORIGINS = [f"http://{h}" for h in ALLOWED_HOSTS if h not in ['*', 'backend']]
+    CORS_ALLOWED_ORIGINS += [f"https://{h}" for h in ALLOWED_HOSTS if h not in ['*', 'backend']]
+    if DEBUG and 'http://localhost:5173' not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append('http://localhost:5173')
 
-CORS_ALLOWED_ORIGINS = os.environ.get(
-    'CORS_ALLOWED_ORIGINS', 
-    'http://localhost:80,http://127.0.0.1:80,http://localhost:5173,http://localhost:8080'
-).split(',')
-
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    'CSRF_TRUSTED_ORIGINS', 
-    'http://localhost:8080,http://127.0.0.1:8080'
-).split(',')
+_csrf_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if _csrf_env:
+    CSRF_TRUSTED_ORIGINS = _csrf_env.split(',')
+else:
+    CSRF_TRUSTED_ORIGINS = [f"http://{h}" for h in ALLOWED_HOSTS if h not in ['*', 'backend']]
+    CSRF_TRUSTED_ORIGINS += [f"https://{h}" for h in ALLOWED_HOSTS if h not in ['*', 'backend']]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -214,7 +220,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 #  FRONTEND CONFIGURATION
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+# If not set, defaults to localhost:5173 in DEBUG mode. 
+# In production, it will be dynamically detected from the request if missing.
+FRONTEND_URL = os.environ.get('FRONTEND_URL')
+if not FRONTEND_URL and DEBUG:
+    FRONTEND_URL = 'http://localhost:5173'
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -226,3 +236,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# =========================================================
+#  FILE UPLOAD LIMITS
+# =========================================================
+# Allow uploading large JSONL datasets (up to 100 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104_857_600  # 100 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104_857_600  # 100 MB

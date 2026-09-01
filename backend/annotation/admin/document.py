@@ -8,6 +8,7 @@ from django.db.models.functions import Cast
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from ..models import Document, DocumentProxy, GoldUnitProxy, Project
 
 class DocumentResource(resources.ModelResource):
@@ -54,7 +55,7 @@ class BaseDocumentAdmin(ModelAdmin, ImportExportModelAdmin):
             extra_context['mace_run_url'] = reverse('admin:project_run_mace', args=[project_id])
             extra_context['mace_project_name'] = project.name
             print(f"DEBUG: MACE URL for project {project_id}: {extra_context['mace_run_url']}")
-        except (Project.DoesNotExist, ValueError) as e:
+        except (ObjectDoesNotExist, ValueError) as e:
             print(f"DEBUG: Failed to get project {project_id}: {e}")
             pass
 

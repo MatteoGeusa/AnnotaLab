@@ -280,18 +280,6 @@ class ProjectAdmin(ModelAdmin):
         )
         return qs
 
-    def save_model(self, request, obj, form, change):
-        """Auto-assign owner on creation and create the OWNER membership record."""
-        if not change and obj.owner is None:
-            obj.owner = request.user
-        super().save_model(request, obj, form, change)
-        # Ensure an OWNER membership record exists
-        if not change:
-            ProjectMembership.objects.get_or_create(
-                project=obj,
-                user=obj.owner,
-                defaults={'role': 'OWNER'},
-            )
 
     @admin.display(description="Owner")
     def owner_display(self, obj):
@@ -994,9 +982,9 @@ class ProjectAdmin(ModelAdmin):
             'action_urls': action_urls,
             'status_transitions': status_transitions,
             'logs': project.logs.all()[:10],
-            'opts': self.model._meta,
+            'opts': getattr(self.model, '_meta'),
             'title': f"Dashboard: {project.name}",
-            'frontend_url': getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/'),
+            'frontend_url': (getattr(settings, 'FRONTEND_URL', None) or f"{request.scheme}://{request.get_host()}").rstrip('/'),
         }
         return render(request, 'admin/annotation/project/dashboard.html', context)
 
@@ -1301,8 +1289,14 @@ class ProjectAdmin(ModelAdmin):
 
     @admin.display(description="Participant Link & Preview")
     def link_prolific(self, obj):
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
-        full_url = f"{base_url}/{obj.slug}?PROLIFIC_PID="
+        # Use setting if available, otherwise default to same host (relative or localhost)
+        base_url = getattr(settings, 'FRONTEND_URL', None) or ""
+        if not base_url:
+            # If we don't have a setting, we'll use a relative path if possible, 
+            # but since this is for a link to copy, we'll default to a clean localhost for Docker.
+            base_url = "http://localhost"
+        
+        full_url = f"{base_url.rstrip('/')}/{obj.slug}?PROLIFIC_PID="
         input_id = f"preview_pid_{obj.pk}"
         is_pub_js = str(obj.is_published).lower()
         return format_html(
@@ -1356,13 +1350,23 @@ class ProjectAdmin(ModelAdmin):
         old_status = None
         if not is_new:
             old_status = Project.objects.get(pk=obj.pk).status
-            
+        else:
+            # Auto-assign owner on creation
+            if obj.owner is None:
+                obj.owner = request.user
+
         # 1. Save base form data
         super(ProjectAdmin, self).save_model(request, obj, form, change)
-        
+
         # 2. Create logs
         if is_new:
             ProjectLogEntry.objects.create(project=obj, action="Project Created", details=f"Project '{obj.name}' initialized.")
+            # Ensure creator always has an OWNER membership record
+            ProjectMembership.objects.get_or_create(
+                project=obj,
+                user=obj.owner,
+                defaults={'role': 'OWNER'},
+            )
         elif old_status != obj.status:
             ProjectLogEntry.objects.create(project=obj, action="Status Changed", details=f"Status changed from {old_status} to {obj.status}.")
 

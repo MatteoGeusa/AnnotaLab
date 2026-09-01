@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 import json
+from django.core.exceptions import ObjectDoesNotExist
 from ..models import Annotation, Project
 
 
@@ -144,7 +145,7 @@ class AnnotationAdmin(ModelAdmin):
             
             color = "#10b981" if score >= 0.6 else ("#f59e0b" if score >= 0.3 else "#ef4444")
             return format_html('<span style="color:{}; font-weight:bold;">{}</span>', color, format(score, ".2f"))
-        except ProjectEnrollment.DoesNotExist:
+        except ObjectDoesNotExist:
             return "-"
 
 
@@ -296,7 +297,7 @@ class AnnotationAdmin(ModelAdmin):
             project = Project.objects.get(pk=project_id)
             extra_context['mace_run_url'] = reverse('admin:project_run_mace', args=[project_id])
             extra_context['mace_project_name'] = project.name
-        except (Project.DoesNotExist, ValueError):
+        except (ObjectDoesNotExist, ValueError):
             pass
 
         return super().changelist_view(request, extra_context=extra_context)

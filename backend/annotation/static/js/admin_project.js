@@ -77,7 +77,7 @@
 /**
  * Open project preview with dynamic participant ID from input
  */
-window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '', updateStatusUrl = '') {
+window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = false, status = '', updateStatusUrl = '', settingsUrl = '') {
     if (status !== 'LIVE') {
         let title = "Playground Mode Required";
         let msg = "You cannot perform test annotations while the project is in **Draft**.<br><br>Would you like to switch to **Playground** mode now to enable testing?";
@@ -104,7 +104,7 @@ window.openProjectPreview = function (baseUrl, slug, inputId, isPublished = fals
             "#10b981",
             () => {
                 if (window.executeUpdateStatus) {
-                    window.executeUpdateStatus(null, updateStatusUrl, 'LIVE');
+                    window.executeUpdateStatus(null, updateStatusUrl, 'LIVE', settingsUrl);
                 } else {
                     console.error("executeUpdateStatus not found");
                 }
@@ -289,23 +289,103 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(injectMaceButton, 500);
     setTimeout(injectMaceButton, 1500);
 
-    // Drag and Drop (Compact)
+    // ── Drag and Drop with Upload Progress Indicator ──────────────────────
     document.querySelectorAll('input[type="file"]').forEach(input => {
-        if (input.name.includes('upload_')) {
+        if (input.name.includes('upload_') || input.name === 'documents_file' || input.name === 'gold_units_file') {
             const p = input.closest('.flex-col, div');
             if (p && !p.querySelector('.dd-zone')) {
                 const zone = document.createElement('div');
                 zone.className = "dd-zone";
                 zone.style.padding = "10px"; zone.style.border = "2px dashed #444"; zone.style.cursor = "pointer";
                 zone.style.textAlign = "center"; zone.style.borderRadius = "6px"; zone.style.marginBottom = "5px";
+                zone.style.transition = "all 0.2s";
                 zone.innerHTML = "📂 Upload File";
                 input.style.display = 'none';
                 p.prepend(zone);
                 zone.onclick = () => input.click();
-                input.onchange = () => zone.innerHTML = `✅ ${input.files[0].name}`;
+                input.onchange = () => {
+                    if (input.files[0]) {
+                        const size = (input.files[0].size / (1024 * 1024)).toFixed(1);
+                        zone.innerHTML = `✅ ${input.files[0].name} <span style="font-size:10px;opacity:0.6;">(${size} MB)</span>`;
+                        zone.style.border = "2px dashed #10b981";
+                        zone.style.color = "#10b981";
+                    }
+                };
+
+                // Drag-over highlight
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.style.border = "2px dashed #3b82f6";
+                    zone.style.background = "rgba(59,130,246,0.06)";
+                });
+                zone.addEventListener('dragleave', () => {
+                    zone.style.border = "2px dashed #444";
+                    zone.style.background = "";
+                });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files.length > 0) {
+                        input.files = e.dataTransfer.files;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                    zone.style.border = "2px dashed #444";
+                    zone.style.background = "";
+                });
             }
         }
     });
+
+    // ── Upload progress: show spinner on form submit when a file is queued ─
+    const adminForm = document.getElementById('content-main');
+    if (adminForm) {
+        const form = adminForm.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                const hasFile = Array.from(form.querySelectorAll('input[type="file"]')).some(i => i.files && i.files.length > 0);
+                if (hasFile) {
+                    // Show a full-screen uploading overlay so users know something is happening
+                    const overlay = document.createElement('div');
+                    overlay.id = 'upload-progress-overlay';
+                    overlay.style.cssText = [
+                        'position:fixed', 'inset:0', 'z-index:999999',
+                        'background:rgba(15,23,42,0.75)', 'display:flex',
+                        'flex-direction:column', 'align-items:center',
+                        'justify-content:center', 'gap:20px',
+                        'backdrop-filter:blur(4px)',
+                    ].join(';');
+                    overlay.innerHTML = `
+                        <div style="font-size:48px;animation:spin 1.2s linear infinite;">⏳</div>
+                        <div style="color:white;font-size:18px;font-weight:800;">Uploading dataset...</div>
+                        <div style="color:#94a3b8;font-size:13px;">Please wait, this may take a moment for large files.</div>
+                        <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+                    `;
+                    document.body.appendChild(overlay);
+                }
+            });
+        }
+    }
+
+    // ── Unsaved changes warning ───────────────────────────────────────────
+    // Track whether the form has been dirtied so we can warn on navigation away
+    const trackForm = document.querySelector('#content-main form, form#changeform');
+    if (trackForm) {
+        let formDirty = false;
+
+        // Mark dirty on any input change
+        trackForm.addEventListener('input', () => { formDirty = true; });
+        trackForm.addEventListener('change', () => { formDirty = true; });
+
+        // Clear dirty flag on form submit (user explicitly saved)
+        trackForm.addEventListener('submit', () => { formDirty = false; });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (formDirty) {
+                e.preventDefault();
+                // Modern browsers show their own generic message; the string is ignored
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            }
+        });
+    }
 });
 
 // CSRF Token Helper
@@ -391,7 +471,7 @@ window.quickUpdateStatus = function (buttonElement, url, newStatus, statusLabel)
     );
 };
 
-window.executeUpdateStatus = function (buttonElement, url, newStatus) {
+window.executeUpdateStatus = function (buttonElement, url, newStatus, settingsUrl = '') {
     const container = buttonElement ? buttonElement.closest('.status-badge-container') : null;
 
     if (buttonElement) buttonElement.disabled = true;
@@ -421,7 +501,27 @@ window.executeUpdateStatus = function (buttonElement, url, newStatus) {
                 window.adminNotify('success', 'Status Updated', 'The project status has been changed successfully.', 2000);
                 setTimeout(() => window.location.reload(), 800);
             } else {
-                window.adminNotify('error', 'Status Change Failed', data.message || 'Unknown error');
+                const msg = data.message || 'Unknown error';
+                // Special case: no documents — nudge user to upload a dataset first
+                if (msg.toLowerCase().includes('no documents')) {
+                    const settingsLink = window.location.href.replace('/dashboard', '').replace(/\/[^/]+\/dashboard.*$/, '');
+                    window.adminAlert(
+                        '📂 No Dataset Uploaded',
+                        `**Cannot switch to Playground yet** — there are no documents in this project.\n\nPlease go to **Project Settings → Dataset Upload** and upload a **.jsonl** file before activating Playground mode.`,
+                        '📂',
+                        'Go to Project Settings',
+                        '#3b82f6'
+                    );
+                    // Rewrite the close button to redirect to settings
+                    setTimeout(() => {
+                        const closeBtn = document.getElementById('modal-close-btn');
+                        if (closeBtn && settingsUrl) {
+                            closeBtn.onclick = () => { window.location.href = settingsUrl; };
+                        }
+                    }, 50);
+                } else {
+                    window.adminNotify('error', 'Status Change Failed', msg);
+                }
                 if (buttonElement) buttonElement.disabled = false;
                 if (container) container.style.opacity = '1';
             }
