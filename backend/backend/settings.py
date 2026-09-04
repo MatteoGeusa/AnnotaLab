@@ -23,6 +23,11 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'exclude_api': {
+            '()': 'backend.middleware.ExcludeApiLogsFilter',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
@@ -33,6 +38,12 @@ LOGGING = {
         'level': 'INFO',
     },
     'loggers': {
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'filters': ['exclude_api'],
+            'propagate': False,
+        },
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
@@ -41,6 +52,11 @@ LOGGING = {
         'annotation': { 
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        'backend.api_logger': {
+            'handlers': ['console'],
+            'level': 'INFO',
             'propagate': False,
         },
     },
@@ -144,6 +160,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'backend.middleware.RequestLoggingMiddleware',
 ]
 
 #  CORS & CSRF CONFIGURATION

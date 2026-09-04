@@ -2,4 +2,4 @@
 *.env
 *.env.prod
 __pycache__/
-backend/config_uploads/
+backend/datasets/

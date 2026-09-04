@@ -10,7 +10,7 @@ import yaml
 from django.contrib.auth import get_user_model
 
 def get_default_configuration_for_task_type():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_annotation_schema.yaml')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'default_annotation_schema.yaml')
     
     if os.path.exists(config_path):
         try:
@@ -63,7 +63,7 @@ def get_default_configuration_for_task_type():
 
 
 def get_default_screening_config():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_screening_config.yaml')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'default_screening_config.yaml')
     
     if os.path.exists(config_path):
         try:
@@ -78,7 +78,7 @@ def get_default_screening_config():
     ]
 
 def get_default_configuration_for_informed_consent():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_informed_consent.md')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'default_informed_consent.md')
 
     if os.path.exists(config_path):
         try:
@@ -95,7 +95,7 @@ that you have read this information, and that you consent to participate.
     """
 
 def get_default_codebook_content():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'codebook_item_similarity.md')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'codebook_item_similarity.md')
     
     if os.path.exists(config_path):
         try:
@@ -122,7 +122,7 @@ def get_default_codebook_content():
         """
 
 def get_default_instructions_content():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_instructions_content.md')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'default_instructions_content.md')
     
     if os.path.exists(config_path):
         try:
@@ -144,7 +144,7 @@ def get_default_instructions_content():
     """
 
 def get_default_practice_task():
-    config_path = os.path.join(settings.BASE_DIR, 'config_defaults', 'default_practice_task.yaml')
+    config_path = os.path.join(settings.BASE_DIR, 'resources', 'config_defaults', 'default_practice_task.yaml')
     
     if os.path.exists(config_path):
         try:

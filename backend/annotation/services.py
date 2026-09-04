@@ -16,82 +16,83 @@ def process_uploaded_dataset(project, file_obj):
 
     schema = project.annotation_schema or {}
 
-    with file_obj.open() as f:
-        text_key = project.dataset_text_key
-        id_key = project.dataset_id_key
-        
-        current_regular_docs_count = Document.objects.filter(project=project, is_gold_unit=False).count()
-        regular_docs_added_in_this_batch = 0
+    with transaction.atomic():
+        with file_obj.open() as f:
+            text_key = project.dataset_text_key
+            id_key = project.dataset_id_key
+            
+            current_regular_docs_count = Document.objects.filter(project=project, is_gold_unit=False).count()
+            regular_docs_added_in_this_batch = 0
 
-        try:
-            for idx, line in enumerate(f, start=1):
-                try:
-                    line_str = line.decode('utf-8').strip()
-                except AttributeError:
-                    line_str = line.strip()
-                
-                if not line_str: continue 
+            try:
+                for idx, line in enumerate(f, start=1):
+                    try:
+                        line_str = line.decode('utf-8').strip()
+                    except AttributeError:
+                        line_str = line.strip()
+                    
+                    if not line_str: continue 
 
-                try:
-                    data = json.loads(line_str)
-                except json.JSONDecodeError:
-                    warnings.append(f"Row {idx}: Invalid JSON, skipped.")
-                    continue
-                
-                text = data.get(text_key)
-                # Identify solution
-                gold_sol = data.get('gold_solution', None)
-                # A document is a gold unit if and only if it has a gold_solution
-                is_gold_final = bool(gold_sol and isinstance(gold_sol, dict))
-
-                if id_key and id_key in data:
-                    external_id = str(data.get(id_key))
-                else:
-                    # Prefix based on detected gold status
-                    prefix = "G" if is_gold_final else "D"
-                    external_id = f"{prefix}-{idx}"
-
-                # DYNAMIC METADATA
-                # Special keys that are not metadata
-                special_keys = {text_key, id_key, 'is_gold_unit', 'gold_solution'}
-                metadata = {k: v for k, v in data.items() if k not in special_keys}
-
-                if not text:
-                    text = f"[CONTENT REDACTED]\nID: {external_id}"
-
-                # VALIDATE GOLD UNIT AGAINST ANNOTATION SCHEMA
-                if is_gold_final:
-                    errs, warns = validate_gold_solution(gold_sol, schema)
-                    for w in warns:
-                        warnings.append(f"Row {idx} (note): {w}")
-                    if errs:
-                        for e in errs:
-                            warnings.append(f"Row {idx} (skipped): {e}")
+                    try:
+                        data = json.loads(line_str)
+                    except json.JSONDecodeError:
+                        warnings.append(f"Row {idx}: Invalid JSON, skipped.")
                         continue
+                    
+                    text = data.get(text_key)
+                    # Identify solution
+                    gold_sol = data.get('gold_solution', None)
+                    # A document is a gold unit if and only if it has a gold_solution
+                    is_gold_final = bool(gold_sol and isinstance(gold_sol, dict))
 
-                # Calculate block_id for SAME_ANNOTATORS strategy
-                block_id = None
-                if not is_gold_final and project.distribution_strategy == 'SAME_ANNOTATORS' and project.block_size > 0:
-                    block_id = (current_regular_docs_count + regular_docs_added_in_this_batch) // project.block_size
+                    if id_key and id_key in data:
+                        external_id = str(data.get(id_key))
+                    else:
+                        # Prefix based on detected gold status
+                        prefix = "G" if is_gold_final else "D"
+                        external_id = f"{prefix}-{idx}"
 
-                # Upsert Document
-                obj, created = Document.objects.update_or_create(
-                    project=project,
-                    external_id=external_id,
-                    defaults={
-                        'text': text,
-                        'metadata': metadata,
-                        'is_gold_unit': is_gold_final, 
-                        'gold_solution': gold_sol if is_gold_final else None,
-                        'min_annotations_required': project.min_annotations_per_doc,
-                        'block_id': block_id,
-                    }
-                )
-                if not is_gold_final:
-                    regular_docs_added_in_this_batch += 1
-                count += 1     
-        except Exception as e:
-            raise e
+                    # DYNAMIC METADATA
+                    # Special keys that are not metadata
+                    special_keys = {text_key, id_key, 'is_gold_unit', 'gold_solution'}
+                    metadata = {k: v for k, v in data.items() if k not in special_keys}
+
+                    if not text:
+                        text = f"[CONTENT REDACTED]\nID: {external_id}"
+
+                    # VALIDATE GOLD UNIT AGAINST ANNOTATION SCHEMA
+                    if is_gold_final:
+                        errs, warns = validate_gold_solution(gold_sol, schema)
+                        for w in warns:
+                            warnings.append(f"Row {idx} (note): {w}")
+                        if errs:
+                            for e in errs:
+                                warnings.append(f"Row {idx} (skipped): {e}")
+                            continue
+
+                    # Calculate block_id for SAME_ANNOTATORS strategy
+                    block_id = None
+                    if not is_gold_final and project.distribution_strategy == 'SAME_ANNOTATORS' and project.block_size > 0:
+                        block_id = (current_regular_docs_count + regular_docs_added_in_this_batch) // project.block_size
+
+                    # Upsert Document
+                    obj, created = Document.objects.update_or_create(
+                        project=project,
+                        external_id=external_id,
+                        defaults={
+                            'text': text,
+                            'metadata': metadata,
+                            'is_gold_unit': is_gold_final, 
+                            'gold_solution': gold_sol if is_gold_final else None,
+                            'min_annotations_required': project.min_annotations_per_doc,
+                            'block_id': block_id,
+                        }
+                    )
+                    if not is_gold_final:
+                        regular_docs_added_in_this_batch += 1
+                    count += 1     
+            except Exception as e:
+                raise e
     
     return count, warnings
 
@@ -376,6 +377,8 @@ class DistributionService:
     @staticmethod
     def _find_normal_candidate(project, annotator, enrollment):
         from django.db.models import Count
+        import random
+        
         base_qs = Document.objects.filter(project=project, is_gold_unit=False)
         
         if project.distribution_strategy == 'SAME_ANNOTATORS':
@@ -399,13 +402,18 @@ class DistributionService:
 
             base_qs = base_qs.filter(block_id=enrollment.assigned_block_id)
 
-        base_qs = base_qs.exclude(annotations__annotator=annotator)
+        # Optimization: fast ID exclusion instead of JOIN on the annotations table
+        done_ids = annotator.annotations.filter(document__project=project).values_list('document_id', flat=True)
+        base_qs = base_qs.exclude(id__in=done_ids)
         
         if project.distribution_strategy in ['STANDARD', 'SAME_ANNOTATORS']:
             candidates = base_qs.filter(current_annotations_count__lt=project.max_annotations_per_doc)
-            order = 'current_annotations_count' if project.prioritize_unannotated else '?'
-            candidates = candidates.order_by(order)
+            if project.prioritize_unannotated:
+                return candidates.order_by('current_annotations_count').values_list('id', flat=True).first()
+            else:
+                # Optimization: avoid order_by('?') on the DB. Slice and randomly pick in Python
+                valid_ids = list(candidates.values_list('id', flat=True)[:100])
+                return random.choice(valid_ids) if valid_ids else None
         else: # FULL_OVERLAP
-            candidates = base_qs.order_by('?')
-        
-        return candidates.values_list('id', flat=True).first()
+            valid_ids = list(base_qs.values_list('id', flat=True)[:100])
+            return random.choice(valid_ids) if valid_ids else None

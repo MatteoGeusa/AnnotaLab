@@ -1,75 +1,117 @@
 @host = http://localhost:8000
-@pid = TEST_USER_123
+@pid = test_user_123
+@project_id = 1
 
-### 1. Healthcheck
+### 0. Healthcheck
 GET {{host}}/api/v1/healthcheck
 
-### 2. Initialize Session (New User)
-# Expected response: step="CONSENT" (if new) or current state
+
+### 1. SESSION MANAGEMENT
+
+### Initialize Session
 POST {{host}}/api/v1/session/
 Content-Type: application/json
 
 {
-    "prolific_pid": "{{pid}}"
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}},
+    "is_test": true,
+    "metadata": {
+        "browser": "Chrome",
+        "os": "Windows"
+    }
 }
 
-### 3. Accept Consent
-# Moves user from CONSENT -> INSTRUCTIONS
+
+### 2. ONBOARDING
+
+### Get Consent
+GET {{host}}/api/v1/get-consent/?prolific_pid={{pid}}&project_id={{project_id}}
+
+
+### Accept Consent
 POST {{host}}/api/v1/consent/
 Content-Type: application/json
 
 {
-    "pid": "{{pid}}"
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}}
 }
 
-### 4. Initialize Session (Check Progress)
-# Expected response: step="INSTRUCTIONS"
-POST {{host}}/api/v1/session/
+
+### Get Screening
+GET {{host}}/api/v1/get-screening/?prolific_pid={{pid}}&project_id={{project_id}}
+
+
+### Submit Screening
+POST {{host}}/api/v1/screening/
 Content-Type: application/json
 
 {
-    "prolific_pid": "{{pid}}"
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}},
+    "responses": {
+        "age": 25,
+        "gender": "Male",
+        "native_language": "English"
+    }
 }
 
-### 5. Complete Onboarding
-# Moves user from INSTRUCTIONS -> ANNOTATION
+
+### Get Codebook
+GET {{host}}/api/v1/get-codebook/?prolific_pid={{pid}}&project_id={{project_id}}
+
+
+### Complete Codebook
+POST {{host}}/api/v1/codebook/
+Content-Type: application/json
+
+{
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}}
+}
+
+
+### Get Instructions
+GET {{host}}/api/v1/get-instructions/?prolific_pid={{pid}}&project_id={{project_id}}
+
+
+### Complete Onboarding
 POST {{host}}/api/v1/onboarding/
 Content-Type: application/json
 
 {
-    "pid": "{{pid}}"
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}}
 }
 
-### 6. Initialize Session (Check Progress)
-# Expected response: step="ANNOTATION"
-POST {{host}}/api/v1/session/
-Content-Type: application/json
 
-{
-    "prolific_pid": "{{pid}}"
-}
 
-### 7. Get Next Task
-# Returns a document to annotate or completion status
-GET {{host}}/api/v1/next-task/?pid={{pid}}
+### 3. ANNOTATION PHASE
 
-### 8. Submit Annotation
-# Replace "document": 1 with the actual ID received from "Get Next Task"
+### Get Next Task
+# The user might receive a normal document or a gold unit.
+GET {{host}}/api/v1/next-task/?prolific_pid={{pid}}&project_id={{project_id}}
+
+
+### Submit Annotation
 POST {{host}}/api/v1/submit/
 Content-Type: application/json
 
 {
-    "pid": "{{pid}}",
-    "document": 1, 
+    "prolific_pid": "{{pid}}",
+    "project_id": {{project_id}},
+    "document": "UUID-OF-THE-DOCUMENT-HERE",
+    "milliseconds_to_complete": 15000,
     "result": {
-        "annotations": [
+        "classification": "Yes",
+        "spans": [
             {
-                "start": 0,
-                "end": 10,
-                "label": "CONSPIRACY",
-                "text": "Some text"
+                "start": 10,
+                "end": 25,
+                "label": "Actor",
+                "text": "The government"
             }
         ]
-    },
-    "milliseconds_to_complete": 45500
+    }
 }
