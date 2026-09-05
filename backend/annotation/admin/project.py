@@ -54,6 +54,13 @@ class ProjectAdminForm(forms.ModelForm):
         help_text="Upload a .md file to overwrite the informed consent text shown to participants before the task."
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.documents_file:
+            if 'documents_file' in self.fields:
+                path = self.instance.documents_file.name
+                self.fields['documents_file'].help_text = mark_safe(f"<span style='color:#10b981; font-weight:bold;'>📁 Dataset Path:</span> {path}")
+
     class Meta:
         model = Project
         fields = '__all__'
@@ -388,6 +395,16 @@ class ProjectAdmin(ModelAdmin):
                     ("dataset_text_key", "dataset_id_key"),
                 ),
                 "description": mark_safe(f"""{notice_html}
+                <style>
+                /* Prevent truncation of long file paths in the Unfold file widget */
+                .field-documents_file .truncate,
+                .field-documents_file a {{
+                    white-space: normal !important;
+                    text-overflow: clip !important;
+                    overflow: visible !important;
+                    word-break: break-all !important;
+                }}
+                </style>
                 <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
                     <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10b981; color:#ddd; border-radius:4px;'>
                         <b style='color:#10b981; font-size:1.1em;'>📁 Dataset Upload</b><br>
