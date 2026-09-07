@@ -3,3 +3,4 @@
 *.env.prod
 __pycache__/
 backend/datasets/
+Claude outputs/

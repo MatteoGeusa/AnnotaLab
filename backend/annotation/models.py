@@ -407,7 +407,6 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-
 class ProjectMembership(models.Model):
     """
     Links a Django staff user to a project as a collaborator.
@@ -435,7 +434,6 @@ class ProjectMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} → {self.project} ({self.role})"
-
 
 class ProjectLogEntry(models.Model):
     """
@@ -627,4 +625,4 @@ class GoldUnitProxy(Document):
         proxy = True
         verbose_name = "Gold Unit"
         verbose_name_plural = "Gold Units"
-        default_permissions = ('add', 'change', 'delete', 'view')
+        default_permissions = ('add', 'change', 'delete', 'view')
