@@ -8,3 +8,4 @@
 {"text": "Apples are a type of fruit.", "is_gold_unit": true, "gold_solution": {"classification": "No"}}
 {"text": "Lizard people run the government.", "is_gold_unit": true, "gold_solution": {"classification": "Yes"}}
 {"text": "The sun rises in the east.", "is_gold_unit": true, "gold_solution": {"classification": "No"}}
+{"text": "The moon landing was faked by the government to control public opinion.", "gold_solution": {"classification": "Yes", "span_highlight": [{"start": 30, "end": 44, "label": "Actor", "text": "the government"}, {"start": 45, "end": 70, "label": "Action", "text": "to control public opinion"}]}}
