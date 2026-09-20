@@ -6,7 +6,6 @@ export const UI_STRINGS = {
     redirect_notice: "Redirecting to provider in {seconds} seconds...",
     session_ended: "Session Ended",
     default_thank_you: "Thank you for your contribution.",
-    gold_task_banner: "QUALITY CONTROL TASK (This is a gold unit used to verify annotation quality)",
     task_instruction_header: "Task Instruction",
     default_instruction: "Read the text below and complete the tasks.",
     default_classification_query: "Classify this text:",

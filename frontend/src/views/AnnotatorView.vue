@@ -22,10 +22,6 @@
         </div>
 
         <div v-else class="task-card">
-            <div v-if="isGold" class="training-banner">
-                {{ UI_STRINGS.gold_task_banner }}
-            </div>
-
             <div class="card-header highlight-header"
                 style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div class="instruction-box">
@@ -91,7 +87,6 @@ const countdown = ref(5);
 let redirectTimer = null;
 const stopped = ref(false);
 const stopMessage = ref('');
-const isGold = ref(false);
 const isWide = ref(localStorage.getItem('annotator_wide_mode') === 'true');
 
 const toggleWide = () => {
@@ -168,7 +163,6 @@ const fetchNextTask = async () => {
             return;
         }
 
-        isGold.value = !!res.data.is_gold;
         currentDoc.value = res.data;
         schema.value = res.data.project_config || {};
         startTime.value = Date.now();
@@ -277,17 +271,6 @@ const debugPayload = computed(() => ({
     margin: 0;
     color: #4f566b;
     line-height: 1.5;
-}
-
-/* TRAINING BANNER */
-.training-banner {
-    background: #fef3c7;
-    color: #92400e;
-    padding: 12px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.9rem;
-    border-bottom: 1px solid #fde68a;
 }
 
 /* FINISHED STATE */

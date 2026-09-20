@@ -278,9 +278,10 @@ class GetNextTask(ProjectContextMixin, APIView):
 
         doc = result['document']
         serializer = DocumentSerializer(doc)
-        data = serializer.data 
-        data.update({'is_gold': doc.is_gold_unit, 'feedback_enabled': False})
-        return Response(data)
+        # Gold units must be indistinguishable from regular documents: exposing
+        # the flag here would let an annotator spot the quality checks in the
+        # network response and answer them differently.
+        return Response(serializer.data)
 
 class GetConsent(ProjectContextMixin, APIView):
     def get(self, request):
