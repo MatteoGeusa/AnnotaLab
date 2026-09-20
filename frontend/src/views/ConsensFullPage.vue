@@ -9,7 +9,7 @@
             <div class="scroll-box">
                 <p v-if="loading" class="state-text">Loading...</p>
                 <div v-else-if="errorMsg" class="error">{{ errorMsg }}</div>
-                <p v-else class="consent-body">{{ consentText }}</p>
+                <div v-else class="markdown-body consent-body" v-html="rendered"></div>
             </div>
         </div>
     </div>
@@ -19,6 +19,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../axios';
+import { useMarkdownRenderer } from '../composables/useMarkdownRenderer';
 
 const route = useRoute();
 const router = useRouter();
@@ -30,6 +31,8 @@ const projectSlug = route.query.project_slug ?? localStorage.getItem('project_sl
 const consentText = ref('');
 const loading = ref(true);
 const errorMsg = ref('');
+
+const { rendered } = useMarkdownRenderer(consentText);
 
 const getConsent = async () => {
     try {
@@ -48,12 +51,13 @@ onMounted(getConsent);
 </script>
 
 <style scoped>
+@import '../assets/shared.css';
+
 .page-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
     padding: 50px 20px;
     box-sizing: border-box;
     background-color: #f0f2f5;
@@ -64,6 +68,9 @@ onMounted(getConsent);
     padding: 40px;
     width: 100%;
     max-width: 760px;
+    max-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -100,27 +107,25 @@ h1 {
 .scroll-box {
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    padding: 20px 24px;
     background: #fafafa;
-    max-height: 70vh;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
 }
 
 .consent-body {
-    margin: 0;
-    line-height: 1.8;
-    color: #333;
-    font-size: 0.95rem;
-    white-space: pre-wrap;
+    padding: 20px 24px;
 }
 
 .state-text {
     margin: 0;
+    padding: 20px 24px;
     color: #999;
     font-style: italic;
 }
 
 .error {
+    padding: 20px 24px;
     color: #dc3545;
 }
 </style>

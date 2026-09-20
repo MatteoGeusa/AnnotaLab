@@ -7,7 +7,7 @@
             <div class="scroll-box">
                 <p v-if="loading" class="state-text">Loading...</p>
                 <p v-else-if="errorMsg" class="error">{{ errorMsg }}</p>
-                <p v-else class="consent-body">{{ truncatedConsent }}</p>
+                <div v-else class="markdown-body consent-body" v-html="renderedConsent"></div>
             </div>
 
             <a v-if="isLong" class="read-more-link" @click="full_consent_form_url">
@@ -29,6 +29,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '../axios';
+import { useMarkdownRenderer } from '../composables/useMarkdownRenderer';
 
 const router = useRouter();
 const route = useRoute();
@@ -47,6 +48,8 @@ const isLong = computed(() => consentText.value.length > TRUNCATE_LIMIT);
 const truncatedConsent = computed(() =>
     isLong.value ? consentText.value.slice(0, TRUNCATE_LIMIT) + '…' : consentText.value
 );
+
+const { rendered: renderedConsent } = useMarkdownRenderer(truncatedConsent);
 
 const getConsent = async () => {
     try {
@@ -75,6 +78,8 @@ const submitConsent = async () => {
 </script>
 
 <style scoped>
+@import '../assets/shared.css';
+
 .page-container {
     display: flex;
     justify-content: center;
@@ -115,11 +120,7 @@ h1 {
 }
 
 .consent-body {
-    margin: 0;
-    line-height: 1.7;
-    color: #333;
-    font-size: 0.95rem;
-    white-space: pre-wrap;
+    padding: 0;
 }
 
 .state-text {
