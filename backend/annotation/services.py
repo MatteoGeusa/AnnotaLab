@@ -356,7 +356,18 @@ class DistributionService:
                  return gold_id
 
         # B. REGULAR PHASE - NORMAL DOCUMENTS
-        return DistributionService._find_normal_candidate(project, annotator, enrollment)
+        normal_id = DistributionService._find_normal_candidate(project, annotator, enrollment)
+        if normal_id:
+            return normal_id
+
+        # C. FALLBACK - the regular pool is exhausted (or the annotator has
+        # already seen every regular document). Don't end the session while
+        # untouched gold units still exist just because this wasn't their
+        # scheduled injection turn.
+        if project.enable_gold_units:
+            return DistributionService._find_gold_candidate(project, annotator)
+
+        return None
 
     @staticmethod
     def _should_inject_gold(project, done_count):
