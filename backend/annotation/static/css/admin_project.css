@@ -215,6 +215,29 @@ div:has(> .json-config-display) {
     }
 }
 
+/* --- Fieldset tab bar (Project Details / Informed Consent / ...) --- */
+div[x-data*="activeFieldsetTab"] nav a,
+a[x-on\:click*="activeFieldsetTab"] {
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+}
+
+div[x-data*="activeFieldsetTab"] nav {
+    flex-wrap: wrap !important;
+}
+
+/* --- Section banner (fieldset description boxes) --- */
+/* Light by default; dark variant only when Unfold's <html> carries the "dark" class */
+.section-banner {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+html.dark .section-banner {
+    background: #2a2a2a;
+    color: #ddd;
+}
+
 /* --- Style Step Indicators in Tabs --- */
 /* Target all buttons in the tablist within the unfold admin */
 .unfold [role="tablist"] button {

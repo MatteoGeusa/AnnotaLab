@@ -322,6 +322,7 @@ class ProjectAdmin(ModelAdmin):
     tabs = [
         ("details", "Project Details"),
         ("config", "Task Configuration"),
+        ("consent", "Informed Consent"),
         ("training", "Training & Instructions"),
         ("quality", "Quality / Monitoring"),
         ("distribution", "Distribution & Launch"),
@@ -381,9 +382,9 @@ class ProjectAdmin(ModelAdmin):
         return (
             ("Project Details", {
                 "fields": (("name", "slug"), "description",),
-                "classes": ("tab", "details"),
+                "classes": ("tab", "details"), 
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #3B82F6; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #3B82F6; border-radius:4px;'>\
                         <b style='color:#60a5fa; font-size:1.1em;'>📝 Project Details</b><br>In this section you can edit the project name, slug (URL), and description.\
                     </div>\
                 </div>")
@@ -406,7 +407,7 @@ class ProjectAdmin(ModelAdmin):
                 }}
                 </style>
                 <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10b981; color:#ddd; border-radius:4px;'>
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #10b981; border-radius:4px;'>
                         <b style='color:#10b981; font-size:1.1em;'>📁 Dataset Upload</b><br>
                         Upload your source data (JSONL) and specify which fields contain the text to annotate and the unique ID.
                     </div>
@@ -420,7 +421,7 @@ class ProjectAdmin(ModelAdmin):
                 ),
                 "description": mark_safe(f"""{notice_html}
                 <div style='display:flex; gap:10px; margin-top:20px; margin-bottom: 20px;'>
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #60a5fa; color:#ddd; border-radius:4px;'>
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #60a5fa; border-radius:4px;'>
                         <b style='color:#60a5fa; font-size:1.1em;'>⚙️ Task Configuration</b><br>
                         Define the core logic of your annotation task. Upload the configuration JSON or edit the schema directly to set up labels and instructions.
                     </div>
@@ -549,7 +550,18 @@ class ProjectAdmin(ModelAdmin):
                 </div>
                 </details>""")
             }),
-
+            ("Informed Consent", {
+                "classes": ("tab", "consent"),
+                "fields": (
+                    "formatted_informed_consent_content",
+                    "upload_informed_consent_content",
+                ),
+                "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #06b6d4; border-radius:4px;'>\
+                        <b style='color:#22d3ee; font-size:1.1em;'>📜 Informed Consent</b><br>Upload the Informed Consent text (Markdown) shown to participants before they are allowed to start the task.\
+                    </div>\
+                </div>")
+                }),
             ("Screening Setup", {
                 "classes": ("tab", "training"),
                 "fields": (
@@ -558,7 +570,7 @@ class ProjectAdmin(ModelAdmin):
                     "upload_screening_config",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #10B981; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #10B981; border-radius:4px;'>\
                         <b style='color:#10B981; font-size:1.1em;'>📋 Screening Setup</b><br>Configure the screening questionnaire (demographics, eligibility criteria, etc.) shown to participants before they begin annotation. Toggle on/off as needed.\
                     </div>\
                 </div>")
@@ -571,7 +583,7 @@ class ProjectAdmin(ModelAdmin):
                     "upload_codebook_content",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #8B5CF6; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #8B5CF6; border-radius:4px;'>\
                         <b style='color:#a78bfa; font-size:1.1em;'>📖 Codebook Setup</b><br>Upload a Codebook (Markdown) to define the theoretical and practical guidelines annotators should follow. Toggle on/off as needed.\
                     </div>\
                 </div>")
@@ -584,7 +596,7 @@ class ProjectAdmin(ModelAdmin):
                     "upload_instructions_content",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #F59E0B; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #F59E0B; border-radius:4px;'>\
                         <b style='color:#f59e0b; font-size:1.1em;'>📝 Instructions</b><br>Upload a Markdown file with detailed task instructions shown to annotators before they start working. Toggle on/off as needed.\
                     </div>\
                 </div>")
@@ -598,7 +610,7 @@ class ProjectAdmin(ModelAdmin):
                     "practice_task_required",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #EC4899; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #EC4899; border-radius:4px;'>\
                         <b style='color:#f472b6; font-size:1.1em;'>🎯 Practice Task</b><br>Set up a training exercise with gold-standard examples so annotators can practice before the real task. Toggle on/off and mark as required if needed.\
                     </div>\
                 </div>")
@@ -612,7 +624,7 @@ class ProjectAdmin(ModelAdmin):
                     "gold_units_file",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #8B5CF6; color:#ddd; border-radius:4px;'>\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #8B5CF6; border-radius:4px;'>\
                         <b style='color:#a78bfa; font-size:1.1em;'>🛡️ Monitoring & Quality</b><br>Monitor data quality using Gold Units and accuracy thresholds. Use the <b>Actions</b> menu to run <b>MACE Analysis</b> to calculate annotator reliability.\
                     </div>\
                 </div>")
@@ -625,12 +637,10 @@ class ProjectAdmin(ModelAdmin):
                     ("min_annotations_per_doc", "max_annotations_per_doc"),
                     ("block_size", "annotators_per_block"),
                     "prioritize_unannotated",
-                    "formatted_informed_consent_content",
-                    "upload_informed_consent_content",
                 ),
                 "description": mark_safe(f"{notice_html}<div style='display:flex; gap:10px; margin-top:20px;'>\
-                    <div style='flex:1; background:#2a2a2a; padding:15px; border-left:4px solid #3B82F6; color:#ddd; border-radius:4px;'>\
-                        <b style='color:#3b82f6; font-size:1.1em;'>🚀 Distribution Criteria</b><br>Define how documents are assigned (Distribution Strategies) and configure Prolific completion codes. Manage the <b>Informed Consent</b> text (Markdown) shown to participants before the task. When ready, use the <b>Launch</b> button to publish.\
+                    <div class='section-banner' style='flex:1; padding:15px; border-left:4px solid #3B82F6; border-radius:4px;'>\
+                        <b style='color:#3b82f6; font-size:1.1em;'>🚀 Distribution Criteria</b><br>Define how documents are assigned (Distribution Strategies) and configure Prolific completion codes. When ready, use the <b>Launch</b> button to publish.\
                     </div>\
                 </div>")
             }),
@@ -1337,9 +1347,6 @@ class ProjectAdmin(ModelAdmin):
             full_url, full_url, input_id, base_url, obj.slug, input_id, is_pub_js, obj.status, reverse('admin:project_set_status', args=[obj.pk])
         )
 
-    class Media:
-        js = ('js/admin_project.js',)
-
     def get_object(self, request, object_id, from_field=None):
         obj = super().get_object(request, object_id, from_field)
         if obj is None and not request.user.is_superuser:
@@ -1459,8 +1466,31 @@ class ProjectAdmin(ModelAdmin):
                 obj.save()
 
         # 5. Dataset processing
-        if 'documents_file' in form.changed_data and obj.documents_file:
-            process_uploaded_dataset(obj, obj.documents_file)
-        if 'gold_units_file' in form.changed_data and obj.gold_units_file:
-            process_uploaded_dataset(obj, obj.gold_units_file)
+        for form_field, file_obj, label in (
+            ('documents_file', obj.documents_file, 'documents'),
+            ('gold_units_file', obj.gold_units_file, 'gold units'),
+        ):
+            if form_field not in form.changed_data or not file_obj:
+                continue
+
+            imported, import_warnings = process_uploaded_dataset(obj, file_obj)
+            self.message_user(request, f"✅ Imported {imported} {label}.", level='info')
+
+            # Rows rejected by validation are skipped silently by the importer,
+            # so surface them here or a broken dataset looks like a successful one.
+            skipped = [w for w in import_warnings if '(skipped)' in w]
+            if skipped:
+                self.message_user(
+                    request,
+                    f"❌ {len(skipped)} row(s) in the {label} file were REJECTED and not imported.",
+                    level='error',
+                )
+            for w in import_warnings[:10]:
+                self.message_user(request, f"⚠️ {w}", level='warning')
+            if len(import_warnings) > 10:
+                self.message_user(
+                    request,
+                    f"⚠️ ...and {len(import_warnings) - 10} more messages for the {label} file.",
+                    level='warning',
+                )
 
