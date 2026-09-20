@@ -206,6 +206,13 @@ def _extract_schema_constraints(schema: dict[str, Any]) -> dict[str, Any]:
                     for opt in comp.get('options', [])
                     if opt.get('value') is not None
                 },
+                # Human-readable label -> stored value, used to tell apart the
+                # common mistake of writing the label in a gold_solution.
+                'label_to_value': {
+                    opt.get('label'): opt.get('value')
+                    for opt in comp.get('options', [])
+                    if opt.get('label') is not None and opt.get('value') is not None
+                },
                 'multi_select': comp.get('multi_select', False),
             }
 
@@ -253,25 +260,43 @@ def validate_gold_solution(gold_sol: Any, schema: dict[str, Any]) -> tuple[list[
     constraints = _extract_schema_constraints(schema)
     active_types = constraints['active_types']
 
+    # Without a schema nothing can be checked, so accepting the gold answer
+    # would mean importing a value that may never match an annotator's reply.
+    # Fail loudly instead of importing unverifiable gold units.
+    if not active_types:
+        return [
+            "Cannot validate gold_solution: the project has no annotation schema. "
+            "Define the annotation schema before uploading gold units."
+        ], []
+
     # ── 1. Unknown keys (not matching any active component type) ────────────
     for key in gold_sol:
         if key not in active_types:
-            if active_types:
-                errors.append(
-                    f"Unknown key '{key}' in gold_solution. "
-                    f"Active component types: {sorted(active_types)}."
-                )
-            else:
-                warnings.append(
-                    f"Project has no annotation_schema — cannot validate key '{key}'."
-                )
+            errors.append(
+                f"Unknown key '{key}' in gold_solution. "
+                f"Active component types: {sorted(active_types)}."
+            )
 
     # ── 2. Classification validation ─────────────────────────────────────────
     if 'classification' in gold_sol and 'classification' in constraints:
         cls_val = gold_sol['classification']
         cls_con = constraints['classification']
         valid_values = cls_con['valid_values']
+        label_to_value = cls_con.get('label_to_value', {})
         multi_select = cls_con['multi_select']
+
+        def _invalid_value_msg(bad_value):
+            msg = (
+                f"'classification' value '{bad_value}' is not a valid option. "
+                f"Valid: {sorted(v for v in valid_values if v)}."
+            )
+            if bad_value in label_to_value:
+                msg += (
+                    f" '{bad_value}' is the display label of option "
+                    f"'{label_to_value[bad_value]}' — gold solutions must use the "
+                    f"option value, which is what annotators submit."
+                )
+            return msg
 
         if multi_select:
             # Must be a list
@@ -281,22 +306,16 @@ def validate_gold_solution(gold_sol: Any, schema: dict[str, Any]) -> tuple[list[
                     f"got {type(cls_val).__name__}."
                 )
             else:
-                bad = [v for v in cls_val if v not in valid_values]
-                if bad:
-                    errors.append(
-                        f"'classification' contains invalid value(s) {bad}. "
-                        f"Valid: {sorted(v for v in valid_values if v)}."
-                    )
+                for v in cls_val:
+                    if v not in valid_values:
+                        errors.append(_invalid_value_msg(v))
         else:
             if not isinstance(cls_val, str):
                 errors.append(
                     f"'classification' must be a string, got {type(cls_val).__name__}."
                 )
             elif cls_val not in valid_values:
-                errors.append(
-                    f"'classification' value '{cls_val}' is not a valid option. "
-                    f"Valid: {sorted(v for v in valid_values if v)}."
-                )
+                errors.append(_invalid_value_msg(cls_val))
 
     # ── 3. Span highlight validation ─────────────────────────────────────────
     if 'span_highlight' in gold_sol and 'span_highlight' in constraints:
