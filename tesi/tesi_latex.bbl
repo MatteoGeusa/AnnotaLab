@@ -1,0 +1,946 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nyt/global//global/global/global}
+    \entry{finkel2009nested}{inproceedings}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=efc836b4a94f22fa4a0e7a79fe8ae425}{%
+           family={Finkel},
+           familyi={F\bibinitperiod},
+           given={Jenny\bibnamedelima Rose},
+           giveni={J\bibinitperiod\bibinitdelim R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=2214edb8305f7ccd7cdc310b3a8ae1b4}{%
+           family={Manning},
+           familyi={M\bibinitperiod},
+           given={Christopher\bibnamedelima D.},
+           giveni={C\bibinitperiod\bibinitdelim D\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{fullhash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{fullhashraw}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{bibnamehash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{authorbibnamehash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{authornamehash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{authorfullhash}{1bd3c46212daaa3542acb421489b2d7c}
+      \strng{authorfullhashraw}{1bd3c46212daaa3542acb421489b2d7c}
+      \field{sortinit}{F}
+      \field{sortinithash}{2638baaa20439f1b5a8f80c6c08a13b4}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 2009 Conference on Empirical Methods in Natural Language Processing}
+      \field{title}{Nested Named Entity Recognition}
+      \field{year}{2009}
+      \field{pages}{141\bibrangedash 150}
+      \range{pages}{10}
+      \verb{urlraw}
+      \verb https://aclanthology.org/D09-1015/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/D09-1015/
+      \endverb
+    \endentry
+    \entry{hovy2013mace}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{un=0,uniquepart=base,hash=460909209014ce11714ba7d75523ebc8}{%
+           family={Hovy},
+           familyi={H\bibinitperiod},
+           given={Dirk},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d0fb0c07f470e0fa020ee4e58dba61a4}{%
+           family={Berg-Kirkpatrick},
+           familyi={B\bibinithyphendelim K\bibinitperiod},
+           given={Taylor},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=7f28e84700536646dd6620a0db07ad09}{%
+           family={Vaswani},
+           familyi={V\bibinitperiod},
+           given={Ashish},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=4c40167d6c8ae2073badfccef0c76767}{%
+           family={Hovy},
+           familyi={H\bibinitperiod},
+           given={Eduard},
+           giveni={E\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{3988b8b4fbce8fd9aa6a781be9b59d86}
+      \strng{fullhash}{cc54821ed3c342bf3b548ef7bbc43192}
+      \strng{fullhashraw}{cc54821ed3c342bf3b548ef7bbc43192}
+      \strng{bibnamehash}{3988b8b4fbce8fd9aa6a781be9b59d86}
+      \strng{authorbibnamehash}{3988b8b4fbce8fd9aa6a781be9b59d86}
+      \strng{authornamehash}{3988b8b4fbce8fd9aa6a781be9b59d86}
+      \strng{authorfullhash}{cc54821ed3c342bf3b548ef7bbc43192}
+      \strng{authorfullhashraw}{cc54821ed3c342bf3b548ef7bbc43192}
+      \field{sortinit}{H}
+      \field{sortinithash}{23a3aa7c24e56cfa16945d55545109b5}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies}
+      \field{title}{Learning Whom to Trust with {MACE}}
+      \field{year}{2013}
+      \field{pages}{1120\bibrangedash 1130}
+      \range{pages}{11}
+      \verb{urlraw}
+      \verb https://aclanthology.org/N13-1132/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/N13-1132/
+      \endverb
+    \endentry
+    \entry{klie2018inception}{inproceedings}{}{}
+      \name{author}{5}{}{%
+        {{un=0,uniquepart=base,hash=2a552f718c3488f1ad0cce7b12a7d08c}{%
+           family={Klie},
+           familyi={K\bibinitperiod},
+           given={Jan-Christoph},
+           giveni={J\bibinithyphendelim C\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=60880d5e5e30b774649b9bcfc60ef54d}{%
+           family={Bugert},
+           familyi={B\bibinitperiod},
+           given={Michael},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=147270491a4ca229d4425ae7eec885ab}{%
+           family={Boullosa},
+           familyi={B\bibinitperiod},
+           given={Beto},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=a3f5ccb89a0b32a442a37a99a12bea15}{%
+           family={Eckart\bibnamedelimb de\bibnamedelima Castilho},
+           familyi={E\bibinitperiod\bibinitdelim d\bibinitperiod\bibinitdelim C\bibinitperiod},
+           given={Richard},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ea70b44be1920f6e8c379706bc7d047a}{%
+           family={Gurevych},
+           familyi={G\bibinitperiod},
+           given={Iryna},
+           giveni={I\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{5fe304b883545c4778f68b83cf3fb19c}
+      \strng{fullhash}{9ac8f1f6d2c9195cda4b4d88f1b212b7}
+      \strng{fullhashraw}{9ac8f1f6d2c9195cda4b4d88f1b212b7}
+      \strng{bibnamehash}{5fe304b883545c4778f68b83cf3fb19c}
+      \strng{authorbibnamehash}{5fe304b883545c4778f68b83cf3fb19c}
+      \strng{authornamehash}{5fe304b883545c4778f68b83cf3fb19c}
+      \strng{authorfullhash}{9ac8f1f6d2c9195cda4b4d88f1b212b7}
+      \strng{authorfullhashraw}{9ac8f1f6d2c9195cda4b4d88f1b212b7}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 27th International Conference on Computational Linguistics: System Demonstrations}
+      \field{title}{The {INCEpTION} Platform: Machine-Assisted and Knowledge-Oriented Interactive Annotation}
+      \field{year}{2018}
+      \field{pages}{5\bibrangedash 9}
+      \range{pages}{5}
+      \verb{urlraw}
+      \verb https://aclanthology.org/C18-2002/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/C18-2002/
+      \endverb
+    \endentry
+    \entry{krippendorff2016unitizing}{article}{}{}
+      \name{author}{4}{}{%
+        {{un=0,uniquepart=base,hash=0fe2f29cabde5dc6e650c498ae365d50}{%
+           family={Krippendorff},
+           familyi={K\bibinitperiod},
+           given={Klaus},
+           giveni={K\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=b63e8c8b022f091546bf53cf994e2d1a}{%
+           family={Mathet},
+           familyi={M\bibinitperiod},
+           given={Yann},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=717b1b7f2a054c4faa2f8669a742c9ec}{%
+           family={Bouvry},
+           familyi={B\bibinitperiod},
+           given={Stéphane},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d13440404d5791631b9d77fc6ffcff8b}{%
+           family={Widlöcher},
+           familyi={W\bibinitperiod},
+           given={Antoine},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{5d2e91019a081c200e7a9751c69d320f}
+      \strng{fullhash}{1e9318fa9f813e13d3d03b695a1e84ab}
+      \strng{fullhashraw}{1e9318fa9f813e13d3d03b695a1e84ab}
+      \strng{bibnamehash}{5d2e91019a081c200e7a9751c69d320f}
+      \strng{authorbibnamehash}{5d2e91019a081c200e7a9751c69d320f}
+      \strng{authornamehash}{5d2e91019a081c200e7a9751c69d320f}
+      \strng{authorfullhash}{1e9318fa9f813e13d3d03b695a1e84ab}
+      \strng{authorfullhashraw}{1e9318fa9f813e13d3d03b695a1e84ab}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Quality \& Quantity}
+      \field{number}{6}
+      \field{title}{On the Reliability of Unitizing Textual Continua: Further Developments}
+      \field{volume}{50}
+      \field{year}{2016}
+      \field{pages}{2347\bibrangedash 2364}
+      \range{pages}{18}
+      \verb{doi}
+      \verb 10.1007/s11135-015-0266-1
+      \endverb
+    \endentry
+    \entry{mathet2015gamma}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=b63e8c8b022f091546bf53cf994e2d1a}{%
+           family={Mathet},
+           familyi={M\bibinitperiod},
+           given={Yann},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d13440404d5791631b9d77fc6ffcff8b}{%
+           family={Widlöcher},
+           familyi={W\bibinitperiod},
+           given={Antoine},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d6d78fe0f86f977c49ae2e562894d5b7}{%
+           family={Métivier},
+           familyi={M\bibinitperiod},
+           given={Jean-Philippe},
+           giveni={J\bibinithyphendelim P\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{fullhash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{fullhashraw}{80d2ad2d23727be225084e16e9296a92}
+      \strng{bibnamehash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{authorbibnamehash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{authornamehash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{authorfullhash}{80d2ad2d23727be225084e16e9296a92}
+      \strng{authorfullhashraw}{80d2ad2d23727be225084e16e9296a92}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Computational Linguistics}
+      \field{number}{3}
+      \field{title}{The Unified and Holistic Method Gamma ($\gamma$) for Inter-Annotator Agreement Measure and Alignment}
+      \field{volume}{41}
+      \field{year}{2015}
+      \field{pages}{437\bibrangedash 479}
+      \range{pages}{43}
+      \verb{doi}
+      \verb 10.1162/COLI_a_00227
+      \endverb
+    \endentry
+    \entry{prodigy}{misc}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=47c9fa7dcc4eb3484a88f4bb42655895}{%
+           family={Montani},
+           familyi={M\bibinitperiod},
+           given={Ines},
+           giveni={I\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=31cf0cd70714219d39b46b0f8aae95f9}{%
+           family={Honnibal},
+           familyi={H\bibinitperiod},
+           given={Matthew},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{organization}{1}{%
+        {Explosion}%
+      }
+      \strng{namehash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{fullhash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{fullhashraw}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{bibnamehash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{authorbibnamehash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{authornamehash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{authorfullhash}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \strng{authorfullhashraw}{e2285f18a8efa17c7d4768c502e5a7d1}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Prodigy: A New Annotation Tool for Radically Efficient Machine Teaching}
+      \field{year}{2018}
+      \verb{urlraw}
+      \verb https://prodi.gy
+      \endverb
+      \verb{url}
+      \verb https://prodi.gy
+      \endverb
+    \endentry
+    \entry{doccano}{misc}{}{}
+      \name{author}{5}{}{%
+        {{un=0,uniquepart=base,hash=0aaf512a0f486d12dcf8287dc8ad9655}{%
+           family={Nakayama},
+           familyi={N\bibinitperiod},
+           given={Hiroki},
+           giveni={H\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=3df13a2dfd177f3eae6458353e6be6d9}{%
+           family={Kubo},
+           familyi={K\bibinitperiod},
+           given={Takahiro},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=80f03cce025c44f8b5c6f0095e3482ac}{%
+           family={Kamura},
+           familyi={K\bibinitperiod},
+           given={Junya},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=cdfc3a0a60f3a713f840adcfd754410f}{%
+           family={Taniguchi},
+           familyi={T\bibinitperiod},
+           given={Yasufumi},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=8aaf2d3b53db2c2b45acb60f959349eb}{%
+           family={Liang},
+           familyi={L\bibinitperiod},
+           given={Xu},
+           giveni={X\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{2d3517cbb01957c838ab3b94c2138462}
+      \strng{fullhash}{24e5f503f95f8c23b8eea70364c11b89}
+      \strng{fullhashraw}{24e5f503f95f8c23b8eea70364c11b89}
+      \strng{bibnamehash}{2d3517cbb01957c838ab3b94c2138462}
+      \strng{authorbibnamehash}{2d3517cbb01957c838ab3b94c2138462}
+      \strng{authornamehash}{2d3517cbb01957c838ab3b94c2138462}
+      \strng{authorfullhash}{24e5f503f95f8c23b8eea70364c11b89}
+      \strng{authorfullhashraw}{24e5f503f95f8c23b8eea70364c11b89}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Software}
+      \field{title}{doccano: Text Annotation Tool for Human}
+      \field{year}{2018}
+      \verb{urlraw}
+      \verb https://github.com/doccano/doccano
+      \endverb
+      \verb{url}
+      \verb https://github.com/doccano/doccano
+      \endverb
+    \endentry
+    \entry{neves2021review}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=6e609901cd6a51fd45b52051224fa99e}{%
+           family={Neves},
+           familyi={N\bibinitperiod},
+           given={Mariana},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d6c12e3427a23cc838f942dfa2249e2e}{%
+           family={Ševa},
+           familyi={Š\bibinitperiod},
+           given={Jurica},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{fullhash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{fullhashraw}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{bibnamehash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{authorbibnamehash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{authornamehash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{authorfullhash}{b1d0677990ed52a71a4cb24172dcbb03}
+      \strng{authorfullhashraw}{b1d0677990ed52a71a4cb24172dcbb03}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Briefings in Bioinformatics}
+      \field{number}{1}
+      \field{title}{An Extensive Review of Tools for Manual Annotation of Documents}
+      \field{volume}{22}
+      \field{year}{2021}
+      \field{pages}{146\bibrangedash 163}
+      \range{pages}{18}
+      \verb{doi}
+      \verb 10.1093/bib/bbz130
+      \endverb
+    \endentry
+    \entry{palmer2005propbank}{article}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=8c92d21f9aded31210d396bfc368310b}{%
+           family={Palmer},
+           familyi={P\bibinitperiod},
+           given={Martha},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=05416ab17043c0bfe73098747bd94465}{%
+           family={Gildea},
+           familyi={G\bibinitperiod},
+           given={Daniel},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=12ceffa2eafb411af62437e14885eafa}{%
+           family={Kingsbury},
+           familyi={K\bibinitperiod},
+           given={Paul},
+           giveni={P\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{fullhash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{fullhashraw}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{bibnamehash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{authorbibnamehash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{authornamehash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{authorfullhash}{83f3259340bb9b145f6f6c359cef43a0}
+      \strng{authorfullhashraw}{83f3259340bb9b145f6f6c359cef43a0}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Computational Linguistics}
+      \field{number}{1}
+      \field{title}{The {Proposition Bank}: An Annotated Corpus of Semantic Roles}
+      \field{volume}{31}
+      \field{year}{2005}
+      \field{pages}{71\bibrangedash 106}
+      \range{pages}{36}
+      \verb{doi}
+      \verb 10.1162/0891201053630264
+      \endverb
+    \endentry
+    \entry{pei2022potato}{inproceedings}{}{}
+      \name{author}{7}{}{%
+        {{un=0,uniquepart=base,hash=c04417b9600d9fdcd53118f96e705726}{%
+           family={Pei},
+           familyi={P\bibinitperiod},
+           given={Jiaxin},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=6b4d0602fae9e73ee8141c09acac9450}{%
+           family={Ananthasubramaniam},
+           familyi={A\bibinitperiod},
+           given={Aparna},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=7f3ac3a915fd503bf7c42bec685289f0}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Xingyao},
+           giveni={X\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=3b715f1b3a9989852097eb7fedd6922c}{%
+           family={Zhou},
+           familyi={Z\bibinitperiod},
+           given={Naitian},
+           giveni={N\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ad2522a4eb470d98a281d2c570351c88}{%
+           family={Dedeloudis},
+           familyi={D\bibinitperiod},
+           given={Apostolos},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=c5e9456693a10681cdc28c81df9741a3}{%
+           family={Sargent},
+           familyi={S\bibinitperiod},
+           given={Jackson},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=453dbaae6267b6b55c5b9531d3eed911}{%
+           family={Jurgens},
+           familyi={J\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{7f1a290dcb9274f7222a066f2edf82c6}
+      \strng{fullhash}{cf01239a529170f63dc832bd91eeb6ca}
+      \strng{fullhashraw}{cf01239a529170f63dc832bd91eeb6ca}
+      \strng{bibnamehash}{7f1a290dcb9274f7222a066f2edf82c6}
+      \strng{authorbibnamehash}{7f1a290dcb9274f7222a066f2edf82c6}
+      \strng{authornamehash}{7f1a290dcb9274f7222a066f2edf82c6}
+      \strng{authorfullhash}{cf01239a529170f63dc832bd91eeb6ca}
+      \strng{authorfullhashraw}{cf01239a529170f63dc832bd91eeb6ca}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 2022 Conference on Empirical Methods in Natural Language Processing: System Demonstrations}
+      \field{title}{{POTATO}: The Portable Text Annotation Tool}
+      \field{year}{2022}
+      \field{pages}{327\bibrangedash 337}
+      \range{pages}{11}
+      \verb{urlraw}
+      \verb https://aclanthology.org/2022.emnlp-demos.33/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/2022.emnlp-demos.33/
+      \endverb
+    \endentry
+    \entry{pontiki2014semeval}{inproceedings}{}{}
+      \name{author}{6}{}{%
+        {{un=0,uniquepart=base,hash=4b6c480a2a735e64f2314dc036aa7cb3}{%
+           family={Pontiki},
+           familyi={P\bibinitperiod},
+           given={Maria},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=bceadc6b93d511d32f2facf4ba4909d7}{%
+           family={Galanis},
+           familyi={G\bibinitperiod},
+           given={Dimitris},
+           giveni={D\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=0e8159430aa7a734ad3f752a91521687}{%
+           family={Pavlopoulos},
+           familyi={P\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=822e01add13878162a8f87a1e32e2a2e}{%
+           family={Papageorgiou},
+           familyi={P\bibinitperiod},
+           given={Harris},
+           giveni={H\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=f0eb468c6aca741748e9e2652aa90c75}{%
+           family={Androutsopoulos},
+           familyi={A\bibinitperiod},
+           given={Ion},
+           giveni={I\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=a2a6fad25554051f29931bbcf70963be}{%
+           family={Manandhar},
+           familyi={M\bibinitperiod},
+           given={Suresh},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{11e891eda16408c6ff38eb2087a38ad1}
+      \strng{fullhash}{f20e2d7b6093ffbe4bc106e85f72777a}
+      \strng{fullhashraw}{f20e2d7b6093ffbe4bc106e85f72777a}
+      \strng{bibnamehash}{11e891eda16408c6ff38eb2087a38ad1}
+      \strng{authorbibnamehash}{11e891eda16408c6ff38eb2087a38ad1}
+      \strng{authornamehash}{11e891eda16408c6ff38eb2087a38ad1}
+      \strng{authorfullhash}{f20e2d7b6093ffbe4bc106e85f72777a}
+      \strng{authorfullhashraw}{f20e2d7b6093ffbe4bc106e85f72777a}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 8th International Workshop on Semantic Evaluation (SemEval 2014)}
+      \field{title}{{SemEval-2014} Task 4: Aspect Based Sentiment Analysis}
+      \field{year}{2014}
+      \field{pages}{27\bibrangedash 35}
+      \range{pages}{9}
+      \verb{urlraw}
+      \verb https://aclanthology.org/S14-2004/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/S14-2004/
+      \endverb
+    \endentry
+    \entry{samory2026psycomark}{inproceedings}{}{}
+      \name{author}{3}{}{%
+        {{un=0,uniquepart=base,hash=752b889ab2af9c94bd39d985debe4e8a}{%
+           family={Samory},
+           familyi={S\bibinitperiod},
+           given={Mattia},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=2388a4da52f6658153d7255468f96d71}{%
+           family={Soldner},
+           familyi={S\bibinitperiod},
+           given={Felix},
+           giveni={F\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=7480418845ac051881802874ee48aeb2}{%
+           family={Batzdorfer},
+           familyi={B\bibinitperiod},
+           given={Veronika},
+           giveni={V\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{fullhash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{fullhashraw}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{bibnamehash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{authorbibnamehash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{authornamehash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{authorfullhash}{a1bf97d2ce324a8d134aacca832f5eec}
+      \strng{authorfullhashraw}{a1bf97d2ce324a8d134aacca832f5eec}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 20th International Workshop on Semantic Evaluation (SemEval-2026)}
+      \field{title}{{SemEval-2026} Task 10: {PsyCoMark} -- Psycholinguistic Conspiracy Marker Extraction and Detection}
+      \field{year}{2026}
+      \verb{urlraw}
+      \verb https://aclanthology.org/2026.semeval-1.444/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/2026.semeval-1.444/
+      \endverb
+    \endentry
+    \entry{sheng2021casee}{inproceedings}{}{}
+      \name{author}{8}{}{%
+        {{un=0,uniquepart=base,hash=2501088e08d81bf6019265b21f3f1886}{%
+           family={Sheng},
+           familyi={S\bibinitperiod},
+           given={Jiawei},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=f7cc212ac95e56051137f219849679fc}{%
+           family={Guo},
+           familyi={G\bibinitperiod},
+           given={Shu},
+           giveni={S\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=fdf3e14cd1c158076088aab21aed2346}{%
+           family={Yu},
+           familyi={Y\bibinitperiod},
+           given={Bowen},
+           giveni={B\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=9885f16be76c4e68e9c2aaf363a53600}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Qian},
+           giveni={Q\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1f102ff4ee67ebca35ea6bdaaa1b1970}{%
+           family={Hei},
+           familyi={H\bibinitperiod},
+           given={Yiming},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=095bc0833aebe9ab588687a191c68351}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Lihong},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=d9439fcc8433cda8a78bb0bebc084737}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Tingwen},
+           giveni={T\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=e12b8336d0ed49c30cddb8e8f78b5dd5}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Hongbo},
+           giveni={H\bibinitperiod},
+           givenun=0}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{1bd6c994ce1d3dcd14bf2ce3c13046d7}
+      \strng{fullhash}{c70b04966a5e39c2b163e828c499d026}
+      \strng{fullhashraw}{c70b04966a5e39c2b163e828c499d026}
+      \strng{bibnamehash}{1bd6c994ce1d3dcd14bf2ce3c13046d7}
+      \strng{authorbibnamehash}{1bd6c994ce1d3dcd14bf2ce3c13046d7}
+      \strng{authornamehash}{1bd6c994ce1d3dcd14bf2ce3c13046d7}
+      \strng{authorfullhash}{c70b04966a5e39c2b163e828c499d026}
+      \strng{authorfullhashraw}{c70b04966a5e39c2b163e828c499d026}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Findings of the Association for Computational Linguistics: ACL-IJCNLP 2021}
+      \field{title}{{CasEE}: A Joint Learning Framework with Cascade Decoding for Overlapping Event Extraction}
+      \field{year}{2021}
+      \field{pages}{164\bibrangedash 174}
+      \range{pages}{11}
+      \verb{urlraw}
+      \verb https://aclanthology.org/2021.findings-acl.14/
+      \endverb
+      \verb{url}
+      \verb https://aclanthology.org/2021.findings-acl.14/
+      \endverb
+    \endentry
+    \entry{stab2017argument}{article}{}{}
+      \name{author}{2}{}{%
+        {{un=0,uniquepart=base,hash=3996c60f234d1a09fcb36436e88a4212}{%
+           family={Stab},
+           familyi={S\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=ea70b44be1920f6e8c379706bc7d047a}{%
+           family={Gurevych},
+           familyi={G\bibinitperiod},
+           given={Iryna},
+           giveni={I\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{fullhash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{fullhashraw}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{bibnamehash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{authorbibnamehash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{authornamehash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{authorfullhash}{61422176c10bdcce6970ca7ce0e09322}
+      \strng{authorfullhashraw}{61422176c10bdcce6970ca7ce0e09322}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Computational Linguistics}
+      \field{number}{3}
+      \field{title}{Parsing Argumentation Structures in Persuasive Essays}
+      \field{volume}{43}
+      \field{year}{2017}
+      \field{pages}{619\bibrangedash 659}
+      \range{pages}{41}
+      \verb{doi}
+      \verb 10.1162/COLI_a_00295
+      \endverb
+    \endentry
+    \entry{labelstudio}{misc}{}{}
+      \name{author}{4}{}{%
+        {{un=0,uniquepart=base,hash=40087730661f2393ee67740ec808c80d}{%
+           family={Tkachenko},
+           familyi={T\bibinitperiod},
+           given={Maxim},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=6c06a8ea484fbf6ef1a5b0e4cc022eda}{%
+           family={Malyuk},
+           familyi={M\bibinitperiod},
+           given={Mikhail},
+           giveni={M\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=848a61a322072b7a74a27fc295a3196f}{%
+           family={Holmanyuk},
+           familyi={H\bibinitperiod},
+           given={Andrey},
+           giveni={A\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=58efb93a473971835005fd0045e559d9}{%
+           family={Liubimov},
+           familyi={L\bibinitperiod},
+           given={Nikolai},
+           giveni={N\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{a01a5c26cdf98c8e793cd31bd814e83e}
+      \strng{fullhash}{b0033336da941893dc740f03e64ff8a1}
+      \strng{fullhashraw}{b0033336da941893dc740f03e64ff8a1}
+      \strng{bibnamehash}{a01a5c26cdf98c8e793cd31bd814e83e}
+      \strng{authorbibnamehash}{a01a5c26cdf98c8e793cd31bd814e83e}
+      \strng{authornamehash}{a01a5c26cdf98c8e793cd31bd814e83e}
+      \strng{authorfullhash}{b0033336da941893dc740f03e64ff8a1}
+      \strng{authorfullhashraw}{b0033336da941893dc740f03e64ff8a1}
+      \field{sortinit}{T}
+      \field{sortinithash}{9af77f0292593c26bde9a56e688eaee9}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Open source software}
+      \field{title}{{Label Studio}: Data Labeling Software}
+      \field{year}{2020}
+      \verb{urlraw}
+      \verb https://github.com/HumanSignal/label-studio
+      \endverb
+      \verb{url}
+      \verb https://github.com/HumanSignal/label-studio
+      \endverb
+    \endentry
+    \entry{vincze2008bioscope}{article}{}{}
+      \name{author}{5}{}{%
+        {{un=0,uniquepart=base,hash=dc093bfd3cfeb5d1736119296c725eaa}{%
+           family={Vincze},
+           familyi={V\bibinitperiod},
+           given={Veronika},
+           giveni={V\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=531a57d910e3d6dac982cde0b96d8ed3}{%
+           family={Szarvas},
+           familyi={S\bibinitperiod},
+           given={György},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=f8aad539598be2c9b45b5b846ef8c779}{%
+           family={Farkas},
+           familyi={F\bibinitperiod},
+           given={Richárd},
+           giveni={R\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=e49d73c94e89d67f8467171418e0bc08}{%
+           family={Móra},
+           familyi={M\bibinitperiod},
+           given={György},
+           giveni={G\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=380decf0ab34d91ca97eae6623373956}{%
+           family={Csirik},
+           familyi={C\bibinitperiod},
+           given={János},
+           giveni={J\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{0ea80ac3de848ef3e170b80a201a6067}
+      \strng{fullhash}{f627739de1af3b5e523541c02d9bb911}
+      \strng{fullhashraw}{f627739de1af3b5e523541c02d9bb911}
+      \strng{bibnamehash}{0ea80ac3de848ef3e170b80a201a6067}
+      \strng{authorbibnamehash}{0ea80ac3de848ef3e170b80a201a6067}
+      \strng{authornamehash}{0ea80ac3de848ef3e170b80a201a6067}
+      \strng{authorfullhash}{f627739de1af3b5e523541c02d9bb911}
+      \strng{authorfullhashraw}{f627739de1af3b5e523541c02d9bb911}
+      \field{sortinit}{V}
+      \field{sortinithash}{afb52128e5b4dc4b843768c0113d673b}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{BMC Bioinformatics}
+      \field{number}{Suppl 11}
+      \field{title}{The {BioScope} Corpus: Biomedical Texts Annotated for Uncertainty, Negation and Their Scopes}
+      \field{volume}{9}
+      \field{year}{2008}
+      \field{pages}{S9}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.1186/1471-2105-9-S11-S9
+      \endverb
+    \endentry
+    \entry{zhang2023absa}{article}{}{}
+      \name{author}{5}{}{%
+        {{un=0,uniquepart=base,hash=c4c338db452298ba7661a0bcdbc26ae8}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Wenxuan},
+           giveni={W\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=86d8cd66cb62928ca1ec636d8cd2e11c}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Xin},
+           giveni={X\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=63c044fc1bc04fba0954b8e26fcca4ce}{%
+           family={Deng},
+           familyi={D\bibinitperiod},
+           given={Yang},
+           giveni={Y\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=1fe22ed203b25c67e853adfbc3c880f8}{%
+           family={Bing},
+           familyi={B\bibinitperiod},
+           given={Lidong},
+           giveni={L\bibinitperiod},
+           givenun=0}}%
+        {{un=0,uniquepart=base,hash=56789f2d40a059bed1d3d0c663022c3e}{%
+           family={Lam},
+           familyi={L\bibinitperiod},
+           given={Wai},
+           giveni={W\bibinitperiod},
+           givenun=0}}%
+      }
+      \strng{namehash}{4385fbdcd74cca6fb748a8c100786c27}
+      \strng{fullhash}{a887978fc75b7de86fd0e6a698def834}
+      \strng{fullhashraw}{a887978fc75b7de86fd0e6a698def834}
+      \strng{bibnamehash}{4385fbdcd74cca6fb748a8c100786c27}
+      \strng{authorbibnamehash}{4385fbdcd74cca6fb748a8c100786c27}
+      \strng{authornamehash}{4385fbdcd74cca6fb748a8c100786c27}
+      \strng{authorfullhash}{a887978fc75b7de86fd0e6a698def834}
+      \strng{authorfullhashraw}{a887978fc75b7de86fd0e6a698def834}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{extradatescope}{labelyear}
+      \field{labeldatesource}{}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{IEEE Transactions on Knowledge and Data Engineering}
+      \field{number}{11}
+      \field{title}{A Survey on Aspect-Based Sentiment Analysis: Tasks, Methods, and Challenges}
+      \field{volume}{35}
+      \field{year}{2023}
+      \field{pages}{11019\bibrangedash 11038}
+      \range{pages}{20}
+      \verb{doi}
+      \verb 10.1109/TKDE.2022.3230975
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

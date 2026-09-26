@@ -1,0 +1,27 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {chapter}{\numberline {1}Introduzione}{1}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Background e lavori correlati}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Il caso di studio, PsyCoMark}{3}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Unitizing con overlap, una difficoltà condivisa da molti task}{4}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Misurare l'accordo quando le unità non sono date}{4}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Gli strumenti di annotazione esistenti}{5}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Controllo della qualità nel crowdsourcing}{5}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Che cosa manca}{5}{section.2.6}%
+\contentsline {chapter}{\numberline {3}Dati, Materiali e Definizioni}{7}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Il progetto come unità di configurazione}{7}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Formalizzazione del task di annotazione}{8}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Lo schema di annotazione}{9}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Formato del dataset}{10}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Le gold unit}{11}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Annotatore e partecipazione al progetto}{11}{section.3.6}%
+\contentsline {chapter}{\numberline {4}Metodi}{13}{chapter.4}%
+\contentsline {section}{\numberline {4.1}L'interazione di annotazione}{13}{section.4.1}%
+\contentsline {section}{\numberline {4.2}L'ingresso nel progetto}{15}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Amministrazione del task live}{18}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Configurazione del task}{21}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Architettura del sistema}{23}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Risultati}{25}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Discussione}{27}{chapter.6}%
+\contentsline {chapter}{\numberline {7}Limitazioni e Sviluppi Futuri}{29}{chapter.7}%
+\contentsline {chapter}{\numberline {8}Conclusioni}{31}{chapter.8}%
