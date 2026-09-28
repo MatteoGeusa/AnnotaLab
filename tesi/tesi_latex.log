@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.9.26)  26 SEP 2026 15:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.9.26)  28 SEP 2026 20:04
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -831,7 +831,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<sapienzalogo.pdf, id=103, 288.07625pt x 89.33376pt>
+<sapienzalogo.pdf, id=95, 288.07625pt x 89.33376pt>
 File: sapienzalogo.pdf Graphic file (type pdf)
 <use sapienzalogo.pdf>
 Package pdftex.def Info: sapienzalogo.pdf  used on input line 70.
@@ -906,64 +906,98 @@ Capitolo 1.
 
 ]
 Capitolo 2.
-[3] [4] [5] [6]
+[3] [4]
 Capitolo 3.
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 154.
-(C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
+<images/image.png, id=205, 576.65437pt x 344.78813pt>
+File: images/image.png Graphic file (type png)
+<use images/image.png>
+Package pdftex.def Info: images/image.png  used on input line 135.
+(pdftex.def)             Requested size: 217.80121pt x 130.22643pt.
+[5
+
+ <./images/image.png>]
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 151.
+ (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [7
-
-] [8] [9{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}] [10] [11] [12]
+ [6] [7{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}] [8] [9] [10]
 Capitolo 4.
-[13
+<images/image 2.png, id=338, 543.83176pt x 384.2355pt>
+File: images/image 2.png Graphic file (type png)
+<use images/image 2.png>
+Package pdftex.def Info: images/image 2.png  used on input line 316.
+(pdftex.def)             Requested size: 336.60242pt x 237.82486pt.
+[11
 
 ]
-<./images/image_potato_span.png, id=379, 682.80093pt x 310.15875pt>
+<./images/image_potato_span.png, id=347, 682.80093pt x 310.15875pt>
 File: ./images/image_potato_span.png Graphic file (type png)
 <use ./images/image_potato_span.png>
-Package pdftex.def Info: ./images/image_potato_span.png  used on input line 347.
+Package pdftex.def Info: ./images/image_potato_span.png  used on input line 328.
 (pdftex.def)             Requested size: 376.19879pt x 170.89072pt.
- [14 <./images/image_potato_span.png>] [15]
-<images/Screening.png, id=403, 570.63188pt x 379.4175pt>
+ [12 <./images/image 2.png> <./images/image_potato_span.png>]
+<images/image 3.png, id=357, 564.30824pt x 164.41425pt>
+File: images/image 3.png Graphic file (type png)
+<use images/image 3.png>
+Package pdftex.def Info: images/image 3.png  used on input line 337.
+(pdftex.def)             Requested size: 376.19879pt x 109.61005pt.
+ [13 <./images/image 3.png>]
+<images/image 4.png, id=368, 998.9822pt x 242.40562pt>
+File: images/image 4.png Graphic file (type png)
+<use images/image 4.png>
+Package pdftex.def Info: images/image 4.png  used on input line 358.
+(pdftex.def)             Requested size: 376.19879pt x 91.28654pt.
+<images/consenso.png, id=373, 345.08925pt x 377.0085pt>
+File: images/consenso.png Graphic file (type png)
+<use images/consenso.png>
+Package pdftex.def Info: images/consenso.png  used on input line 373.
+(pdftex.def)             Requested size: 277.19879pt x 302.85553pt.
+ [14 <./images/image 4.png>]
+<images/Screening.png, id=382, 570.63188pt x 379.4175pt>
 File: images/Screening.png Graphic file (type png)
 <use images/Screening.png>
-Package pdftex.def Info: images/Screening.png  used on input line 401.
+Package pdftex.def Info: images/Screening.png  used on input line 382.
 (pdftex.def)             Requested size: 277.19879pt x 184.31252pt.
- [16]
-<images/Codebook 1.png, id=411, 603.75563pt x 517.935pt>
+ [15 <./images/consenso.png> <./images/Screening.png>]
+<images/Codebook 1.png, id=391, 603.75563pt x 517.935pt>
 File: images/Codebook 1.png Graphic file (type png)
 <use images/Codebook 1.png>
-Package pdftex.def Info: images/Codebook 1.png  used on input line 410.
+Package pdftex.def Info: images/Codebook 1.png  used on input line 391.
 (pdftex.def)             Requested size: 277.19879pt x 237.7946pt.
- [17 <./images/Screening.png> <./images/Codebook 1.png>]
-<images/Practice Task .png, id=423, 584.1825pt x 522.45187pt>
+<images/Practice Task .png, id=394, 584.1825pt x 522.45187pt>
 File: images/Practice Task .png Graphic file (type png)
 <use images/Practice Task .png>
-Package pdftex.def Info: images/Practice Task .png  used on input line 419.
+Package pdftex.def Info: images/Practice Task .png  used on input line 400.
 (pdftex.def)             Requested size: 277.19879pt x 247.91211pt.
-<images/Dashboard white cut.png, id=426, 1809.76125pt x 1809.76125pt>
+ [16 <./images/Codebook 1.png>]
+<images/Dashboard white cut.png, id=404, 1809.76125pt x 1809.76125pt>
 File: images/Dashboard white cut.png Graphic file (type png)
 <use images/Dashboard white cut.png>
-Package pdftex.def Info: images/Dashboard white cut.png  used on input line 436.
+Package pdftex.def Info: images/Dashboard white cut.png  used on input line 417.
 (pdftex.def)             Requested size: 396.0pt x 395.99477pt.
- [18 <./images/Practice Task .png>] [19 <./images/Dashboard white cut.png>]
-<images/Annotation Mace Gold.png, id=444, 1197.72469pt x 636.87938pt>
+ [17 <./images/Practice Task .png>] [18 <./images/Dashboard white cut.png>]
+<images/Annotation Mace Gold.png, id=422, 1197.72469pt x 636.87938pt>
 File: images/Annotation Mace Gold.png Graphic file (type png)
 <use images/Annotation Mace Gold.png>
-Package pdftex.def Info: images/Annotation Mace Gold.png  used on input line 453.
+Package pdftex.def Info: images/Annotation Mace Gold.png  used on input line 434.
 (pdftex.def)             Requested size: 396.0pt x 210.56927pt.
- [20 <./images/Annotation Mace Gold.png>]
-<images/panel dashboard.png, id=454, 2995.19pt x 1399.2275pt>
+ [19 <./images/Annotation Mace Gold.png>]
+<images/panel dashboard.png, id=432, 2995.19pt x 1399.2275pt>
 File: images/panel dashboard.png Graphic file (type png)
 <use images/panel dashboard.png>
-Package pdftex.def Info: images/panel dashboard.png  used on input line 478.
+Package pdftex.def Info: images/panel dashboard.png  used on input line 459.
 (pdftex.def)             Requested size: 396.0pt x 184.98042pt.
- [21] [22 <./images/panel dashboard.png>] [23] [24
+ [20] [21 <./images/panel dashboard.png>]
+<images/diagram.jpg, id=449, 1098.1025pt x 1109.14375pt>
+File: images/diagram.jpg Graphic file (type jpg)
+<use images/diagram.jpg>
+Package pdftex.def Info: images/diagram.jpg  used on input line 482.
+(pdftex.def)             Requested size: 297.0pt x 299.98055pt.
+ [22 <./images/diagram.jpg>] [23] [24
 
 ]
 Capitolo 5.
@@ -990,24 +1024,36 @@ Package microtype Info: Character `029' is missing
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
  ***********
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `tesi_latex.out' has not changed.
-(rerunfilecheck)             Checksum: 8B3BD88480751B3971A9EEF77BFF9D03;4827.
+(rerunfilecheck)             Checksum: 2EB944B8ABAC5FF7E490D0845F16F08C;4121.
+
+Package biblatex Warning: Please (re)run Biber on the file:
+(biblatex)                tesi_latex
+(biblatex)                and rerun LaTeX afterwards.
+
 Package logreq Info: Writing requests to 'tesi_latex.run.xml'.
 \openout1 = `tesi_latex.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 25595 strings out of 467871
- 446303 string characters out of 5418376
- 1451530 words of memory out of 5000000
- 53769 multiletter control sequences out of 15000+600000
+ 25610 strings out of 467871
+ 446879 string characters out of 5418376
+ 1451002 words of memory out of 5000000
+ 53786 multiletter control sequences out of 15000+600000
  715905 words of font info for 191 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,13n,131p,1272b,2142s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,131p,1269b,2142s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmcsc10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr7.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss17.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmssbx10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb>
-Output written on tesi_latex.pdf (42 pages, 1217804 bytes).
+Output written on tesi_latex.pdf (42 pages, 1516079 bytes).
 PDF statistics:
- 652 PDF objects out of 1000 (max. 8388607)
- 188 named destinations out of 1000 (max. 500000)
- 52465 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 643 PDF objects out of 1000 (max. 8388607)
+ 186 named destinations out of 1000 (max. 500000)
+ 52479 words of extra memory for PDF output out of 61914 (max. 10000000)
 

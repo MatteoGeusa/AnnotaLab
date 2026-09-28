@@ -2375,24 +2375,15 @@
   </bcf:bibdata>
   <bcf:section number="0">
     <bcf:citekey order="1" intorder="1">samory2026psycomark</bcf:citekey>
-    <bcf:citekey order="2" intorder="1">palmer2005propbank</bcf:citekey>
-    <bcf:citekey order="3" intorder="1">pontiki2014semeval</bcf:citekey>
-    <bcf:citekey order="3" intorder="2">zhang2023absa</bcf:citekey>
-    <bcf:citekey order="4" intorder="1">finkel2009nested</bcf:citekey>
-    <bcf:citekey order="5" intorder="1">sheng2021casee</bcf:citekey>
-    <bcf:citekey order="6" intorder="1">vincze2008bioscope</bcf:citekey>
-    <bcf:citekey order="7" intorder="1">stab2017argument</bcf:citekey>
-    <bcf:citekey order="8" intorder="1">krippendorff2016unitizing</bcf:citekey>
-    <bcf:citekey order="9" intorder="1">mathet2015gamma</bcf:citekey>
-    <bcf:citekey order="10" intorder="1">neves2021review</bcf:citekey>
-    <bcf:citekey order="11" intorder="1">pei2022potato</bcf:citekey>
-    <bcf:citekey order="12" intorder="1">prodigy</bcf:citekey>
-    <bcf:citekey order="13" intorder="1">doccano</bcf:citekey>
-    <bcf:citekey order="14" intorder="1">klie2018inception</bcf:citekey>
-    <bcf:citekey order="15" intorder="1">labelstudio</bcf:citekey>
-    <bcf:citekey order="16" intorder="1">hovy2013mace</bcf:citekey>
-    <bcf:citekey order="17" intorder="1">pei2022potato</bcf:citekey>
-    <bcf:citekey order="18" intorder="1">hovy2013mace</bcf:citekey>
+    <bcf:citekey order="2" intorder="1">neves2021review</bcf:citekey>
+    <bcf:citekey order="3" intorder="1">pei2022potato</bcf:citekey>
+    <bcf:citekey order="4" intorder="1">prodigy</bcf:citekey>
+    <bcf:citekey order="5" intorder="1">doccano</bcf:citekey>
+    <bcf:citekey order="6" intorder="1">klie2018inception</bcf:citekey>
+    <bcf:citekey order="7" intorder="1">labelstudio</bcf:citekey>
+    <bcf:citekey order="8" intorder="1">hovy2013mace</bcf:citekey>
+    <bcf:citekey order="9" intorder="1">pei2022potato</bcf:citekey>
+    <bcf:citekey order="10" intorder="1">hovy2013mace</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="nyt">
