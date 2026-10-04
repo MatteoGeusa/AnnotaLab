@@ -28,6 +28,7 @@
 \usepackage{listings}  % per i blocchi JSON/YAML
 \usepackage{float}
 \usepackage{csquotes}
+\usepackage{subcaption}
 \usepackage[style=authoryear,backend=biber]{biblatex}
 \addbibresource{citazioni.bib}
 \raggedbottom
@@ -58,7 +59,8 @@
 \course{Laurea Triennale in Informatica}
 \courseorganizer{Facoltà di Ingegneria dell'Informazione, Informatica e Statistica}
 \AcademicYear{2025/2026}
-\advisor{Prof. Mattia Samory}
+\advisor{Prof. Matteo Cinelli}
+\coadvisor{Prof. Mattia Samory}
 \authoremail{matteogeusa03@gmail.com}
 \copyyear{2026}
 \thesistype{Tesi di Laurea Triennale}
@@ -491,8 +493,224 @@ Backend, frontend e i due piani che espone sono l'infrastruttura su cui si appog
 \chapter{Risultati}
 \label{chap:risultati}
 
+% =====================================================================
+\section{La valutazione con un'esperta di dominio}
+\label{sec:walkthrough}
+
+Le prove descritte finora dicono che il sistema funziona, ma non dicono se chi deve usarlo riesce a capirlo. Un ricercatore che prepara uno studio di annotazione non legge il codice, attraversa l'interfaccia una schermata alla volta e decide cosa fare in base a quello che vede. Se un'etichetta è ambigua o un'opzione sta nel posto sbagliato, il rischio non è un errore del software ma un progetto configurato male, oppure un'azione irreversibile compiuta senza volerlo. Per osservare questo lato del sistema serve una persona che lo usi davvero. Questa sezione racconta la sessione condotta con una ricercatrice che conosce il problema dall'interno, cosa ne è emerso e come il sistema è cambiato di conseguenza.
+
+% ---------------------------------------------------------------------
+\subsection{Perché un cognitive walkthrough, e con chi}
+\label{subsec:walkthrough-setting}
+
+Il metodo scelto è il cognitive walkthrough \parencite{wharton1994cognitive}, una tecnica di ispezione dell'usabilità pensata per chi usa un sistema per la prima volta. Il valutatore percorre una sequenza di task realistici e, per ogni passo, si chiede se l'utente capirebbe cosa deve fare, se troverebbe il comando giusto, se ne interpreterebbe correttamente l'etichetta e se, dopo averlo usato, si accorgerebbe di aver ottenuto l'effetto voluto. Il metodo si adatta bene a una piattaforma come questa, dove la maggior parte delle difficoltà nasce proprio dal primo contatto, quando chi configura un progetto deve orientarsi tra molte opzioni senza ancora conoscere le regole del sistema.
+
+La sessione si è svolta il 16 aprile 2026, da remoto, ed è durata tra un'ora e un'ora e mezza. La partecipante è Veronika Batzdorfer, tra gli organizzatori di PsyCoMark \parencite{samory2026psycomark}, quindi una persona che ha già condotto in prima persona uno studio di annotazione in crowdsourcing simile a quello che la piattaforma vuole supportare. Non aveva mai usato l'interfaccia, ma conosceva già alcune delle funzionalità per averne discusso in precedenza con il relatore. È un profilo utile proprio per questo, perché unisce la freschezza di chi vede le schermate per la prima volta alla competenza di chi sa cosa serve davvero a un ricercatore.
+
+La traccia della sessione comprendeva sette task, che coprono l'intero ciclo di vita di un progetto.
+\begin{enumerate}
+    \item Creare un nuovo progetto.
+    \item Caricare il dataset da annotare.
+    \item Portare il progetto nell'ambiente di prova (\emph{Live (playground)}).
+    \item Simulare un partecipante e completare un'annotazione di prova.
+    \item Cancellare i dati di prova senza toccare il progetto.
+    \item Lanciare ufficialmente il progetto.
+    \item Correggere un errore nella configurazione di un progetto già lanciato.
+\end{enumerate}
+
+Rispetto alla forma classica del metodo, la sessione ha preso una piega più guidata. Era il candidato a condividere lo schermo e a muoversi nell'interfaccia seguendo la traccia, mentre la partecipante osservava, commentava ad alta voce e interrompeva con domande ogni volta che qualcosa non le era chiaro. Questa scelta riduce la possibilità di osservare dove l'utente si perde da solo, ma in cambio ha lasciato spazio a domande che la traccia non prevedeva, e alcune di queste si sono rivelate le più utili. Della sessione esiste una registrazione di circa ventisei minuti, che copre la seconda parte del percorso, dall'annotazione di prova alla clonazione del progetto e al monitoraggio. Le osservazioni sui primi task vengono invece dagli appunti presi durante la sessione.
+
+Con il contesto chiarito, le osservazioni si possono leggere per temi invece che task per task, perché diversi problemi si ripresentano in punti diversi del percorso.
+
+% ---------------------------------------------------------------------
+\subsection{Cosa è emerso}
+\label{subsec:walkthrough-risultati}
+
+Le osservazioni si raccolgono in quattro gruppi. Due riguardano problemi veri e propri, cioè la struttura della configurazione e la chiarezza di alcune etichette. Il terzo riguarda il modo in cui il sistema gestisce le azioni irreversibili, dove il design ha retto ma ha comunque generato domande. L'ultimo raccoglie un'esigenza che il sistema non copriva affatto.
+
+\paragraph{Il dataset si nascondeva in fondo alla pagina.}
+Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non trovava il punto in cui caricare i dati se non scorrendo. La partecipante ha faticato proprio qui, e il problema non riguarda un singolo pulsante. Una pagina che unisce cose diverse non comunica la struttura del lavoro da fare.
+
+La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Oltre a rendere ogni campo visibile senza scorrere, l'ordine delle schede suggerisce anche l'ordine in cui conviene procedere.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/cw_config_prima.png}
+        \caption{Prima della sessione. Schema e dataset nella stessa scheda, con il caricamento dei documenti in fondo.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.49\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/cw_config_dopo.png}
+        \caption{Dopo la sessione. Il caricamento del dataset ha una scheda dedicata.}
+    \end{subfigure}
+    \caption{La configurazione del progetto prima e dopo il cognitive walkthrough.}
+    \label{fig:cw-config}
+\end{figure}
+
+\paragraph{Alcune etichette dicevano meno di quanto sembrava.}
+Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma proprio quest'ultimo l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante. È un esempio piccolo, ma mostra quanto il significato di un'etichetta dipenda dal contesto in cui compare, perché la stessa parola che altrove sarebbe ovvia diventa ambigua quando sullo schermo convivono più span sovrapposti.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\linewidth]{images/cw_clear_all.png}
+    \caption{L'interfaccia di annotazione dopo la sessione. Con più span sovrapposti sullo stesso testo, il pulsante in basso dichiara esplicitamente che rimuove tutte le annotazioni del documento.}
+    \label{fig:cw-clear}
+\end{figure}
+
+\paragraph{Le azioni irreversibili hanno retto, ma hanno fatto nascere domande.}
+Il ciclo di vita del progetto è la parte in cui un errore costa di più, e infatti è quella in cui la partecipante si è fermata più spesso a chiedere. Vedendo il pulsante di lancio ufficiale, la prima domanda è stata cosa succede se si lancia per errore e si vuole togliere il progetto dalla rete. La risposta esiste, perché un progetto lanciato può essere messo in pausa, ma il fatto che la domanda sia arrivata subito conferma che il timore dell'irreversibilità è reale, e giustifica la scelta di isolare queste azioni in una zona separata dell'interfaccia. Un secondo punto ha riguardato la cancellazione dei dati di prova, che richiede di riportare prima il progetto in bozza o in pausa. Il sistema lo comunica con un messaggio, ma solo dopo che l'utente ha provato, quindi il vincolo si scopre per tentativi. Infine il blocco della configurazione dopo il lancio è stato capito senza difficoltà. Il banner che spiega perché i campi non sono più modificabili e propone di clonare il progetto (Figura~\ref{fig:cw-banner}) è risultato chiaro, e lo stesso vale per la differenza tra clonare solo la configurazione o anche documenti e annotatori. È un risultato che conta, perché il task~7 era quello in cui l'utente si trova davanti a un vicolo cieco, e il banner è riuscito a indicargli l'uscita.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\linewidth]{images/cw_banner_clone.png}
+    \caption{Un progetto lanciato ufficialmente. I campi sono in sola lettura e il banner spiega il motivo, proponendo la clonazione come via per apportare modifiche.}
+    \label{fig:cw-banner}
+\end{figure}
+
+\paragraph{Un'esigenza che il sistema non copriva.}
+L'osservazione più importante non riguardava nessuno dei sette task. Guardando quanto velocemente si poteva completare un'annotazione di prova, la partecipante ha chiesto se fosse possibile imporre un tempo minimo per ogni documento, così da impedire che un partecipante clicchi a caso, completi il compito in pochi secondi e venga comunque pagato. È un problema concreto di chi lavora in crowdsourcing, ed è lo stesso che i meccanismi di controllo qualità descritti nel capitolo~\ref{cap:metodi} affrontano solo a posteriori. Oggi il sistema registra il tempo impiegato per ogni annotazione e, nella vista amministrativa, evidenzia in rosso quelle completate in meno di cinque secondi, ma non impedisce l'invio. Il ricercatore può quindi accorgersi del comportamento e intervenire, ad esempio escludendo l'annotatore dalla distribuzione, ma non può prevenirlo. Questa lacuna resta aperta ed è ripresa nel capitolo sulle limitazioni.
+
+Accanto a questi problemi, la sessione ha fatto emergere anche ciò che funziona, e conviene riportarlo con la stessa cura.
+
+% ---------------------------------------------------------------------
+\subsection{Cosa ha convinto}
+\label{subsec:walkthrough-positivi}
+
+Gli apprezzamenti si sono concentrati sulle parti che aiutano il ricercatore a controllare il proprio studio prima e durante la raccolta. La partecipante ha indicato come particolarmente utile l'ambiente di prova, che permette di attraversare il percorso da partecipante e verificare che la configurazione sia corretta prima di aprire il progetto al pubblico. Ha apprezzato la vista della singola annotazione, sia nella resa grafica sia nel formato grezzo, il calcolo dell'affidabilità degli annotatori, che ha definito \emph{really handy}, e il registro delle attività, utile soprattutto quando sullo stesso progetto lavorano più ricercatori. Il giudizio complessivo è stato positivo, con un riferimento esplicito alla quantità di aspetti personalizzabili e alla loro sensatezza.
+
+L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante. È un'osservazione coerente con il problema della pagina unica descritto sopra, e la riorganizzazione in sottosezioni ne è in parte la risposta, ma la curva di apprendimento iniziale resta un aspetto su cui il sistema può migliorare.
+
+% ---------------------------------------------------------------------
+\subsection{Dalle osservazioni agli interventi}
+\label{subsec:walkthrough-interventi}
+
+La tabella~\ref{tab:walkthrough} riassume le osservazioni principali e il modo in cui il sistema è cambiato dopo la sessione.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{p{0.45\textwidth} p{0.45\textwidth}}
+\toprule
+\textbf{Osservazione} & \textbf{Intervento} \\
+\midrule
+Schema e dataset nella stessa scheda, con il caricamento dei documenti visibile solo scorrendo & Configurazione riorganizzata in dieci schede, con il dataset in una scheda dedicata \\
+\addlinespace
+Il pulsante \emph{Clear} non chiarisce se cancella uno o tutti gli span & Etichetta cambiata in \emph{Clear all} \\
+\addlinespace
+Timore di non poter ritirare un progetto lanciato per errore & Nessuno, la pausa copre il caso e la zona separata per le azioni irreversibili è confermata \\
+\addlinespace
+La cancellazione dei dati di prova richiede lo stato di bozza o pausa, scoperto solo per tentativi & Il vincolo è comunicato da un messaggio al momento del tentativo \\
+\addlinespace
+Blocco della configurazione dopo il lancio e opzioni di clonazione & Nessuno, risultati chiari \\
+\addlinespace
+Nessun modo di imporre un tempo minimo per documento & Solo monitoraggio, con le annotazioni sotto i cinque secondi evidenziate, questione rimandata alle limitazioni \\
+\bottomrule
+\end{tabular}
+\caption{Osservazioni emerse dal cognitive walkthrough e interventi conseguenti.}
+\label{tab:walkthrough}
+\end{table}
+
+Tra le osservazioni in tabella, una merita di essere ripresa. Il tempo minimo per documento sembra un'esigenza isolata, ma riporta a un problema già incontrato in questo capitolo da tutt'altra strada.
+
+% ---------------------------------------------------------------------
+\subsection{Due prove, la stessa debolezza}
+\label{subsec:walkthrough-convergenza}
+
+Nello studio simulato (\S\ref{sec:disc-qualita}) l'annotatore con il profilo da spammer risponde sempre con la stessa classe. Proprio per questo supera la soglia di accuratezza sulle gold unit e non viene escluso, mentre MACE, guardando l'insieme delle sue risposte, gli attribuisce la competenza più bassa del gruppo. La domanda di Veronika Batzdorfer descrive lo stesso comportamento visto dal lato umano. Chi partecipa a uno studio retribuito può attraversare i documenti in fretta, senza leggerli davvero, e arrivare comunque al codice di completamento. La sua preoccupazione non nasceva da un'ipotesi, ma dall'esperienza di chi ha raccolto in crowdsourcing le annotazioni di PsyCoMark.
+
+Le due prove sono indipendenti. La prima viene da annotatori artificiali costruiti apposta, la seconda da una ricercatrice che non conosceva i loro profili. Arrivano però allo stesso punto, cioè che il controllo basato sulle gold unit ferma chi sbaglia, ma non chi lavora senza impegnarsi e ha la fortuna, o l'accortezza, di rispondere in modo compatibile con le soluzioni attese. Il sistema raccoglie già i segnali che permettono di riconoscere questo comportamento, la competenza stimata da MACE e il tempo impiegato per ogni documento, ma li usa solo per il monitoraggio a posteriori. Nessuno dei due interviene mentre la raccolta è in corso.
+
+Questa convergenza dà alla debolezza un peso maggiore di quello che avrebbe se fosse emersa da una sola delle due prove, e indica anche una direzione concreta. Un controllo di qualità più robusto non ha bisogno di nuovi dati, ma di usare in tempo reale quelli che il sistema già raccoglie. Il capitolo di discussione riprende questo punto.
+
+% ---------------------------------------------------------------------
+\subsection{In sintesi}
+\label{subsec:walkthrough-sintesi}
+
+Nel complesso la sessione ha spostato l'attenzione da come il sistema funziona a come viene capito. I problemi emersi non riguardano la logica della piattaforma, che ha retto anche nelle parti più delicate, ma il modo in cui questa logica viene presentata a chi la incontra per la prima volta. Resta il limite di una valutazione condotta con una sola esperta e in forma guidata, che non sostituisce uno studio con più utenti, e su cui si torna nel capitolo sulle limitazioni. Il capitolo successivo riprende questi risultati insieme a quelli dello studio simulato, per capire cosa dicono, nel loro insieme, rispetto al problema da cui la tesi è partita.
+
+% =====================================================================
 \chapter{Discussione}
-\label{chap:discussione}
+\label{cap:discussione}
+
+Il capitolo precedente ha descritto cosa è successo quando il sistema è stato messo alla prova, con i test automatici, con lo studio simulato e con la sessione insieme a un'esperta di dominio. Questo capitolo prova a dire cosa significano quei risultati. Per ogni aspetto si chiede se il sistema si è comportato come ci si aspettava, dove invece ha sorpreso, e cosa ne segue per il problema da cui la tesi è partita. Si parte dalle aspettative, si passa alle parti che i risultati confermano e a quelle in cui se ne discostano, e si chiude con ciò che i risultati dicono, e non dicono, sul gap dichiarato nell'introduzione.
+
+% =====================================================================
+\section{Le aspettative di partenza}
+\label{sec:disc-aspettative}
+
+La tesi nasce da un'osservazione precisa. Gli strumenti di annotazione esistenti trattano gli span sovrapposti come un'estensione del formato dati e non come un'esperienza progettata per chi annota, e chi conduce uno studio in crowdsourcing deve comporre a mano più strumenti per coprire l'intero ciclo, dal reclutamento all'analisi dell'affidabilità. Il sistema risponde con due proposte, un'interfaccia pensata per definire span sovrapposti direttamente sul testo e una piattaforma che integra in un'unica configurazione tutte le fasi dello studio.
+
+Da queste proposte discendono tre aspettative, che fanno da filo conduttore per il resto del capitolo. La prima è che il ciclo dello studio regga da capo a fondo senza strumenti esterni. La seconda è che il controllo qualità distingua chi lavora bene da chi no. La terza è che un ricercatore riesca a orientarsi nella configurazione e nel ciclo di vita di un progetto senza conoscere il codice. Le sezioni seguenti le riprendono una alla volta.
+
+% =====================================================================
+\section{L'integrazione del ciclo regge}
+\label{sec:disc-integrazione}
+
+La prima aspettativa è quella confermata in modo più netto. Nello studio simulato dieci annotatori hanno attraversato l'intero percorso passando dagli endpoint reali del sistema, dal consenso informato fino al codice di completamento. In tutte e trenta le ripetizioni la distribuzione ha portato i venti documenti oltre la soglia minima di tre annotazioni, con un totale compreso tra 140 e 146 annotazioni. Le gold unit sono state iniettate e valutate, gli annotatori sotto soglia sono stati esclusi in modo automatico e MACE ha stimato competenze ed etichette sui dati raccolti. Nessuna di queste fasi ha richiesto di esportare dati, convertirli o passarli a un altro strumento.
+
+La sessione con l'esperta di dominio conferma lo stesso punto dal lato di chi usa il sistema. Le funzionalità che Veronika Batzdorfer ha indicato come più utili sono l'ambiente di prova, il calcolo dell'affidabilità e il registro delle attività condiviso tra ricercatori. Sono proprio le parti che, componendo strumenti separati, vanno costruite o raccordate a mano. È la risposta più diretta alla domanda su cosa offra il sistema rispetto a uno strumento generalista come Potato. Il valore non sta in una singola funzione, ma nel fatto che le fasi dello studio condividono la stessa configurazione e gli stessi dati.
+
+Fin qui i risultati confermano le aspettative. Il controllo qualità, invece, ha mostrato un comportamento diverso da quello previsto, ed è il punto su cui conviene soffermarsi di più.
+
+% =====================================================================
+\section{Il controllo qualità}
+\label{sec:disc-qualita}
+
+Il sistema affida il controllo qualità a due meccanismi, le gold unit, che decidono in tempo reale se escludere un annotatore, e MACE, che stima a posteriori la competenza di ciascuno. Ci si aspettava che i due meccanismi arrivassero a conclusioni simili. Lo studio simulato, ripetuto trenta volte con semi casuali diversi, mostra invece che possono divergere molto, e che la divergenza dice qualcosa su come vanno configurati. I numeri che seguono sono frequenze sulle trenta ripetizioni e non valori di una singola esecuzione, perché da un'esecuzione all'altra gli esiti individuali cambiano in modo sensibile. La Tabella~\ref{tab:simulazione-profili} ne riassume gli esiti per profilo di annotatore.
+
+\input{tabella_studio_simulato}
+
+\paragraph{Le gold unit da sole non bastano.}
+Il caso più chiaro è quello dello spammer, un annotatore simulato che risponde sempre con la stessa classe. Su trenta ripetizioni non viene escluso in venti casi, pur avendo un'accuratezza reale media del 33\%, cioè quella del caso. La ragione è semplice. Lo spammer viene valutato dopo tre gold unit, e quando due delle tre appartengono alla classe che sceglie sempre ottiene il 67\%, sopra la soglia del 60\%. Lo stesso problema si vede in senso opposto. In dodici ripetizioni su trenta almeno un annotatore con profilo esperto o buono viene escluso, per un totale di quattordici esclusioni ingiustificate. Su tre gold unit un solo errore porta l'accuratezza al 67\%, due errori la portano al 33\%, e basta un po' di sfortuna per far uscire un annotatore valido. Nel complesso, quasi metà dei profili inaffidabili, 43 su 90 tra sciatti e spammer, arriva in fondo alla raccolta senza essere esclusa.
+
+Da questi casi seguono tre indicazioni per chi configura uno studio. La soglia va tarata sul numero di classi, perché con tre opzioni il caso produce già circa il 33\% di risposte corrette. Le gold unit vanno bilanciate tra le classi, così che nessuna risposta costante possa superare la soglia. Infine, il numero minimo di gold unit prima di valutare un annotatore va scelto tenendo conto di quanto sia rumorosa la stima su pochi elementi. Il sistema rende già configurabili tutti questi parametri. Quello che lo studio aggiunge è la prova che i valori predefiniti non sono neutri.
+
+\paragraph{MACE vede ciò che le gold unit non vedono, ma non è un oracolo.}
+MACE attribuisce allo spammer la competenza più bassa del gruppo in 27 ripetizioni su 30, con un valore medio di 0,03, e ricostruisce in media 19,6 etichette corrette su 20. È il comportamento atteso da un metodo che sfrutta tutte le annotazioni raccolte invece di pochi documenti di controllo. Due risultati però invitano a non considerarlo una verità di riferimento. Il primo è che la competenza stimata per lo stesso profilo varia molto tra le ripetizioni. Per gli annotatori con profilo buono va da 0,29 a 0,95, perché con una decina di documenti per annotatore anche MACE lavora su pochi dati. Il secondo è che la sua confidenza non segnala in modo affidabile i propri errori. Delle tredici etichette sbagliate nelle trenta ripetizioni, quattro hanno una confidenza pari o superiore a 0,9, e tredici etichette corrette hanno invece una confidenza inferiore a 0,6.
+
+\paragraph{Due prove indipendenti arrivano allo stesso punto.}
+La debolezza delle gold unit non emerge solo dalla simulazione. Durante il cognitive walkthrough l'esperta di dominio ha chiesto se fosse possibile imporre un tempo minimo per documento, così da fermare chi risponde in fretta e senza leggere pur di ottenere il compenso. È lo stesso comportamento dello spammer, visto dal lato di chi ha già condotto uno studio reale. Le due prove convergono su una conclusione. Il controllo con le gold unit ferma chi sbaglia, ma non chi lavora senza impegnarsi e risponde in modo compatibile con le soluzioni attese.
+
+Il sistema raccoglie già due segnali che permettono di riconoscere questo comportamento, la competenza stimata da MACE e il tempo impiegato per ogni documento. Oggi però li usa solo per il monitoraggio a posteriori. La direzione che i risultati indicano non richiede quindi nuovi dati, ma di usare durante la raccolta quelli che il sistema già possiede, ad esempio ricalcolando MACE a intervalli regolari o segnalando gli annotatori con tempi anomali.
+
+Il controllo qualità mostra che una configurazione sbagliata può compromettere lo studio. La sezione seguente mostra che lo stesso vale, in modo più sottile, per la configurazione nel suo insieme.
+
+% =====================================================================
+\section{Una configurazione unica sposta il rischio}
+\label{sec:disc-configurazione}
+
+Integrare tutte le fasi in un'unica configurazione elimina il lavoro di raccordo tra strumenti diversi, ed è uno dei vantaggi del sistema. Lo studio simulato ha mostrato il rovescio di questa scelta. Durante la preparazione dello studio, in una prova precedente, un annotatore che aveva risposto correttamente a tutte le gold unit è stato escluso con accuratezza nulla. Lo schema di annotazione associava a ogni opzione un'etichetta visibile e un valore interno, ad esempio \emph{Conspiracy} e \emph{Yes}, e l'interfaccia inviava il valore. Le soluzioni delle gold unit, invece, erano state scritte usando l'etichetta. Il confronto tra le due stringhe falliva sempre. La validazione delle soluzioni esisteva, ma veniva saltata quando le gold unit erano caricate prima che lo schema fosse attivo.
+
+Il difetto in sé è piccolo, ma il suo effetto non lo è, perché un errore in un solo file di configurazione si è propagato fino all'esclusione di un annotatore valido. Quando le fasi dello studio condividono la stessa configurazione, un errore in quella configurazione non resta confinato in un punto. Il rischio non scompare, si sposta dal raccordo tra strumenti alla coerenza interna della configurazione. Ne segue che, in un sistema integrato, la validazione incrociata tra le parti della configurazione, come schema e soluzioni delle gold unit, va trattata come una funzione centrale e non come un controllo accessorio. In questo senso l'ambiente di prova, che Veronika Batzdorfer ha indicato come la funzione più utile, ha un ruolo più importante di quanto sembri, perché è il luogo in cui il ricercatore può accorgersi di questi errori prima che coinvolgano annotatori reali.
+
+Le sezioni precedenti riguardano soprattutto la piattaforma. Resta da capire cosa dicono i risultati sull'altra proposta della tesi, l'interfaccia per gli span sovrapposti.
+
+% =====================================================================
+\section{Cosa i risultati dicono sul gap}
+\label{sec:disc-gap}
+
+Il gap da cui la tesi parte riguarda l'esperienza dell'annotatore davanti a span sovrapposti. I risultati raccolti sostengono questa parte della tesi in modo indiretto. Durante il cognitive walkthrough l'unica ambiguità emersa nell'interfaccia di annotazione è legata proprio alla sovrapposizione. Con più span sullo stesso testo, il pulsante \emph{Clear} non chiariva se rimuovesse l'ultimo span o tutti. In un'interfaccia con un solo span per porzione di testo la stessa parola non creerebbe dubbi. È un episodio piccolo, ma va nella direzione del gap. L'overlap pone problemi di interazione propri, che un formato dati da solo non risolve e che vanno affrontati con scelte di interfaccia mirate.
+
+Va però detto con chiarezza cosa i risultati non mostrano. Il vantaggio dell'interfaccia rispetto a Potato è argomentato nel capitolo dei metodi, a partire dal confronto tra le due interazioni, ma non è misurato. Nessuno dei test svolti coinvolge annotatori reali che definiscono span sovrapposti, e quindi la tesi non dispone di dati su errori di confine, tempi di annotazione o accordo tra annotatori. Gli annotatori dello studio simulato producono span secondo regole fissate in anticipo, e servono a verificare il comportamento del sistema, non quello delle persone. La parte della tesi che riguarda l'integrazione del ciclo è quindi sostenuta dai risultati, mentre quella che riguarda l'interazione con gli span sovrapposti resta una proposta motivata, in attesa di una verifica sperimentale. Il capitolo sulle limitazioni torna su questo punto e descrive lo studio che servirebbe.
+
+C'è infine un aspetto che riguarda tutti e due i meccanismi di controllo qualità e che tocca la motivazione stessa del lavoro.
+
+% =====================================================================
+\section{Una tensione con il perspectivismo}
+\label{sec:disc-perspectivismo}
+
+Sia le gold unit sia MACE assumono che ogni documento abbia una sola risposta corretta. Le gold unit la dichiarano in anticipo, MACE la stima a partire dalle annotazioni, ma in entrambi i casi un annotatore che si discosta dalla risposta maggioritaria viene trattato come meno affidabile. Il paradigma perspectivista, richiamato nell'introduzione, mette in discussione proprio questa assunzione e considera il disaccordo tra annotatori un'informazione legittima, che riflette differenze di esperienza e di interpretazione \parencite{cabitza2023perspectivist}. Per un compito come il riconoscimento di narrative complottiste, dove la stessa frase può essere letta in modi diversi da persone diverse, la questione non è teorica.
+
+Lo studio simulato ne offre un indizio. Delle tredici etichette su cui MACE si discosta da quella prevista, otto coinvolgono la classe \emph{Can't tell}, assegnata a documenti che il disegno dello studio considerava netti o, al contrario, negata a documenti pensati come ambigui. Nella simulazione il disaccordo è rumore per costruzione, perché gli annotatori artificiali sbagliano a caso. In uno studio reale, però, gli stessi numeri non permetterebbero di stabilire se si tratti di un errore della stima o di un'ambiguità effettiva del testo, che lettori diversi risolvono in modi diversi. Il sistema, così com'è, offre al ricercatore gli strumenti per misurare la qualità rispetto a una risposta unica, ma non per distinguere il rumore dal disaccordo informativo. È una scelta coerente con la pratica corrente nel crowdsourcing, ma va resa esplicita, perché un controllo qualità troppo severo rischia di escludere proprio le prospettive minoritarie che il paradigma perspectivista vorrebbe conservare.
+
+% =====================================================================
+\section{In sintesi}
+\label{sec:disc-sintesi}
+
+Dei tre aspetti da cui si era partiti, i risultati confermano il primo e il terzo. Il ciclo dello studio regge senza strumenti esterni, e un'esperta di dominio riesce a orientarsi nel sistema, con difficoltà che riguardano la presentazione e non la logica. Il secondo, il controllo qualità, funziona ma in modo diverso dal previsto. Le gold unit da sole lasciano passare comportamenti scorretti, MACE li individua ma non è infallibile, e i parametri predefiniti vanno tarati sul singolo studio. Due ulteriori lezioni riguardano il disegno del sistema. Una configurazione unica sposta il rischio sulla sua coerenza interna, e un controllo qualità fondato su una risposta corretta unica è in tensione con un dominio in cui il disaccordo può essere informativo. Sul gap, i risultati sostengono la proposta di integrazione e offrono un indizio a favore di quella sull'interfaccia, che però resta da misurare. Il capitolo successivo discute i limiti di queste conclusioni e il lavoro che servirebbe per superarli.
 
 \chapter{Limitazioni e Sviluppi Futuri}
 \label{chap:limitazioni}

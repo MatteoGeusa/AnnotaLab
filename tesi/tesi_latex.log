@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.10.2)  2 OCT 2026 23:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.10.2)  4 OCT 2026 20:18
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -456,59 +456,65 @@ Package csquotes Info: Trying to load configuration file 'csquotes.cfg'...
 Package csquotes Info: ... configuration file loaded successfully.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.cfg
 File: csquotes.cfg 
-)) (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.sty
+)) (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/caption\subcaption.sty
+Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
+Package caption Info: New subtype `subfigure' on input line 238.
+\c@subfigure=\count345
+Package caption Info: New subtype `subtable' on input line 238.
+\c@subtable=\count346
+) (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.sty
 Package: biblatex 2025/07/10 v3.21 programmable bibliographies (PK/MW)
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.sty
 Package: logreq 2010/08/04 v1.0 xml request logger
-\lrq@indent=\count345
+\lrq@indent=\count347
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.def
 File: logreq.def 2010/08/04 v1.0 logreq spec v1.0
 )) (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/base\ifthen.sty
 Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
 )
-\c@tabx@nest=\count346
-\c@listtotal=\count347
-\c@listcount=\count348
-\c@liststart=\count349
-\c@liststop=\count350
-\c@citecount=\count351
-\c@citetotal=\count352
-\c@multicitecount=\count353
-\c@multicitetotal=\count354
-\c@instcount=\count355
-\c@maxnames=\count356
-\c@minnames=\count357
-\c@maxitems=\count358
-\c@minitems=\count359
-\c@citecounter=\count360
-\c@maxcitecounter=\count361
-\c@savedcitecounter=\count362
-\c@uniquelist=\count363
-\c@uniquename=\count364
-\c@refsection=\count365
-\c@refsegment=\count366
-\c@maxextratitle=\count367
-\c@maxextratitleyear=\count368
-\c@maxextraname=\count369
-\c@maxextradate=\count370
-\c@maxextraalpha=\count371
-\c@abbrvpenalty=\count372
-\c@highnamepenalty=\count373
-\c@lownamepenalty=\count374
-\c@maxparens=\count375
-\c@parenlevel=\count376
-\blx@tempcnta=\count377
-\blx@tempcntb=\count378
-\blx@tempcntc=\count379
-\c@blx@maxsection=\count380
-\blx@maxsegment@0=\count381
-\blx@notetype=\count382
-\blx@parenlevel@text=\count383
-\blx@parenlevel@foot=\count384
-\blx@sectionciteorder@0=\count385
-\blx@sectionciteorderinternal@0=\count386
-\blx@entrysetcounter=\count387
-\blx@biblioinstance=\count388
+\c@tabx@nest=\count348
+\c@listtotal=\count349
+\c@listcount=\count350
+\c@liststart=\count351
+\c@liststop=\count352
+\c@citecount=\count353
+\c@citetotal=\count354
+\c@multicitecount=\count355
+\c@multicitetotal=\count356
+\c@instcount=\count357
+\c@maxnames=\count358
+\c@minnames=\count359
+\c@maxitems=\count360
+\c@minitems=\count361
+\c@citecounter=\count362
+\c@maxcitecounter=\count363
+\c@savedcitecounter=\count364
+\c@uniquelist=\count365
+\c@uniquename=\count366
+\c@refsection=\count367
+\c@refsegment=\count368
+\c@maxextratitle=\count369
+\c@maxextratitleyear=\count370
+\c@maxextraname=\count371
+\c@maxextradate=\count372
+\c@maxextraalpha=\count373
+\c@abbrvpenalty=\count374
+\c@highnamepenalty=\count375
+\c@lownamepenalty=\count376
+\c@maxparens=\count377
+\c@parenlevel=\count378
+\blx@tempcnta=\count379
+\blx@tempcntb=\count380
+\blx@tempcntc=\count381
+\c@blx@maxsection=\count382
+\blx@maxsegment@0=\count383
+\blx@notetype=\count384
+\blx@parenlevel@text=\count385
+\blx@parenlevel@foot=\count386
+\blx@sectionciteorder@0=\count387
+\blx@sectionciteorderinternal@0=\count388
+\blx@entrysetcounter=\count389
+\blx@biblioinstance=\count390
 \labelnumberwidth=\skip71
 \labelalphawidth=\skip72
 \biblabelsep=\skip73
@@ -520,9 +526,9 @@ Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
 \blx@bcfin=\read3
 \blx@bcfout=\write3
 \blx@langwohyphens=\language80
-\c@mincomprange=\count389
-\c@maxcomprange=\count390
-\c@mincompwidth=\count391
+\c@mincomprange=\count391
+\c@maxcomprange=\count392
+\c@mincompwidth=\count393
 Package biblatex Info: Trying to load biblatex default data model...
 Package biblatex Info: ... file 'blx-dm.def' found.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\blx-dm.def
@@ -532,74 +538,74 @@ Package biblatex Info: Trying to load biblatex style data model...
 Package biblatex Info: ... file 'authoryear.dbx' not found.
 Package biblatex Info: Trying to load biblatex custom data model...
 Package biblatex Info: ... file 'biblatex-dm.cfg' not found.
-\c@afterword=\count392
-\c@savedafterword=\count393
-\c@annotator=\count394
-\c@savedannotator=\count395
-\c@author=\count396
-\c@savedauthor=\count397
-\c@bookauthor=\count398
-\c@savedbookauthor=\count399
-\c@commentator=\count400
-\c@savedcommentator=\count401
-\c@editor=\count402
-\c@savededitor=\count403
-\c@editora=\count404
-\c@savededitora=\count405
-\c@editorb=\count406
-\c@savededitorb=\count407
-\c@editorc=\count408
-\c@savededitorc=\count409
-\c@foreword=\count410
-\c@savedforeword=\count411
-\c@holder=\count412
-\c@savedholder=\count413
-\c@introduction=\count414
-\c@savedintroduction=\count415
-\c@namea=\count416
-\c@savednamea=\count417
-\c@nameb=\count418
-\c@savednameb=\count419
-\c@namec=\count420
-\c@savednamec=\count421
-\c@translator=\count422
-\c@savedtranslator=\count423
-\c@shortauthor=\count424
-\c@savedshortauthor=\count425
-\c@shorteditor=\count426
-\c@savedshorteditor=\count427
-\c@labelname=\count428
-\c@savedlabelname=\count429
-\c@institution=\count430
-\c@savedinstitution=\count431
-\c@lista=\count432
-\c@savedlista=\count433
-\c@listb=\count434
-\c@savedlistb=\count435
-\c@listc=\count436
-\c@savedlistc=\count437
-\c@listd=\count438
-\c@savedlistd=\count439
-\c@liste=\count440
-\c@savedliste=\count441
-\c@listf=\count442
-\c@savedlistf=\count443
-\c@location=\count444
-\c@savedlocation=\count445
-\c@organization=\count446
-\c@savedorganization=\count447
-\c@origlocation=\count448
-\c@savedoriglocation=\count449
-\c@origpublisher=\count450
-\c@savedorigpublisher=\count451
-\c@publisher=\count452
-\c@savedpublisher=\count453
-\c@language=\count454
-\c@savedlanguage=\count455
-\c@origlanguage=\count456
-\c@savedoriglanguage=\count457
-\c@pageref=\count458
-\c@savedpageref=\count459
+\c@afterword=\count394
+\c@savedafterword=\count395
+\c@annotator=\count396
+\c@savedannotator=\count397
+\c@author=\count398
+\c@savedauthor=\count399
+\c@bookauthor=\count400
+\c@savedbookauthor=\count401
+\c@commentator=\count402
+\c@savedcommentator=\count403
+\c@editor=\count404
+\c@savededitor=\count405
+\c@editora=\count406
+\c@savededitora=\count407
+\c@editorb=\count408
+\c@savededitorb=\count409
+\c@editorc=\count410
+\c@savededitorc=\count411
+\c@foreword=\count412
+\c@savedforeword=\count413
+\c@holder=\count414
+\c@savedholder=\count415
+\c@introduction=\count416
+\c@savedintroduction=\count417
+\c@namea=\count418
+\c@savednamea=\count419
+\c@nameb=\count420
+\c@savednameb=\count421
+\c@namec=\count422
+\c@savednamec=\count423
+\c@translator=\count424
+\c@savedtranslator=\count425
+\c@shortauthor=\count426
+\c@savedshortauthor=\count427
+\c@shorteditor=\count428
+\c@savedshorteditor=\count429
+\c@labelname=\count430
+\c@savedlabelname=\count431
+\c@institution=\count432
+\c@savedinstitution=\count433
+\c@lista=\count434
+\c@savedlista=\count435
+\c@listb=\count436
+\c@savedlistb=\count437
+\c@listc=\count438
+\c@savedlistc=\count439
+\c@listd=\count440
+\c@savedlistd=\count441
+\c@liste=\count442
+\c@savedliste=\count443
+\c@listf=\count444
+\c@savedlistf=\count445
+\c@location=\count446
+\c@savedlocation=\count447
+\c@organization=\count448
+\c@savedorganization=\count449
+\c@origlocation=\count450
+\c@savedoriglocation=\count451
+\c@origpublisher=\count452
+\c@savedorigpublisher=\count453
+\c@publisher=\count454
+\c@savedpublisher=\count455
+\c@language=\count456
+\c@savedlanguage=\count457
+\c@origlanguage=\count458
+\c@savedoriglanguage=\count459
+\c@pageref=\count460
+\c@savedpageref=\count461
 \shorthandwidth=\skip79
 \shortjournalwidth=\skip80
 \shortserieswidth=\skip81
@@ -623,19 +629,19 @@ Package biblatex Info: Trying to load generic definitions...
 Package biblatex Info: ... file 'biblatex.def' found.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.def
 File: biblatex.def 2025/07/10 v3.21 biblatex compatibility (PK/MW)
-\c@textcitecount=\count460
-\c@textcitetotal=\count461
-\c@textcitemaxnames=\count462
-\c@biburlbigbreakpenalty=\count463
-\c@biburlbreakpenalty=\count464
-\c@biburlnumpenalty=\count465
-\c@biburlucpenalty=\count466
-\c@biburllcpenalty=\count467
+\c@textcitecount=\count462
+\c@textcitetotal=\count463
+\c@textcitemaxnames=\count464
+\c@biburlbigbreakpenalty=\count465
+\c@biburlbreakpenalty=\count466
+\c@biburlnumpenalty=\count467
+\c@biburlucpenalty=\count468
+\c@biburllcpenalty=\count469
 \biburlbigskip=\muskip19
 \biburlnumskip=\muskip20
 \biburlucskip=\muskip21
 \biburllcskip=\muskip22
-\c@smartand=\count468
+\c@smartand=\count470
 )
 Package biblatex Info: Trying to load bibliography style 'authoryear'...
 Package biblatex Info: ... file 'authoryear.bbx' found.
@@ -645,8 +651,8 @@ Package biblatex Info: Trying to load bibliography style 'standard'...
 Package biblatex Info: ... file 'standard.bbx' found.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/bbx\standard.bbx
 File: standard.bbx 2025/07/10 v3.21 biblatex bibliography style (PK/MW)
-\c@bbx:relatedcount=\count469
-\c@bbx:relatedtotal=\count470
+\c@bbx:relatedcount=\count471
+\c@bbx:relatedtotal=\count472
 ))
 Package biblatex Info: Trying to load citation style 'authoryear'...
 Package biblatex Info: ... file 'authoryear.cbx' found.
@@ -671,7 +677,7 @@ Package biblatex Info: Document encoding is UTF8 ....
 Package: expl3 2025-12-24 L3 programming layer (loader) 
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count471
+\l__color_backend_stack_int=\count473
 ))
 Package biblatex Info: ... and expl3
 (biblatex)             2025-12-24 L3 programming layer (loader) 
@@ -686,7 +692,7 @@ Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 Package csquotes Info: Adjusting default style.
 Package csquotes Info: Redefining alias 'default' -> 'italian'.
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 66.
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 68.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -697,24 +703,24 @@ LaTeX Warning: Unused global option(s):
 (tesi_latex.aux)
 \openout1 = `tesi_latex.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 68.
+LaTeX Font Info:    ... okay on input line 68.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -760,16 +766,16 @@ Package caption Info: listings package is loaded.
 Package caption Info: End \AtBeginDocument code.
 (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count472
+\scratchcounter=\count474
 \scratchdimen=\dimen199
 \scratchbox=\box60
-\nofMPsegments=\count473
-\nofMParguments=\count474
+\nofMPsegments=\count475
+\nofMParguments=\count476
 \everyMPshowfont=\toks39
-\MPscratchCnt=\count475
+\MPscratchCnt=\count477
 \MPscratchDim=\dimen256
-\MPnumerator=\count476
-\makeMPintoPDFobject=\count477
+\MPnumerator=\count478
+\makeMPintoPDFobject=\count479
 \everyMPtoPDFconversion=\toks40
 ) (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -777,14 +783,14 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/00miktex\epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 ))
-LaTeX Info: Redefining \textsubscript on input line 66.
-LaTeX Info: Redefining \microtypecontext on input line 66.
-Package microtype Info: Applying patch `item' on input line 66.
-Package microtype Info: Applying patch `toc' on input line 66.
-Package microtype Info: Applying patch `eqnum' on input line 66.
-Package microtype Info: Applying patch `footnote' on input line 66.
-Package microtype Info: Applying patch `verbatim' on input line 66.
-LaTeX Info: Redefining \microtypesetup on input line 66.
+LaTeX Info: Redefining \textsubscript on input line 68.
+LaTeX Info: Redefining \microtypecontext on input line 68.
+Package microtype Info: Applying patch `item' on input line 68.
+Package microtype Info: Applying patch `toc' on input line 68.
+Package microtype Info: Applying patch `eqnum' on input line 68.
+Package microtype Info: Applying patch `footnote' on input line 68.
+Package microtype Info: Applying patch `verbatim' on input line 68.
+LaTeX Info: Redefining \microtypesetup on input line 68.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -798,14 +804,14 @@ Package microtype Info: No adjustment of character kerning.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
-LaTeX Info: Redefining \it@ocap on input line 66.
-LaTeX Info: Redefining \it@ccap on input line 66.
-Package hyperref Info: Link coloring OFF on input line 66.
+LaTeX Info: Redefining \it@ocap on input line 68.
+LaTeX Info: Redefining \it@ccap on input line 68.
+Package hyperref Info: Link coloring OFF on input line 68.
  (tesi_latex.out) (tesi_latex.out)
 \@outlinefile=\write4
 \openout4 = `tesi_latex.out'.
 
-\c@lstlisting=\count478
+\c@lstlisting=\count480
 Package biblatex Info: Trying to load language 'italian'...
 Package biblatex Info: ... file 'italian.lbx' found.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/lbx\italian.lbx
@@ -819,11 +825,11 @@ Package biblatex Info: Automatic encoding selection.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'tesi_latex.bbl' found.
  (tesi_latex.bbl)
-Package biblatex Info: Reference section=0 on input line 66.
-Package biblatex Info: Reference segment=0 on input line 66.
+Package biblatex Info: Reference section=0 on input line 68.
+Package biblatex Info: Reference segment=0 on input line 68.
 \SAP@parboxindent=\skip93
 \SAP@parboxwidth=\skip94
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 70.
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 72.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -831,48 +837,48 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<sapienzalogo.pdf, id=95, 288.07625pt x 89.33376pt>
+<sapienzalogo.pdf, id=151, 288.07625pt x 89.33376pt>
 File: sapienzalogo.pdf Graphic file (type pdf)
 <use sapienzalogo.pdf>
-Package pdftex.def Info: sapienzalogo.pdf  used on input line 70.
+Package pdftex.def Info: sapienzalogo.pdf  used on input line 72.
 (pdftex.def)             Requested size: 142.26378pt x 44.11742pt.
  [1
 
 
 
 {C:/Users/magut/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc} <./sapienzalogo.pdf>]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 70.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 72.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-Underfull \hbox (badness 10000) in paragraph at lines 70--70
+Underfull \hbox (badness 10000) in paragraph at lines 72--72
 
  []
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 70.
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 72.
 (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 70.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 72.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 70.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 72.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 70.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 72.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 70.
+(Font)              <10> on input line 72.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 70.
+(Font)              <7> on input line 72.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 70.
+(Font)              <5> on input line 72.
 
-Underfull \hbox (badness 10000) in paragraph at lines 70--70
+Underfull \hbox (badness 10000) in paragraph at lines 72--72
 
  []
 
@@ -892,15 +898,14 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <8> on input line 5.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <6> on input line 5.
-)
+ [7])
 \tf@toc=\write5
 \openout5 = `tesi_latex.toc'.
 
- [7] [8
-
-]
+ [8]
 Capitolo 1.
 [1
+
 
 ] [2
 
@@ -908,15 +913,15 @@ Capitolo 1.
 Capitolo 2.
 [3] [4]
 Capitolo 3.
-<images/image.png, id=205, 576.65437pt x 344.78813pt>
+<images/image.png, id=275, 576.65437pt x 344.78813pt>
 File: images/image.png Graphic file (type png)
 <use images/image.png>
-Package pdftex.def Info: images/image.png  used on input line 135.
+Package pdftex.def Info: images/image.png  used on input line 137.
 (pdftex.def)             Requested size: 217.80121pt x 130.22643pt.
 [5
 
  <./images/image.png>]
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 151.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 153.
  (C:\Users\magut\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -926,100 +931,129 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             See the microtype manual for details.
  [6] [7{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}] [8] [9] [10]
 Capitolo 4.
-<images/image 2.png, id=338, 543.83176pt x 384.2355pt>
+<images/image 2.png, id=408, 543.83176pt x 384.2355pt>
 File: images/image 2.png Graphic file (type png)
 <use images/image 2.png>
-Package pdftex.def Info: images/image 2.png  used on input line 316.
+Package pdftex.def Info: images/image 2.png  used on input line 318.
 (pdftex.def)             Requested size: 336.60242pt x 237.82486pt.
 [11
 
 ]
-<./images/image_potato_span.png, id=347, 682.80093pt x 310.15875pt>
+<./images/image_potato_span.png, id=417, 682.80093pt x 310.15875pt>
 File: ./images/image_potato_span.png Graphic file (type png)
 <use ./images/image_potato_span.png>
-Package pdftex.def Info: ./images/image_potato_span.png  used on input line 328.
+Package pdftex.def Info: ./images/image_potato_span.png  used on input line 330.
 (pdftex.def)             Requested size: 376.19879pt x 170.89072pt.
  [12 <./images/image 2.png> <./images/image_potato_span.png>]
-<images/image 3.png, id=357, 564.30824pt x 164.41425pt>
+<images/image 3.png, id=427, 564.30824pt x 164.41425pt>
 File: images/image 3.png Graphic file (type png)
 <use images/image 3.png>
-Package pdftex.def Info: images/image 3.png  used on input line 337.
+Package pdftex.def Info: images/image 3.png  used on input line 339.
 (pdftex.def)             Requested size: 376.19879pt x 109.61005pt.
  [13 <./images/image 3.png>]
-<images/image 4.png, id=368, 998.9822pt x 242.40562pt>
+<images/image 4.png, id=438, 998.9822pt x 242.40562pt>
 File: images/image 4.png Graphic file (type png)
 <use images/image 4.png>
-Package pdftex.def Info: images/image 4.png  used on input line 358.
+Package pdftex.def Info: images/image 4.png  used on input line 360.
 (pdftex.def)             Requested size: 376.19879pt x 91.28654pt.
-<images/consenso.png, id=373, 345.08925pt x 377.0085pt>
+<images/consenso.png, id=443, 345.08925pt x 377.0085pt>
 File: images/consenso.png Graphic file (type png)
 <use images/consenso.png>
-Package pdftex.def Info: images/consenso.png  used on input line 373.
+Package pdftex.def Info: images/consenso.png  used on input line 375.
 (pdftex.def)             Requested size: 277.19879pt x 302.85553pt.
  [14 <./images/image 4.png>]
-<images/Screening.png, id=382, 570.63188pt x 379.4175pt>
+<images/Screening.png, id=452, 570.63188pt x 379.4175pt>
 File: images/Screening.png Graphic file (type png)
 <use images/Screening.png>
-Package pdftex.def Info: images/Screening.png  used on input line 382.
+Package pdftex.def Info: images/Screening.png  used on input line 384.
 (pdftex.def)             Requested size: 277.19879pt x 184.31252pt.
  [15 <./images/consenso.png> <./images/Screening.png>]
-<images/Codebook 1.png, id=391, 603.75563pt x 517.935pt>
+<images/Codebook 1.png, id=461, 603.75563pt x 517.935pt>
 File: images/Codebook 1.png Graphic file (type png)
 <use images/Codebook 1.png>
-Package pdftex.def Info: images/Codebook 1.png  used on input line 391.
+Package pdftex.def Info: images/Codebook 1.png  used on input line 393.
 (pdftex.def)             Requested size: 277.19879pt x 237.7946pt.
-<images/Practice Task .png, id=394, 584.1825pt x 522.45187pt>
+<images/Practice Task .png, id=464, 584.1825pt x 522.45187pt>
 File: images/Practice Task .png Graphic file (type png)
 <use images/Practice Task .png>
-Package pdftex.def Info: images/Practice Task .png  used on input line 400.
+Package pdftex.def Info: images/Practice Task .png  used on input line 402.
 (pdftex.def)             Requested size: 277.19879pt x 247.91211pt.
  [16 <./images/Codebook 1.png>]
-<images/Dashboard white cut.png, id=404, 1809.76125pt x 1809.76125pt>
+<images/Dashboard white cut.png, id=474, 1809.76125pt x 1809.76125pt>
 File: images/Dashboard white cut.png Graphic file (type png)
 <use images/Dashboard white cut.png>
-Package pdftex.def Info: images/Dashboard white cut.png  used on input line 417.
+Package pdftex.def Info: images/Dashboard white cut.png  used on input line 419.
 (pdftex.def)             Requested size: 396.0pt x 395.99477pt.
  [17 <./images/Practice Task .png>] [18 <./images/Dashboard white cut.png>]
-<images/Annotation Mace Gold.png, id=422, 1197.72469pt x 636.87938pt>
+<images/Annotation Mace Gold.png, id=492, 1197.72469pt x 636.87938pt>
 File: images/Annotation Mace Gold.png Graphic file (type png)
 <use images/Annotation Mace Gold.png>
-Package pdftex.def Info: images/Annotation Mace Gold.png  used on input line 434.
+Package pdftex.def Info: images/Annotation Mace Gold.png  used on input line 436.
 (pdftex.def)             Requested size: 396.0pt x 210.56927pt.
  [19 <./images/Annotation Mace Gold.png>]
-<images/panel dashboard.png, id=432, 2995.19pt x 1399.2275pt>
+<images/panel dashboard.png, id=502, 2995.19pt x 1399.2275pt>
 File: images/panel dashboard.png Graphic file (type png)
 <use images/panel dashboard.png>
-Package pdftex.def Info: images/panel dashboard.png  used on input line 459.
+Package pdftex.def Info: images/panel dashboard.png  used on input line 461.
 (pdftex.def)             Requested size: 396.0pt x 184.98042pt.
  [20] [21 <./images/panel dashboard.png>]
-<images/diagram.jpg, id=449, 1098.1025pt x 1109.14375pt>
+<images/diagram.jpg, id=519, 1098.1025pt x 1109.14375pt>
 File: images/diagram.jpg Graphic file (type jpg)
 <use images/diagram.jpg>
-Package pdftex.def Info: images/diagram.jpg  used on input line 482.
+Package pdftex.def Info: images/diagram.jpg  used on input line 484.
 (pdftex.def)             Requested size: 297.0pt x 299.98055pt.
  [22 <./images/diagram.jpg>] [23] [24
 
 ]
 Capitolo 5.
-[25] [26
 
-]
+LaTeX Warning: Citation 'wharton1994cognitive' on page 25 undefined on input line 506.
+
+[25]
+<images/cw_config_prima.png, id=544, 1156.32pt x 1155.31625pt>
+File: images/cw_config_prima.png Graphic file (type png)
+<use images/cw_config_prima.png>
+Package pdftex.def Info: images/cw_config_prima.png  used on input line 540.
+(pdftex.def)             Requested size: 194.04218pt x 193.86263pt.
+<images/cw_config_dopo.png, id=545, 1156.32pt x 548.0475pt>
+File: images/cw_config_dopo.png Graphic file (type png)
+<use images/cw_config_dopo.png>
+Package pdftex.def Info: images/cw_config_dopo.png  used on input line 546.
+(pdftex.def)             Requested size: 194.04218pt x 91.96263pt.
+ [26]
+<images/cw_clear_all.png, id=560, 2609.75pt x 1995.455pt>
+File: images/cw_clear_all.png Graphic file (type png)
+<use images/cw_clear_all.png>
+Package pdftex.def Info: images/cw_clear_all.png  used on input line 558.
+(pdftex.def)             Requested size: 316.80121pt x 242.21504pt.
+<images/cw_banner_clone.png, id=562, 1156.32pt x 588.1975pt>
+File: images/cw_banner_clone.png Graphic file (type png)
+<use images/cw_banner_clone.png>
+Package pdftex.def Info: images/cw_banner_clone.png  used on input line 568.
+(pdftex.def)             Requested size: 316.80121pt x 161.14899pt.
+ [27 <./images/cw_config_prima.png (PNG copy)> <./images/cw_config_dopo.png (PNG copy)>] [28 <./images/cw_clear_all.png (PNG copy)>] [29 <./images/cw_banner_clone.png (PNG copy)>] [30]
 Capitolo 6.
-[27] [28
+[31
+
+] (tabella_studio_simulato.tex) [32] [33] [34]
+
+LaTeX Warning: Citation 'cabitza2023perspectivist' on page 35 undefined on input line 705.
+
+[35] [36
 
 ]
 Capitolo 7.
-[29] [30
+[37] [38
 
 ]
 Capitolo 8.
-[31] [32
+[39] [40
 
 ]
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10.95'.
 (microtype)             Ignoring protrusion settings for this character.
- [33] [34] (tesi_latex.aux)
+ [41] [42] (tesi_latex.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
@@ -1029,13 +1063,16 @@ L3 programming layer <2025-12-24>
 LaTeX Warning: There were undefined references.
 
 
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
 Package rerunfilecheck Warning: File `tesi_latex.out' has changed.
 (rerunfilecheck)                Rerun to get outlines right
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `tesi_latex.out':
-(rerunfilecheck)             Before: 9D079EA333515FEE2ED07775D6DEBBA3;4144
-(rerunfilecheck)             After:  2EB944B8ABAC5FF7E490D0845F16F08C;4121.
+(rerunfilecheck)             Before: AE806301412EDDD31C9C607A5D849618;7132
+(rerunfilecheck)             After:  C93E5B6677FE2F7608E84E605EC9CDE7;6970.
 
 Package biblatex Warning: Please (re)run Biber on the file:
 (biblatex)                tesi_latex
@@ -1046,17 +1083,17 @@ Package logreq Info: Writing requests to 'tesi_latex.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 25610 strings out of 467871
- 446885 string characters out of 5418376
- 1451002 words of memory out of 5000000
- 53786 multiletter control sequences out of 15000+600000
- 715905 words of font info for 191 fonts, out of 8000000 for 9000
+ 25897 strings out of 467871
+ 452239 string characters out of 5418376
+ 1454690 words of memory out of 5000000
+ 53977 multiletter control sequences out of 15000+600000
+ 728574 words of font info for 219 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,13n,131p,1271b,2142s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,131p,1412b,2165s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmcsc10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr7.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmss17.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmssbx10.pfb><C:/Users/magut/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb>
-Output written on tesi_latex.pdf (42 pages, 1516079 bytes).
+Output written on tesi_latex.pdf (50 pages, 2074553 bytes).
 PDF statistics:
- 643 PDF objects out of 1000 (max. 8388607)
- 186 named destinations out of 1000 (max. 500000)
- 52479 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 789 PDF objects out of 1000 (max. 8388607)
+ 227 named destinations out of 1000 (max. 500000)
+ 58755 words of extra memory for PDF output out of 61914 (max. 10000000)
 

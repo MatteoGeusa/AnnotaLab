@@ -1,0 +1,18 @@
+% Tabella per il capitolo 5 (studio simulato, 30 ripetizioni). Richiede booktabs.
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrrrrrc}
+\toprule
+\textbf{Profilo} & \textbf{n} & \textbf{Esclusi} & \textbf{Acc. gold} & \textbf{Acc. reale} & \textbf{MACE} & \textbf{MACE min--max} \\
+\midrule
+Esperto  & 90 & 2 (2\%)   & 94\% & 94\% & 0,868 & 0,463--0,951 \\
+Buono    & 90 & 12 (13\%) & 81\% & 87\% & 0,754 & 0,294--0,951 \\
+Medio    & 30 & 5 (17\%)  & 80\% & 77\% & 0,633 & 0,168--0,947 \\
+Sciatto  & 60 & 37 (62\%) & 49\% & 55\% & 0,333 & 0,020--0,791 \\
+Spammer  & 30 & 10 (33\%) & 61\% & 33\% & 0,032 & 0,022--0,060 \\
+\bottomrule
+\end{tabular}
+\caption{Esiti del controllo qualità per profilo di annotatore, aggregati su 30 ripetizioni dello studio simulato. \emph{n} è il numero di annotatori di quel profilo sommato sulle ripetizioni. L'accuratezza sulle gold unit è quella usata dal sistema per decidere l'esclusione, l'accuratezza reale è calcolata sulle etichette previste dei documenti regolari, e MACE riporta la competenza stimata media.}
+\label{tab:simulazione-profili}
+\end{table}
