@@ -686,6 +686,60 @@ Sul lato del ricercatore i risultati sostengono la proposta di integrare il cicl
 \chapter{Limitazioni e Sviluppi Futuri}
 \label{chap:limitazioni}
 
+Le conclusioni del capitolo precedente dipendono da come il sistema è stato valutato. Tre scelte in particolare hanno reso possibili quelle conclusioni e ne hanno anche fissato i confini. La prima è aver valutato il sistema con una sola esperta in una sessione guidata (\S\ref{sec:lim-sessione}). La seconda è aver affidato la valutazione a una ricercatrice invece che a chi annota (\S\ref{sec:lim-valutatore}). La terza è aver costruito il sistema attorno a un unico caso di studio (\S\ref{sec:lim-caso}). Per ciascuna il capitolo spiega perché era una scelta ragionevole e cosa lascia fuori. L'ultima sezione (\S\ref{sec:sviluppi}) indica da dove ripartire.
+
+% =====================================================================
+\section{Una sola valutatrice, in una sessione guidata}
+\label{sec:lim-sessione}
+
+Il sistema è stato valutato da una sola persona, Veronika Batzdorfer, in una sessione in cui il candidato condivideva lo schermo e si muoveva nell'interfaccia. Per un primo test era la scelta più sensata. Il sistema non era mai stato usato da un utente reale, e Veronika aveva già condotto PsyCoMark, quindi sapeva bene cosa serve a un ricercatore che prepara uno studio di questo tipo. I vantaggi e i limiti della forma guidata sono già descritti in \S\ref{subsec:walkthrough-setting}.
+
+Questa scelta ha però orientato i risultati. Sei dei sette task riguardavano la configurazione e il ciclo di vita del progetto, quindi quasi tutte le osservazioni raccolte riguardano quella parte del sistema. Inoltre, con il candidato alla guida, è più difficile vedere i punti in cui un utente si blocca da solo. Il vincolo sulla cancellazione dei dati di prova è emerso comunque, ma altri ostacoli potrebbero essere rimasti nascosti.
+
+Per la tesi questo significa che le osservazioni sul lato del ricercatore, compreso il problema del primo contatto discusso nel capitolo~\ref{cap:discussione}, vengono da una sola persona esperta. Non sappiamo ancora se un ricercatore con meno esperienza incontrerebbe gli stessi ostacoli o altri diversi.
+
+Questo primo limite riguarda quante persone hanno valutato il sistema e in che modo. Il secondo riguarda chi erano.
+
+% =====================================================================
+\section{Chi ha valutato non è chi annota}
+\label{sec:lim-valutatore}
+
+Il gap da cui parte la tesi riguarda chi annota per la prima volta, cioè un lavoratore reclutato su una piattaforma di crowdsourcing senza addestramento specifico (\S\ref{sec:intro-gap}). Il sistema invece è stato valutato da una ricercatrice esperta, che lo ha guardato soprattutto dal lato della configurazione. Il lato dell'annotatore è entrato nella sessione solo durante l'annotazione di prova, da cui è emerso l'episodio del pulsante \emph{Clear}.
+
+Per questo la tesi non dispone di misure su errori di confine, tempi di annotazione o accordo tra annotatori. Le scelte dell'interfaccia descritte in \S\ref{sec:overlap}, come l'aggancio ai confini di parola e le fasce impilate, sono sostenute dal ragionamento di progettazione e dal confronto con Potato, ma non da dati raccolti su annotatori reali.
+
+L'ordine seguito ha comunque una ragione. Uno studio con annotatori pagati funziona solo se ingresso da Prolific, onboarding, distribuzione dei documenti e controllo qualità sono già affidabili. Ogni errore di configurazione scoperto durante la raccolta si traduce in dati da scartare e compensi spesi inutilmente. Verificare prima il lato del ricercatore riduce questo rischio, e il sistema descritto in questa tesi è proprio l'infrastruttura che uno studio sugli annotatori richiede.
+
+I primi due limiti riguardano la valutazione. Il terzo riguarda il punto da cui il sistema è partito.
+
+% =====================================================================
+\section{Un solo caso di studio}
+\label{sec:lim-caso}
+
+Il sistema è nato da PsyCoMark ed è stato costruito e provato su quel compito, con cinque etichette di span, una domanda di classificazione sul documento, commenti Reddit come testi e Prolific come piattaforma di reclutamento. Partire da un caso concreto ha permesso di confrontarsi con chi quel problema lo aveva già affrontato.
+
+Il prezzo è che non sappiamo ancora quanto il sistema si adatti ad altri task. Lo schema dichiarativo (\S\ref{sec:schema}) permette di cambiare etichette, colori e domande senza modificare il codice, e l'interfaccia si costruisce a partire dallo schema. Altri task citati nell'introduzione, come l'estrazione di entità annidate o l'argument mining, potrebbero però richiedere componenti che oggi il sistema non offre, per esempio le relazioni tra span. Allo stesso modo l'ingresso degli annotatori è pensato per Prolific, e altre piattaforme di reclutamento richiederebbero un adattamento.
+
+La tesi mostra quindi che il sistema funziona per il caso da cui è nato. La sua generalità resta da verificare usandolo su un task diverso.
+
+Ciascuno di questi tre limiti indica anche da dove ripartire.
+
+% =====================================================================
+\section{Sviluppi futuri}
+\label{sec:sviluppi}
+
+Il passo più importante è uno studio con annotatori reclutati su Prolific, che usino questo sistema e uno strumento esistente come Potato sugli stessi documenti. Lo studio misurerebbe gli errori di confine rispetto alle gold unit, il tempo per documento e l'accordo tra annotatori, calcolato con misure adatte all'unitizing \parencite{krippendorff2016unitizing}. Il sistema ha già quasi tutto ciò che serve. L'ingresso da Prolific e l'onboarding preparano gli annotatori, la strategia a piena sovrapposizione assegna a tutti gli stessi documenti e il tempo di ogni annotazione viene già registrato. Uno studio di questo tipo direbbe se l'interfaccia riduce il disaccordo dovuto allo strumento, che è la domanda da cui la tesi è partita.
+
+Per il primo limite serve un secondo cognitive walkthrough, questa volta senza guida e con più ricercatori, inclusi alcuni che non hanno mai condotto uno studio in crowdsourcing. Servirebbe a capire quali difficoltà sono comuni a tutti e a verificare se le modifiche introdotte dopo la prima sessione, come la divisione in schede e il pulsante \emph{Clear all}, funzionano davvero.
+
+Per il terzo limite basta usare il sistema su un task diverso da PsyCoMark. Ogni nuovo task mostrerebbe quali componenti mancano allo schema, e l'interfaccia è costruita in modo da poterli aggiungere senza modificare quelli esistenti. Le relazioni tra span sono il primo candidato.
+
+La Discussione suggerisce poi un intervento concreto sul lato del ricercatore, cioè mostrare i vincoli del ciclo di vita del progetto prima che l'utente li violi. Il caso più evidente è la cancellazione dei dati di prova, che oggi si scopre solo dopo un tentativo fallito.
+
+Restano infine due estensioni più piccole già emerse nel lavoro. La prima è poter modificare i confini di uno span esistente invece di cancellarlo e ricrearlo. La seconda è trasformare il tempo già registrato per ogni annotazione in un tempo minimo per documento, come chiesto durante la sessione.
+
+Il sistema è rilasciato come open source anche per questo motivo. Chi vuole condurre uno di questi studi può partire da un'infrastruttura già funzionante invece di costruirne una propria. Il capitolo seguente chiude la tesi riprendendone i messaggi principali.
+
 \chapter{Conclusioni}
 \label{chap:conclusioni}
 
