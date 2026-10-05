@@ -20,3 +20,4 @@ Claude outputs/
 *.fls
 *.fdb_latexmk
 *-SAVE-ERROR
+tesi/tesi_latex.pdf
