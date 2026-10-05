@@ -73,7 +73,11 @@
 \dedication{Dedicato a }
 
 \begin{abstract}
-Riassunto 
+Molti compiti di annotazione testuale non si limitano a classificare un documento, ma chiedono di individuare i confini delle porzioni di testo che esprimono un concetto, porzioni che spesso si sovrappongono. Raccogliere questo tipo di annotazione in crowdsourcing richiede oggi di comporre più strumenti indipendenti, e quelli esistenti trattano la sovrapposizione degli span come un'estensione del formato dei dati o come una funzione per annotatori esperti, non come un'esperienza progettata per chi annota per la prima volta.
+
+Questa tesi presenta la progettazione e lo sviluppo di una piattaforma full stack open source per l'annotazione in crowdsourcing di narrative complottiste, nata dal caso di studio PsyCoMark, la Task 10 di SemEval-2026. La piattaforma offre un'interfaccia in cui gli span sovrapposti si definiscono direttamente sul testo e integra in un'unica configurazione l'intero ciclo dello studio, dall'ingresso dei partecipanti tramite Prolific a un percorso di preparazione configurabile, alla distribuzione dei documenti, fino al controllo qualità con documenti a soluzione nota e alla stima della competenza degli annotatori con MACE.
+
+Il sistema è stato valutato con un cognitive walkthrough condotto insieme a una ricercatrice tra gli organizzatori di PsyCoMark. La sessione indica che l'integrazione del ciclo risponde a un bisogno reale dei ricercatori, ha portato a riorganizzare la configurazione del progetto e ha mostrato che la sovrapposizione degli span pone problemi di interazione specifici. Il vantaggio dell'interfaccia rispetto agli strumenti esistenti resta da verificare con uno studio su annotatori reali.
 
 \end{abstract}
 
@@ -81,8 +85,58 @@ Riassunto
 
 \mainmatter
 
+% =====================================================================
+
+
 \chapter{Introduzione}
-\label{chap:introduzione}
+\label{cap:introduzione}
+
+\section{Motivazione}
+\label{sec:motivazione}
+
+Classificare un documento come complottista o meno richiede una sola decisione. Capire perché lo sia ne richiede molte di più. Bisogna individuare chi viene accusato, cosa gli viene attribuito, chi ne sarebbe danneggiato e quali prove vengono citate, e ciascuno di questi elementi occupa una porzione diversa del testo. Il compito di stabilire i confini di queste porzioni prende il nome di unitizing \parencite{krippendorff2016unitizing}, e compare in una famiglia crescente di task, dall'estrazione di entità annidate \parencite{finkel2009nested} all'analisi del sentiment per aspetti \parencite{zhang2023absa}, fino all'argument mining \parencite{stab2017argument}. In molti di questi task le porzioni si sovrappongono, perché la stessa frase può nominare l'attore di un complotto ed essere al tempo stesso parte dell'azione che gli viene attribuita.
+
+PsyCoMark, la Task 10 di SemEval-2026 \parencite{samory2026psycomark}, è un esempio concreto di questa difficoltà. Il compito chiede di individuare in commenti Reddit cinque marcatori psicolinguistici delle narrative complottiste, i cui span possono sovrapporsi, e le annotazioni sono state raccolte in crowdsourcing da lavoratori reclutati online. L'accordo tra annotatori misurato sugli span è stato molto basso, segno che individuare i confini delle unità è molto più difficile che assegnare un'etichetta all'intero testo.
+
+Una parte di questo disaccordo non è necessariamente rumore. La prospettiva perspectivista sostiene che, per costrutti soggettivi come quelli coinvolti nelle narrative complottiste, il disaccordo tra annotatori può riflettere letture diverse e legittime dello stesso testo \parencite{cabitza2023perspectivist}. Per distinguere queste differenze dagli errori serve però che l'annotazione venga raccolta in condizioni controllate, con annotatori preparati, un'interfaccia che non introduca errori propri e strumenti per stimare l'affidabilità di ciascuno.
+
+Condurre uno studio di questo tipo in crowdsourcing richiede oggi di assemblare più strumenti indipendenti. Uno serve per il reclutamento, uno per il consenso informato e i questionari, uno per l'annotazione e un altro ancora per analizzare l'affidabilità dei dati raccolti. Il ricercatore deve tenerli sincronizzati, gestire a mano il passaggio dei dati dall'uno all'altro e, se lavora con altri colleghi, trovare un modo per condividere lo stesso studio.
+
+% =====================================================================
+\section{Il gap}
+\label{sec:intro-gap}
+
+Tra gli strumenti di annotazione disponibili, molti sanno rappresentare span sovrapposti. Lo fanno però trattando la sovrapposizione come un'estensione del formato dei dati, un'opzione da abilitare oppure una funzione pensata per annotatori esperti. Nessuno di essi documenta come rendere la sovrapposizione governabile da chi annota per la prima volta, cioè da un lavoratore reclutato su una piattaforma di crowdsourcing, senza addestramento specifico. Il task di unitizing con overlap viene quindi trattato come un problema di rappresentazione dei dati e non come un'esperienza da progettare per l'annotatore. Il capitolo~\ref{cap:background} esamina questi strumenti nel dettaglio.
+
+% =====================================================================
+\section{Il problema affrontato}
+\label{sec:problema}
+
+La tesi affronta quindi una domanda precisa. Come si può progettare un sistema che permetta a un ricercatore di condurre uno studio di unitizing con span sovrapposti in crowdsourcing, dalla preparazione degli annotatori alla stima dell'affidabilità, e che offra a chi annota un'interazione pensata per questo compito?
+
+% =====================================================================
+\section{Novelty}
+\label{sec:novelty}
+
+La proposta centrale è un'interfaccia di annotazione interattiva in cui gli span sovrapposti si definiscono direttamente sul testo, senza ricorrere a formati intermedi o a procedure manuali. L'interfaccia aggancia la selezione ai confini delle parole, così da eliminare gli errori di confine dovuti alla selezione con il mouse, e mantiene leggibili le etichette anche quando più span coprono la stessa porzione di testo. La sovrapposizione diventa così il comportamento normale dell'interfaccia e non un'eccezione da gestire.
+
+% =====================================================================
+\section{Contribution}
+\label{sec:contribution}
+
+Questa interfaccia è il cuore di un sistema open source che integra l'intero ciclo di uno studio di annotazione in crowdsourcing in un'unica applicazione. Il sistema gestisce l'ingresso dei partecipanti da Prolific, un percorso di preparazione configurabile fatto di consenso informato, questionario, codebook, istruzioni e task di prova, la distribuzione dei documenti tra gli annotatori secondo strategie diverse, il controllo della qualità tramite documenti con soluzione nota e la stima della competenza degli annotatori con MACE \parencite{hovy2013mace}. Tutte queste fasi condividono la stessa configurazione del progetto, e più ricercatori possono lavorare sullo stesso studio con permessi distinti. Il sistema è stato valutato con una sessione di cognitive walkthrough condotta insieme a una ricercatrice tra gli organizzatori di PsyCoMark.
+
+% =====================================================================
+\section{Implicazioni}
+\label{sec:implicazioni}
+
+Un sistema che colmasse del tutto questo gap avrebbe due effetti. Per chi annota, ridurrebbe la parte di disaccordo che nasce dall'interfaccia e non dal testo, rendendo più facile separare gli errori dalle letture legittimamente diverse. Per chi conduce lo studio, eliminerebbe il lavoro di raccordo tra strumenti, che richiede competenze tecniche estranee alla domanda di ricerca, e renderebbe gli studi di unitizing accessibili anche a gruppi che oggi non hanno le risorse per costruirsi un'infrastruttura propria.
+
+% =====================================================================
+\section{Struttura della tesi}
+\label{sec:struttura}
+
+Il capitolo~\ref{cap:background} presenta il caso di studio, gli strumenti di annotazione esistenti e gli approcci al controllo qualità nel crowdsourcing. Il capitolo~\ref{cap:dati} definisce i concetti su cui si basa il sistema, dal progetto allo schema di annotazione, alle gold unit. Il capitolo~\ref{cap:metodi} descrive come il sistema realizza questi concetti, seguendo il percorso dell'annotatore e quello del ricercatore. Il capitolo~\ref{chap:risultati} riporta la valutazione condotta con un'esperta di dominio, il capitolo~\ref{cap:discussione} ne discute il significato rispetto al problema di partenza e il capitolo~\ref{chap:limitazioni} ne descrive i limiti e gli sviluppi possibili. Il capitolo~\ref{chap:conclusioni} riassume i messaggi principali del lavoro.
 
 \chapter{Background e lavori correlati}
 \label{cap:background}
@@ -497,7 +551,7 @@ Backend, frontend e i due piani che espone sono l'infrastruttura su cui si appog
 \section{La valutazione con un'esperta di dominio}
 \label{sec:walkthrough}
 
-Le prove descritte finora dicono che il sistema funziona, ma non dicono se chi deve usarlo riesce a capirlo. Un ricercatore che prepara uno studio di annotazione non legge il codice, attraversa l'interfaccia una schermata alla volta e decide cosa fare in base a quello che vede. Se un'etichetta è ambigua o un'opzione sta nel posto sbagliato, il rischio non è un errore del software ma un progetto configurato male, oppure un'azione irreversibile compiuta senza volerlo. Per osservare questo lato del sistema serve una persona che lo usi davvero. Questa sezione racconta la sessione condotta con una ricercatrice che conosce il problema dall'interno, cosa ne è emerso e come il sistema è cambiato di conseguenza.
+Un sistema di annotazione può funzionare correttamente e restare comunque difficile da usare. Un ricercatore che prepara uno studio di annotazione non legge il codice, attraversa l'interfaccia una schermata alla volta e decide cosa fare in base a quello che vede. Se un'etichetta è ambigua o un'opzione sta nel posto sbagliato, il rischio non è un errore del software ma un progetto configurato male, oppure un'azione irreversibile compiuta senza volerlo. Per osservare questo lato del sistema serve una persona che lo usi davvero. Questa sezione racconta la sessione condotta con una ricercatrice che conosce il problema dall'interno, cosa ne è emerso e come il sistema è cambiato di conseguenza.
 
 % ---------------------------------------------------------------------
 \subsection{Perché un cognitive walkthrough, e con chi}
@@ -527,9 +581,9 @@ Rispetto alla forma classica del metodo, la sessione ha preso una piega più gui
 Le osservazioni si raccolgono in quattro gruppi. Due riguardano problemi veri e propri, cioè la struttura della configurazione e la chiarezza di alcune etichette. Il terzo riguarda il modo in cui il sistema gestisce le azioni irreversibili, dove il design ha retto ma ha comunque generato domande. L'ultimo raccoglie un'esigenza che il sistema non copriva affatto.
 
 \paragraph{Il dataset si nascondeva in fondo alla pagina.}\mbox{}\\
-Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non trovava il punto in cui caricare i dati se non scorrendo. La partecipante ha faticato proprio qui, e il problema non riguarda un singolo pulsante. Una pagina che unisce cose diverse non comunica la struttura del lavoro da fare.
+Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non trovava il punto in cui caricare i dati se non scorrendo. La partecipante ha faticato proprio qui, e ha trovato il campo solo scorrendo fino in fondo.
 
-La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Oltre a rendere ogni campo visibile senza scorrere, l'ordine delle schede suggerisce anche l'ordine in cui conviene procedere.
+La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Ogni campo è ora visibile senza scorrere, e le schede seguono l'ordine in cui il progetto viene configurato.
 
 \begin{figure}[ht]
     \centering
@@ -549,7 +603,7 @@ La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun
 \end{figure}
 
 \paragraph{Alcune etichette dicevano meno di quanto sembrava.}\mbox{}\\
-Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma proprio quest'ultimo l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante. È un esempio piccolo, ma mostra quanto il significato di un'etichetta dipenda dal contesto in cui compare, perché la stessa parola che altrove sarebbe ovvia diventa ambigua quando sullo schermo convivono più span sovrapposti.
+Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma proprio quest'ultimo l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante.
 
 \begin{figure}[ht]
     \centering
@@ -559,7 +613,7 @@ Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha 
 \end{figure}
 
 \paragraph{Le azioni irreversibili hanno retto, ma hanno fatto nascere domande.}\mbox{}\\
-Il ciclo di vita del progetto è la parte in cui un errore costa di più, e infatti è quella in cui la partecipante si è fermata più spesso a chiedere. Vedendo il pulsante di lancio ufficiale, la prima domanda è stata cosa succede se si lancia per errore e si vuole togliere il progetto dalla rete. La risposta esiste, perché un progetto lanciato può essere messo in pausa, ma il fatto che la domanda sia arrivata subito conferma che il timore dell'irreversibilità è reale, e giustifica la scelta di isolare queste azioni in una zona separata dell'interfaccia. Un secondo punto ha riguardato la cancellazione dei dati di prova, che richiede di riportare prima il progetto in bozza o in pausa. Il sistema lo comunica con un messaggio, ma solo dopo che l'utente ha provato, quindi il vincolo si scopre per tentativi. Infine il blocco della configurazione dopo il lancio è stato capito senza difficoltà. Il banner che spiega perché i campi non sono più modificabili e propone di clonare il progetto (Figura~\ref{fig:cw-banner}) è risultato chiaro, e lo stesso vale per la differenza tra clonare solo la configurazione o anche documenti e annotatori. È un risultato che conta, perché il task~7 era quello in cui l'utente si trova davanti a un vicolo cieco, e il banner è riuscito a indicargli l'uscita.
+Il ciclo di vita del progetto è la parte in cui un errore costa di più, ed è quella in cui la partecipante si è fermata più spesso a chiedere. Vedendo il pulsante di lancio ufficiale, la prima domanda è stata cosa succede se si lancia per errore e si vuole togliere il progetto dalla rete. Un progetto lanciato può essere messo in pausa, e la risposta l'ha soddisfatta. Un secondo punto ha riguardato la cancellazione dei dati di prova, che richiede di riportare prima il progetto in bozza o in pausa. Il sistema lo comunica con un messaggio solo dopo che l'utente ha provato a cancellare, quindi la partecipante ha scoperto il vincolo per tentativi. Infine il blocco della configurazione dopo il lancio, affrontato nel task~7, è stato capito senza difficoltà. Il banner che spiega perché i campi non sono più modificabili e propone di clonare il progetto (Figura~\ref{fig:cw-banner}) è risultato chiaro, e lo stesso vale per la differenza tra clonare solo la configurazione o anche documenti e annotatori.
 
 \begin{figure}[ht]
     \centering
@@ -577,88 +631,71 @@ L'osservazione più importante non riguardava nessuno dei sette task. Guardando 
 
 Gli apprezzamenti si sono concentrati sulle parti che aiutano il ricercatore a controllare il proprio studio prima e durante la raccolta. La partecipante ha indicato come particolarmente utile l'ambiente di prova, che permette di attraversare il percorso da partecipante e verificare che la configurazione sia corretta prima di aprire il progetto al pubblico. Ha apprezzato la vista della singola annotazione, sia nella resa grafica sia nel formato grezzo, il calcolo dell'affidabilità degli annotatori, che ha definito \emph{really handy}, e il registro delle attività, utile soprattutto quando sullo stesso progetto lavorano più ricercatori. Il giudizio complessivo è stato positivo, con un riferimento esplicito alla quantità di aspetti personalizzabili e alla loro sensatezza.
 
-L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante. È un'osservazione coerente con il problema del caricamento del dataset descritto sopra, e la riorganizzazione delle schede ne è in parte la risposta, ma la curva di apprendimento iniziale resta un aspetto su cui il sistema può migliorare.
+L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante.
 
 \subsection{In sintesi}
 \label{subsec:walkthrough-sintesi}
 
-Nel complesso la sessione ha spostato l'attenzione da come il sistema funziona a come viene capito. I problemi emersi non riguardano la logica della piattaforma, che ha retto anche nelle parti più delicate, ma il modo in cui questa logica viene presentata a chi la incontra per la prima volta. Resta il limite di una valutazione condotta con una sola esperta e in forma guidata, che non sostituisce uno studio con più utenti, e su cui si torna nel capitolo sulle limitazioni. Il capitolo successivo riprende questi risultati per capire cosa dicono rispetto al problema da cui la tesi è partita.
+La sessione ha fatto emergere due problemi nella presentazione della configurazione, cioè il dataset nascosto in fondo a una scheda e un vincolo sulla cancellazione dei dati di prova che si scopre solo provando, oltre a un'etichetta ambigua nell'interfaccia di annotazione e a un'esigenza non coperta, il tempo minimo per documento. Il dataset e l'etichetta sono stati corretti dopo la sessione. Il blocco della configurazione dopo il lancio e la clonazione sono stati capiti senza aiuto, e la partecipante ha apprezzato soprattutto l'ambiente di prova, il calcolo dell'affidabilità e il registro delle attività. Il capitolo successivo riprende questi risultati per capire cosa dicono rispetto al problema da cui la tesi è partita.
 
-% =====================================================================
 \chapter{Discussione}
 \label{cap:discussione}
 
-Il capitolo precedente ha riportato cosa è emerso quando un'esperta di dominio ha usato il sistema per la prima volta. Questo capitolo confronta quelle osservazioni con le aspettative da cui la tesi è partita e ne ricava cosa implicano per il problema affrontato. Si richiamano prima le aspettative, poi si discutono le parti che la sessione conferma, quelle in cui il sistema mostra un limite e infine ciò che i risultati dicono, e non dicono, sul gap dichiarato nell'introduzione.
+Il capitolo~\ref{chap:risultati} ha riportato cosa è emerso dalla sessione con la ricercatrice. Questo capitolo ne ricava le risposte alla domanda posta nell'introduzione (\S\ref{sec:problema}). La domanda ha due metà, una rivolta al ricercatore che conduce lo studio e una a chi annota, e le prime due sezioni le affrontano una alla volta (\S\ref{sec:disc-ricercatore} e \S\ref{sec:disc-annotatore}). La terza (\S\ref{sec:disc-gap}) guarda cosa significano insieme per il gap da cui la tesi parte.
 
 % =====================================================================
-\section{Le aspettative di partenza}
-\label{sec:disc-aspettative}
+\section{Il lato del ricercatore}
+\label{sec:disc-ricercatore}
 
-La tesi parte da due osservazioni. Gli strumenti di annotazione esistenti trattano gli span sovrapposti come un'estensione del formato dati e non come un'esperienza progettata per chi annota. Chi conduce uno studio in crowdsourcing, inoltre, deve comporre a mano più strumenti per coprire l'intero ciclo, dal reclutamento all'analisi dell'affidabilità. Il sistema risponde con un'interfaccia pensata per definire span sovrapposti direttamente sul testo e con una piattaforma che riunisce tutte le fasi dello studio in un'unica configurazione.
+Integrare l'intero ciclo dello studio in un'unica configurazione risponde a un bisogno che chi ha condotto uno studio di questo tipo riconosce subito. Le funzioni che la partecipante ha indicato come più utili sono l'ambiente di prova, il calcolo dell'affidabilità e il registro delle attività (\S\ref{subsec:walkthrough-positivi}), e hanno in comune il fatto di stare tra una fase e l'altra dello studio. L'ambiente di prova attraversa consenso, screening, codebook, task di pratica e annotazione in un solo percorso. Il calcolo dell'affidabilità lavora sulle annotazioni raccolte senza bisogno di esportarle. Il registro tiene traccia delle modifiche quando più ricercatori lavorano sullo stesso progetto. Sono proprio i punti in cui, componendo strumenti separati, il ricercatore deve costruirsi da solo il raccordo tra un passaggio e l'altro (\S\ref{sec:motivazione}).
 
-Da queste due proposte discendono tre aspettative. Un ricercatore dovrebbe poter preparare, provare e lanciare uno studio senza ricorrere a strumenti esterni. Il controllo qualità dovrebbe proteggere i dati raccolti dal lavoro di annotatori poco attenti. Chi configura un progetto, infine, dovrebbe riuscire a orientarsi nel sistema senza conoscerne il codice. Le sezioni che seguono le riprendono nell'ordine.
+L'integrazione però non elimina la complessità di uno studio, la concentra in un unico punto. Chi usa strumenti separati deve farli comunicare tra loro, mentre chi usa questo sistema deve capire una configurazione che descrive tutte le fasi insieme. Il dataset nascosto in fondo alla scheda dello schema e il commento sulla quantità di informazioni (\S\ref{subsec:walkthrough-risultati}) mostrano che questo costo si paga al primo contatto, quando il ricercatore si trova davanti all'intero studio in una volta sola.
 
-% =====================================================================
-\section{Il ciclo dello studio in un unico sistema}
-\label{sec:disc-integrazione}
+I risultati indicano anche come contenere questo costo. Il blocco della configurazione dopo il lancio è un vincolo rigido, eppure è stato capito senza aiuto, perché il banner spiega perché esiste e propone la clonazione come strada alternativa. Il vincolo sulla cancellazione dei dati di prova è altrettanto ragionevole, ma il sistema lo comunica solo dopo un tentativo fallito, e la partecipante lo ha scoperto sbagliando. La differenza tra i due casi sta nel momento in cui il sistema rende visibile la regola. La riorganizzazione in schede ordinate secondo il percorso di configurazione va nella stessa direzione, perché mostra la struttura dello studio prima che l'utente debba ricostruirla da solo.
 
-La prima aspettativa è quella che la sessione conferma in modo più netto. Le funzionalità che Veronika Batzdorfer ha indicato come più utili sono l'ambiente di prova, che permette di attraversare il percorso da partecipante prima del lancio, il calcolo dell'affidabilità degli annotatori e il registro delle attività condiviso tra ricercatori. Sono le parti che, componendo strumenti separati, il ricercatore deve costruire o raccordare da solo. Un ambiente di prova, ad esempio, richiederebbe di replicare l'intera catena di strumenti in una copia di test, e il calcolo dell'affidabilità richiederebbe di esportare le annotazioni e passarle a un programma esterno.
-
-Questo risponde anche alla domanda su cosa offra il sistema rispetto a uno strumento generalista come Potato. Il valore non sta in una singola funzione, che altri strumenti potrebbero aggiungere, ma nel fatto che le fasi dello studio condividono gli stessi dati e la stessa configurazione. Il giudizio di una ricercatrice che ha già condotto uno studio di questo tipo indica che questa integrazione risponde a un bisogno reale.
-
-Se l'integrazione regge, il controllo qualità mostra invece un limite, ed è la stessa partecipante a farlo emergere.
+Sul lato del ricercatore la risposta è quindi positiva, con un'indicazione precisa su come la configurazione va presentata. La seconda metà della domanda riguarda chi annota.
 
 % =====================================================================
-\section{Un controllo qualità che arriva dopo}
-\label{sec:disc-qualita}
+\section{Il lato dell'annotatore}
+\label{sec:disc-annotatore}
 
-Durante la sessione la partecipante ha chiesto se fosse possibile imporre un tempo minimo per documento, così da fermare chi risponde in fretta, senza leggere, pur di ottenere il compenso. La domanda nasce dall'esperienza diretta con PsyCoMark e tocca un punto che il sistema copre solo in parte.
+La sovrapposizione degli span crea problemi di interazione che il formato dei dati da solo non risolve, come sostiene il gap. L'episodio del pulsante in precedenza "Clear" \emph{Clear} (\S\ref{subsec:walkthrough-risultati}) lo mostra in piccolo. Con un solo span sullo schermo, un pulsante che cancella ha un solo significato possibile. Con più span sovrapposti sulla stessa porzione di testo, la stessa parola ammette due letture, cancellare l'ultimo span oppure tutti. L'ambiguità nasce dalla sovrapposizione e si risolve con una scelta di interfaccia, un'etichetta che dichiara cosa succede.
 
-I due meccanismi descritti nel capitolo dei metodi, le gold unit e MACE, valutano un annotatore solo dopo che ha già prodotto annotazioni. Le gold unit decidono l'esclusione quando l'annotatore ne ha completato un numero minimo, MACE stima la competenza a raccolta avviata. Il sistema registra anche il tempo impiegato per ogni documento, ma lo usa solo per evidenziare nella vista amministrativa le annotazioni completate in meno di cinque secondi. Nessuno di questi segnali impedisce a un annotatore frettoloso di continuare a lavorare.
+Ne segue che saper rappresentare span sovrapposti, cosa che quasi tutti gli strumenti del capitolo~\ref{cap:background} fanno, è la condizione di partenza e non la soluzione. Le scelte descritte in \S\ref{sec:overlap}, dall'aggancio ai confini di parola alle fasce impilate fino alle etichette che compaiono al passaggio del mouse, rispondono allo stesso tipo di problema, cioè rendere leggibile e controllabile un testo su cui convivono più interpretazioni.
 
-La configurazione predefinita rende il problema più concreto. Con tre classi, una soglia di accuratezza del 60\% e una valutazione dopo tre gold unit, un annotatore che risponde sempre con la stessa classe supera la soglia ogni volta che due delle tre gold unit appartengono a quella classe. Non serve un esperimento per vederlo, è una conseguenza diretta dei parametri. Ne seguono due indicazioni. I parametri del controllo qualità non sono neutri e vanno tarati sul singolo studio, bilanciando le classi tra le gold unit e scegliendo la soglia in base al numero di opzioni. I segnali che il sistema già raccoglie, come il tempo per documento e la competenza stimata da MACE, andrebbero inoltre usati durante la raccolta e non solo per il monitoraggio successivo.
+Quanto queste scelte riducano errori e disaccordo rispetto a uno strumento come Potato è una misura che la sessione non fornisce, e il capitolo~\ref{chap:limitazioni} descrive lo studio che servirebbe a ottenerla.
 
-La domanda sul tempo minimo riguarda la qualità dei dati. L'osservazione successiva della partecipante riguarda invece chi configura lo studio.
-
-% =====================================================================
-\section{Il costo della personalizzazione}
-\label{sec:disc-configurazione}
-
-La partecipante ha descritto il sistema come ricco di aspetti personalizzabili e sensati, e nella stessa frase ha osservato che, per chi non ha mai visto la dashboard e l'intera pipeline, le informazioni sono tante. Le due osservazioni dipendono l'una dall'altra. Ogni fase dello studio che il sistema integra porta con sé le proprie opzioni, e più il sistema copre, più il ricercatore deve capire prima di lanciare uno studio.
-
-Il problema del caricamento del dataset ne è un esempio. La difficoltà non riguardava un'opzione mancante, ma il modo in cui le opzioni erano raggruppate. La riorganizzazione della configurazione in schede separate ha reso più leggibile l'ordine delle operazioni, ma non riduce il numero di decisioni da prendere. In un sistema integrato il rischio di errore non scompare, si sposta dal raccordo tra strumenti alla coerenza interna della configurazione. Per questo l'ambiente di prova ha un ruolo più importante di quanto sembri. È il punto in cui il ricercatore può accorgersi di un errore di configurazione prima che coinvolga annotatori reali.
-
-Le sezioni precedenti riguardano la piattaforma. Resta da vedere cosa dice la sessione sull'altra proposta della tesi, l'interfaccia per gli span sovrapposti.
+Le due sezioni hanno risposto alla domanda una metà alla volta. Lette insieme, dicono qualcosa anche sul gap.
 
 % =====================================================================
-\section{Cosa i risultati dicono sul gap}
+\section{Cosa significa per il gap}
 \label{sec:disc-gap}
 
-Il gap da cui la tesi parte riguarda l'esperienza dell'annotatore davanti a span sovrapposti. La sessione offre un indizio a suo favore. L'unica ambiguità emersa nell'interfaccia di annotazione riguarda il pulsante \emph{Clear}, che non chiariva se rimuovesse l'ultimo span o tutti. In un'interfaccia con un solo span per porzione di testo la stessa parola non creerebbe dubbi. Il dubbio nasce perché sullo schermo convivono più span sovrapposti, e mostra che l'overlap pone problemi di interazione propri, che un formato dati da solo non risolve.
+Il gap individuato nel capitolo~\ref{cap:background} riguarda il modo in cui gli strumenti esistenti trattano la sovrapposizione. Prodigy, doccano, INCEpTION e Label Studio la rappresentano come estensione del formato, la rendono un'opzione da abilitare o la affidano a utenti esperti, mentre Potato, l'unico pensato per il crowdsourcing, la gestisce impilando le fasce ma accumula le etichette sopra il testo nel punto di intersezione (\S\ref{sec:strumenti}). In tutti i casi la domanda implicita è se lo strumento sappia rappresentare la sovrapposizione. Questa tesi propone di affiancarle una seconda domanda, cioè se chi la incontra per la prima volta riesca a gestirla.
 
-Va però detto con chiarezza cosa la sessione non mostra. Il vantaggio dell'interfaccia rispetto a Potato è argomentato nel capitolo dei metodi a partire dal confronto tra le due interazioni, ma non è misurato. Nessuna prova svolta coinvolge annotatori reali che definiscono span sovrapposti, quindi la tesi non dispone di dati su errori di confine, tempi di annotazione o accordo tra annotatori. La proposta di integrazione è quindi sostenuta dalla valutazione con l'esperta di dominio, mentre quella sull'interfaccia resta una proposta motivata, in attesa di una verifica sperimentale. Il capitolo sulle limitazioni descrive lo studio che servirebbe.
+I risultati indicano che questa seconda domanda vale per entrambi i ruoli. L'annotatore occasionale è il soggetto del gap, ma anche il ricercatore che apre il sistema per la prima volta si trova nella stessa condizione. Tutti gli episodi della sessione parlano di questo momento. Il dataset nascosto, il vincolo scoperto sbagliando e il pulsante ambiguo sono ostacoli al primo contatto, mentre il banner di clonazione e le schede riordinate funzionano perché spiegano le regole del sistema prima dell'errore. Per uno strumento rivolto a persone senza addestramento specifico, sia nel ruolo di chi annota sia in quello di chi configura, il modo in cui le funzioni vengono presentate conta quanto le funzioni stesse.
 
-Resta un ultimo aspetto, che riguarda entrambi i meccanismi di controllo qualità e tocca la motivazione stessa del lavoro.
-
-% =====================================================================
-\section{Una tensione con il perspectivismo}
-\label{sec:disc-perspectivismo}
-
-Sia le gold unit sia MACE assumono che ogni documento abbia una sola risposta corretta. Le gold unit la dichiarano in anticipo, MACE la stima a partire dalle annotazioni, ma in entrambi i casi un annotatore che si discosta dalla maggioranza viene considerato meno affidabile. Il paradigma perspectivista mette in discussione proprio questa assunzione e tratta il disaccordo tra annotatori come un'informazione legittima, che riflette differenze di esperienza e di interpretazione \parencite{cabitza2023perspectivist}.
-
-Per un compito come il riconoscimento di narrative complottiste la questione è concreta, perché la stessa frase può essere letta in modi diversi da persone con background diversi. Lo schema usato in questa tesi lo riconosce in parte, prevedendo l'opzione \emph{Ambiguous} tra le classi. Il controllo qualità, però, tratta anche quella risposta come giusta o sbagliata rispetto a una soluzione unica. Il sistema offre quindi al ricercatore gli strumenti per misurare la qualità rispetto a una risposta di riferimento, ma non per distinguere il rumore dal disaccordo informativo. È una scelta coerente con la pratica corrente nel crowdsourcing, ma va resa esplicita, perché un controllo qualità troppo severo rischia di escludere proprio le prospettive minoritarie che il paradigma perspectivista vorrebbe conservare.
+È anche la condizione perché le implicazioni descritte nell'introduzione (\S\ref{sec:implicazioni}) si realizzino. Un sistema integrato rende gli studi di unitizing accessibili a gruppi senza un'infrastruttura propria solo se chi lo usa per la prima volta riesce a orientarsi. Allo stesso modo, riduce il disaccordo prodotto dall'interfaccia solo se l'annotatore occasionale capisce cosa sta facendo quando gli span si sovrappongono.
 
 % =====================================================================
 \section{In sintesi}
 \label{sec:disc-sintesi}
 
-Delle tre aspettative di partenza, la sessione con l'esperta di dominio conferma la prima. Il ciclo dello studio si svolge in un unico sistema, e le funzioni più apprezzate sono proprio quelle che questa integrazione rende possibili. La seconda è soddisfatta solo in parte, perché il controllo qualità interviene dopo che l'annotatore ha già lavorato e dipende da parametri che vanno tarati sul singolo studio. La terza regge, ma con un costo, perché la ricchezza della configurazione richiede al ricercatore uno sforzo iniziale che la riorganizzazione delle schede riduce senza eliminare. Sul gap, la sessione sostiene la proposta di integrazione e offre un indizio a favore di quella sull'interfaccia, che resta da misurare. Il capitolo successivo discute i limiti di queste conclusioni e il lavoro necessario per superarli.
+Sul lato del ricercatore i risultati sostengono la proposta di integrare il ciclo dello studio, a patto di presentare la configurazione in modo che le sue regole siano visibili prima dell'errore. Sul lato dell'annotatore confermano che la sovrapposizione degli span è un problema di interazione oltre che di rappresentazione. Il filo che tiene insieme le due metà è il primo contatto, che riguarda allo stesso modo chi annota e chi configura. Il capitolo seguente esamina le scelte di valutazione che delimitano queste conclusioni.
 
 \chapter{Limitazioni e Sviluppi Futuri}
 \label{chap:limitazioni}
 
 \chapter{Conclusioni}
 \label{chap:conclusioni}
+
+Questa tesi è partita da un compito concreto, quello di PsyCoMark, in cui annotatori reclutati online dovevano individuare nei commenti Reddit le porzioni di testo che esprimono gli elementi di una narrativa complottista. L'accordo basso misurato sugli span faceva sorgere una domanda che andava oltre il singolo task. Quanto di quel disaccordo dipendeva dal testo e dalle letture diverse che ammette, e quanto invece dagli strumenti con cui l'annotazione era stata raccolta?
+
+Rispondere a questa domanda richiede prima di tutto condizioni di raccolta controllate, ed è qui che si è concentrato il lavoro. Il sistema sviluppato prova a dare al ricercatore un solo posto in cui preparare, condurre e sorvegliare uno studio di unitizing in crowdsourcing, e a dare a chi annota un'interfaccia in cui la sovrapposizione degli span è il comportamento normale e non un'eccezione da gestire. Le due parti sono legate dalla stessa configurazione, che stabilisce cosa viene annotato, da chi e con quali controlli.
+
+La valutazione con una ricercatrice tra gli organizzatori di PsyCoMark ha dato indicazioni chiare sulla prima parte. L'integrazione del ciclo risponde a un bisogno che chi ha già condotto uno studio simile riconosce, e i problemi emersi riguardano soprattutto il modo in cui la configurazione viene presentata, non la logica che la regge. Sulla seconda parte le indicazioni sono più deboli. La sessione ha confermato che la sovrapposizione degli span crea problemi di interazione propri, ma non ha misurato se l'interfaccia proposta li risolva meglio delle alternative.
+
+La domanda iniziale resta quindi aperta, ma ora è possibile affrontarla. Uno studio con annotatori reali, che confronti errori di confine, tempi e accordo tra strumenti diversi, è il passo che permetterebbe di separare il disaccordo prodotto dall'interfaccia da quello che riflette letture legittimamente diverse dello stesso testo. Il sistema descritto in questa tesi è stato costruito anche per rendere possibile quello studio, ed è rilasciato come open source perché possa servire ad altri gruppi che lavorano su task simili, senza che ciascuno debba ricostruirsi da zero la propria infrastruttura.
 
 \printbibliography[heading=bibintoc]
 
