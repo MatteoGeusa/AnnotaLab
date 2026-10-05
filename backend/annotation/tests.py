@@ -1,8 +1,9 @@
 import json
-from django.test import TestCase, Client
+from django.test import TestCase, SimpleTestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import Project, Annotator, ProjectEnrollment, Document, Annotation
+from .gold_strategies import check_gold_correctness
 
 class AnnotaLabAPITestCase(TestCase):
     def setUp(self):
@@ -141,6 +142,37 @@ class AnnotaLabAPITestCase(TestCase):
         print(f"DEBUG: status={enrollment.status}, is_test={enrollment.annotator.is_test}, gold_tasks={enrollment.gold_tasks_completed}, gold_acc={enrollment.gold_accuracy}")
         self.assertEqual(enrollment.status, 'EXCLUDED', "Annotator should be EXCLUDED due to gold unit failure")
 
+    def test_gold_unit_label_solution_not_excluded(self):
+        # Gold solution written with the display label ("Conspiracy") while the
+        # frontend submits the option value ("Yes"): a correct answer must pass.
+        self.project.annotation_schema = {"components": [{
+            "type": "classification",
+            "options": [
+                {"label": "Conspiracy", "value": "Yes"},
+                {"label": "Not conspiracy", "value": "No"},
+            ],
+        }]}
+        self.project.save()
+        Document.objects.filter(pk=self.doc2.pk).update(gold_solution={"classification": "Conspiracy"})
+
+        self.client.post(reverse('consent'), {'prolific_pid': self.pid, 'project_slug': self.project.slug})
+        self.client.post(reverse('screening'), {'prolific_pid': self.pid, 'project_slug': self.project.slug, 'responses': {"q1": "25"}}, content_type="application/json")
+        self.client.post(reverse('codebook'), {'prolific_pid': self.pid, 'project_slug': self.project.slug})
+        self.client.post(reverse('onboarding'), {'prolific_pid': self.pid, 'project_slug': self.project.slug})
+
+        resp = self.client.post(reverse('submit'), {
+            'prolific_pid': self.pid,
+            'project_slug': self.project.slug,
+            'document': self.doc2.id,
+            'result': {"classification": "Yes"},
+            'milliseconds_to_complete': 1000
+        }, content_type="application/json")
+        self.assertEqual(resp.status_code, 201)
+
+        enrollment = ProjectEnrollment.objects.get(project=self.project, annotator__prolific_pid=self.pid)
+        self.assertNotEqual(enrollment.status, 'EXCLUDED', "Correct answer on a label-written gold unit must not exclude")
+        self.assertEqual(enrollment.gold_accuracy, 1.0)
+
     def test_completed_flow(self):
         # We need documents to test exhaustion
         # To exhaust, user needs to complete `documents_per_annotator` docs (which is 2)
@@ -194,4 +226,40 @@ class AnnotaLabAPITestCase(TestCase):
         resp = self.client.get(reverse('next_task'), {'prolific_pid': self.pid, 'project_slug': self.project.slug})
         self.assertEqual(resp.status_code, 200)
         self.assertTrue('id' in resp.json())
+
+
+class GoldCorrectnessTestCase(SimpleTestCase):
+    SCHEMA = {"components": [{
+        "type": "classification",
+        "multi_select": True,
+        "options": [
+            {"label": "Conspiracy", "value": "Yes"},
+            {"label": "Not conspiracy", "value": "No"},
+            {"label": "Unsure", "value": "Maybe"},
+        ],
+    }]}
+
+    def test_label_in_gold_matches_value_in_answer(self):
+        self.assertTrue(check_gold_correctness({"classification": "Yes"}, {"classification": "Conspiracy"}, self.SCHEMA))
+
+    def test_wrong_answer_still_fails(self):
+        self.assertFalse(check_gold_correctness({"classification": "No"}, {"classification": "Conspiracy"}, self.SCHEMA))
+
+    def test_multi_select_ignores_order_and_labels(self):
+        self.assertTrue(check_gold_correctness(
+            {"classification": ["Maybe", "Yes"]},
+            {"classification": ["Conspiracy", "Unsure"]},
+            self.SCHEMA,
+        ))
+
+    def test_multi_select_subset_fails(self):
+        self.assertFalse(check_gold_correctness(
+            {"classification": ["Yes"]},
+            {"classification": ["Yes", "Maybe"]},
+            self.SCHEMA,
+        ))
+
+    def test_without_schema_compares_raw_strings(self):
+        self.assertTrue(check_gold_correctness({"classification": "A"}, {"classification": "A"}))
+        self.assertFalse(check_gold_correctness({"classification": "Yes"}, {"classification": "Conspiracy"}))
 

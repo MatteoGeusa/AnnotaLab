@@ -60,7 +60,7 @@ def get_strategy(strategy_name='percentage'):
     return evaluate_percentage
 
 
-def check_gold_correctness(annotation_result, gold_solution):
+def check_gold_correctness(annotation_result, gold_solution, schema=None):
     """
     Compares the annotator's result against the gold solution.
 
@@ -71,6 +71,13 @@ def check_gold_correctness(annotation_result, gold_solution):
     Supports both result formats:
       - New (component-based):  {"classification": "Yes", "span_highlight": [...]}
       - Legacy (flat):          {"classification": "Yes", "spans": [...]}
+
+    If `schema` (the project's annotation_schema) is given, classification
+    answers are compared by option value: a gold solution written with the
+    display label (e.g. "Conspiracy" instead of "Yes") is mapped to its value
+    first. Gold units that bypassed upload validation (uploaded before the
+    schema was set, edited in the admin, or left over after a schema change)
+    would otherwise fail every annotator who answers them correctly.
 
     Returns: bool -- True if ALL evaluated components are correct.
     """
@@ -83,8 +90,13 @@ def check_gold_correctness(annotation_result, gold_solution):
 
     # -- Classification check (only if gold provides it) ---------------------
     if 'classification' in gold_solution:
-        gold_class = gold_solution['classification']
-        user_class = annotation_result.get('classification')
+        label_to_value, valid_values = _classification_options(schema)
+        gold_class = _normalize_classification(
+            gold_solution['classification'], label_to_value, valid_values
+        )
+        user_class = _normalize_classification(
+            annotation_result.get('classification'), label_to_value, valid_values
+        )
         if user_class != gold_class:
             return False
 
@@ -100,6 +112,50 @@ def check_gold_correctness(annotation_result, gold_solution):
             return False
 
     return True
+
+
+def _classification_options(schema):
+    """
+    Returns (label_to_value, valid_values) for the schema's classification
+    component, or empty mappings if there is no schema / no such component.
+    """
+    if not isinstance(schema, dict):
+        return {}, set()
+    for comp in schema.get('components') or []:
+        if isinstance(comp, dict) and comp.get('type') == 'classification':
+            options = [o for o in comp.get('options') or [] if isinstance(o, dict)]
+            valid_values = {o.get('value') for o in options if o.get('value') is not None}
+            label_to_value = {
+                o.get('label'): o.get('value')
+                for o in options
+                if o.get('label') is not None and o.get('value') is not None
+            }
+            return label_to_value, valid_values
+    return {}, set()
+
+
+def _normalize_classification(answer, label_to_value, valid_values):
+    """
+    Maps a classification answer to option values so that label and value
+    spellings compare equal. A string that is already a valid value is kept
+    as is (a value takes precedence over a label with the same text).
+    Multi-select answers (lists) become sets, so option order is irrelevant.
+    """
+    def to_value(item):
+        if item in valid_values:
+            return item
+        return label_to_value.get(item, item)
+
+    if isinstance(answer, (list, tuple)):
+        try:
+            return frozenset(to_value(a) for a in answer)
+        except TypeError:  # unhashable items: fall back to an ordered list
+            return [to_value(a) for a in answer]
+    try:
+        return to_value(answer)
+    except TypeError:
+        return answer
+
 
 def _spans_match(user_spans, gold_spans, tolerance=5):
     """

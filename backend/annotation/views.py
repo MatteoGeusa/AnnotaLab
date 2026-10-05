@@ -235,7 +235,11 @@ class SubmitAnnotation(ProjectContextMixin, APIView):
                     if document.is_gold_unit:
                         if not annotator.is_test:
                             enrollment.gold_tasks_completed += 1
-                            is_correct = check_gold_correctness(request.data.get('result', {}), document.gold_solution)
+                            is_correct = check_gold_correctness(
+                                request.data.get('result', {}),
+                                document.gold_solution,
+                                project.annotation_schema,
+                            )
                             
                             from .gold_strategies import get_strategy
                             strategy = get_strategy()

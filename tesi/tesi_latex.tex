@@ -505,22 +505,20 @@ Le prove descritte finora dicono che il sistema funziona, ma non dicono se chi d
 
 Il metodo scelto è il cognitive walkthrough \parencite{wharton1994cognitive}, una tecnica di ispezione dell'usabilità pensata per chi usa un sistema per la prima volta. Il valutatore percorre una sequenza di task realistici e, per ogni passo, si chiede se l'utente capirebbe cosa deve fare, se troverebbe il comando giusto, se ne interpreterebbe correttamente l'etichetta e se, dopo averlo usato, si accorgerebbe di aver ottenuto l'effetto voluto. Il metodo si adatta bene a una piattaforma come questa, dove la maggior parte delle difficoltà nasce proprio dal primo contatto, quando chi configura un progetto deve orientarsi tra molte opzioni senza ancora conoscere le regole del sistema.
 
-La sessione si è svolta il 16 aprile 2026, da remoto, ed è durata tra un'ora e un'ora e mezza. La partecipante è Veronika Batzdorfer, tra gli organizzatori di PsyCoMark \parencite{samory2026psycomark}, quindi una persona che ha già condotto in prima persona uno studio di annotazione in crowdsourcing simile a quello che la piattaforma vuole supportare. Non aveva mai usato l'interfaccia, ma conosceva già alcune delle funzionalità per averne discusso in precedenza con il relatore. È un profilo utile proprio per questo, perché unisce la freschezza di chi vede le schermate per la prima volta alla competenza di chi sa cosa serve davvero a un ricercatore.
+La sessione si è svolta il 16 aprile 2026, da remoto, ed è durata circa un'ora e mezza. La partecipante è Veronika Batzdorfer, tra gli organizzatori di PsyCoMark \parencite{samory2026psycomark}, quindi una persona che ha già condotto in prima persona uno studio di annotazione in crowdsourcing simile a quello che la piattaforma vuole supportare. Non aveva mai usato l'interfaccia, ma conosceva già alcune delle funzionalità per averne discusso in precedenza con il relatore. È un profilo utile proprio per questo, perché unisce la freschezza di chi vede le schermate per la prima volta alla competenza di chi sa cosa serve davvero a un ricercatore.
 
 La traccia della sessione comprendeva sette task, che coprono l'intero ciclo di vita di un progetto.
 \begin{enumerate}
     \item Creare un nuovo progetto.
     \item Caricare il dataset da annotare.
-    \item Portare il progetto nell'ambiente di prova (\emph{Live (playground)}).
+    \item Portare il progetto nell'ambiente di prova.
     \item Simulare un partecipante e completare un'annotazione di prova.
-    \item Cancellare i dati di prova senza toccare il progetto.
+    \item Cancellare i dati di prova senza alterare le configurazioni del progetto.
     \item Lanciare ufficialmente il progetto.
     \item Correggere un errore nella configurazione di un progetto già lanciato.
 \end{enumerate}
 
-Rispetto alla forma classica del metodo, la sessione ha preso una piega più guidata. Era il candidato a condividere lo schermo e a muoversi nell'interfaccia seguendo la traccia, mentre la partecipante osservava, commentava ad alta voce e interrompeva con domande ogni volta che qualcosa non le era chiaro. Questa scelta riduce la possibilità di osservare dove l'utente si perde da solo, ma in cambio ha lasciato spazio a domande che la traccia non prevedeva, e alcune di queste si sono rivelate le più utili. Della sessione esiste una registrazione di circa ventisei minuti, che copre la seconda parte del percorso, dall'annotazione di prova alla clonazione del progetto e al monitoraggio. Le osservazioni sui primi task vengono invece dagli appunti presi durante la sessione.
-
-Con il contesto chiarito, le osservazioni si possono leggere per temi invece che task per task, perché diversi problemi si ripresentano in punti diversi del percorso.
+Rispetto alla forma classica del metodo, la sessione ha preso una piega più guidata. Era il candidato a condividere lo schermo e a muoversi nell'interfaccia seguendo la traccia, mentre la partecipante osservava, commentava ad alta voce e interrompeva con domande ogni volta che qualcosa non le era chiaro. Questa scelta riduce la possibilità di osservare dove l'utente si perde da solo, ma in cambio ha lasciato spazio a domande che la traccia non prevedeva, e alcune di queste si sono rivelate le più utili. Della sessione esiste una registrazione video e degli appunti, che sono stati rivisti e integrati con le osservazioni del relatore per produrre il resoconto che segue.
 
 % ---------------------------------------------------------------------
 \subsection{Cosa è emerso}
@@ -528,7 +526,7 @@ Con il contesto chiarito, le osservazioni si possono leggere per temi invece che
 
 Le osservazioni si raccolgono in quattro gruppi. Due riguardano problemi veri e propri, cioè la struttura della configurazione e la chiarezza di alcune etichette. Il terzo riguarda il modo in cui il sistema gestisce le azioni irreversibili, dove il design ha retto ma ha comunque generato domande. L'ultimo raccoglie un'esigenza che il sistema non copriva affatto.
 
-\paragraph{Il dataset si nascondeva in fondo alla pagina.}
+\paragraph{Il dataset si nascondeva in fondo alla pagina.}\mbox{}\\
 Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non trovava il punto in cui caricare i dati se non scorrendo. La partecipante ha faticato proprio qui, e il problema non riguarda un singolo pulsante. Una pagina che unisce cose diverse non comunica la struttura del lavoro da fare.
 
 La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Oltre a rendere ogni campo visibile senza scorrere, l'ordine delle schede suggerisce anche l'ordine in cui conviene procedere.
@@ -550,7 +548,7 @@ La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun
     \label{fig:cw-config}
 \end{figure}
 
-\paragraph{Alcune etichette dicevano meno di quanto sembrava.}
+\paragraph{Alcune etichette dicevano meno di quanto sembrava.}\mbox{}\\
 Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma proprio quest'ultimo l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante. È un esempio piccolo, ma mostra quanto il significato di un'etichetta dipenda dal contesto in cui compare, perché la stessa parola che altrove sarebbe ovvia diventa ambigua quando sullo schermo convivono più span sovrapposti.
 
 \begin{figure}[ht]
@@ -560,7 +558,7 @@ Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha 
     \label{fig:cw-clear}
 \end{figure}
 
-\paragraph{Le azioni irreversibili hanno retto, ma hanno fatto nascere domande.}
+\paragraph{Le azioni irreversibili hanno retto, ma hanno fatto nascere domande.}\mbox{}\\
 Il ciclo di vita del progetto è la parte in cui un errore costa di più, e infatti è quella in cui la partecipante si è fermata più spesso a chiedere. Vedendo il pulsante di lancio ufficiale, la prima domanda è stata cosa succede se si lancia per errore e si vuole togliere il progetto dalla rete. La risposta esiste, perché un progetto lanciato può essere messo in pausa, ma il fatto che la domanda sia arrivata subito conferma che il timore dell'irreversibilità è reale, e giustifica la scelta di isolare queste azioni in una zona separata dell'interfaccia. Un secondo punto ha riguardato la cancellazione dei dati di prova, che richiede di riportare prima il progetto in bozza o in pausa. Il sistema lo comunica con un messaggio, ma solo dopo che l'utente ha provato, quindi il vincolo si scopre per tentativi. Infine il blocco della configurazione dopo il lancio è stato capito senza difficoltà. Il banner che spiega perché i campi non sono più modificabili e propone di clonare il progetto (Figura~\ref{fig:cw-banner}) è risultato chiaro, e lo stesso vale per la differenza tra clonare solo la configurazione o anche documenti e annotatori. È un risultato che conta, perché il task~7 era quello in cui l'utente si trova davanti a un vicolo cieco, e il banner è riuscito a indicargli l'uscita.
 
 \begin{figure}[ht]
@@ -570,10 +568,8 @@ Il ciclo di vita del progetto è la parte in cui un errore costa di più, e infa
     \label{fig:cw-banner}
 \end{figure}
 
-\paragraph{Un'esigenza che il sistema non copriva.}
-L'osservazione più importante non riguardava nessuno dei sette task. Guardando quanto velocemente si poteva completare un'annotazione di prova, la partecipante ha chiesto se fosse possibile imporre un tempo minimo per ogni documento, così da impedire che un partecipante clicchi a caso, completi il compito in pochi secondi e venga comunque pagato. È un problema concreto di chi lavora in crowdsourcing, ed è lo stesso che i meccanismi di controllo qualità descritti nel capitolo~\ref{cap:metodi} affrontano solo a posteriori. Oggi il sistema registra il tempo impiegato per ogni annotazione e, nella vista amministrativa, evidenzia in rosso quelle completate in meno di cinque secondi, ma non impedisce l'invio. Il ricercatore può quindi accorgersi del comportamento e intervenire, ad esempio escludendo l'annotatore dalla distribuzione, ma non può prevenirlo. Questa lacuna resta aperta ed è ripresa nel capitolo sulle limitazioni.
-
-Accanto a questi problemi, la sessione ha fatto emergere anche ciò che funziona, e conviene riportarlo con la stessa cura.
+\paragraph{Un'esigenza che il sistema non copriva.}\mbox{}\\
+L'osservazione più importante non riguardava nessuno dei sette task. Guardando quanto velocemente si poteva completare un'annotazione di prova, la partecipante ha chiesto se fosse possibile imporre un tempo minimo per ogni documento, così da impedire che un partecipante clicchi a caso, completi il compito in pochi secondi e venga comunque pagato. È un problema concreto di chi lavora in crowdsourcing, ed è lo stesso che i meccanismi di controllo qualità descritti nel capitolo~\ref{cap:metodi} affrontano solo a posteriori. Oggi il sistema registra il tempo impiegato per ogni annotazione e, nella vista amministrativa, evidenzia in rosso quelle completate in meno di cinque secondi, ma non impedisce l'invio.
 
 % ---------------------------------------------------------------------
 \subsection{Cosa ha convinto}
@@ -581,55 +577,12 @@ Accanto a questi problemi, la sessione ha fatto emergere anche ciò che funziona
 
 Gli apprezzamenti si sono concentrati sulle parti che aiutano il ricercatore a controllare il proprio studio prima e durante la raccolta. La partecipante ha indicato come particolarmente utile l'ambiente di prova, che permette di attraversare il percorso da partecipante e verificare che la configurazione sia corretta prima di aprire il progetto al pubblico. Ha apprezzato la vista della singola annotazione, sia nella resa grafica sia nel formato grezzo, il calcolo dell'affidabilità degli annotatori, che ha definito \emph{really handy}, e il registro delle attività, utile soprattutto quando sullo stesso progetto lavorano più ricercatori. Il giudizio complessivo è stato positivo, con un riferimento esplicito alla quantità di aspetti personalizzabili e alla loro sensatezza.
 
-L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante. È un'osservazione coerente con il problema della pagina unica descritto sopra, e la riorganizzazione in sottosezioni ne è in parte la risposta, ma la curva di apprendimento iniziale resta un aspetto su cui il sistema può migliorare.
+L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante. È un'osservazione coerente con il problema del caricamento del dataset descritto sopra, e la riorganizzazione delle schede ne è in parte la risposta, ma la curva di apprendimento iniziale resta un aspetto su cui il sistema può migliorare.
 
-% ---------------------------------------------------------------------
-\subsection{Dalle osservazioni agli interventi}
-\label{subsec:walkthrough-interventi}
-
-La tabella~\ref{tab:walkthrough} riassume le osservazioni principali e il modo in cui il sistema è cambiato dopo la sessione.
-
-\begin{table}[ht]
-\centering
-\small
-\begin{tabular}{p{0.45\textwidth} p{0.45\textwidth}}
-\toprule
-\textbf{Osservazione} & \textbf{Intervento} \\
-\midrule
-Schema e dataset nella stessa scheda, con il caricamento dei documenti visibile solo scorrendo & Configurazione riorganizzata in dieci schede, con il dataset in una scheda dedicata \\
-\addlinespace
-Il pulsante \emph{Clear} non chiarisce se cancella uno o tutti gli span & Etichetta cambiata in \emph{Clear all} \\
-\addlinespace
-Timore di non poter ritirare un progetto lanciato per errore & Nessuno, la pausa copre il caso e la zona separata per le azioni irreversibili è confermata \\
-\addlinespace
-La cancellazione dei dati di prova richiede lo stato di bozza o pausa, scoperto solo per tentativi & Il vincolo è comunicato da un messaggio al momento del tentativo \\
-\addlinespace
-Blocco della configurazione dopo il lancio e opzioni di clonazione & Nessuno, risultati chiari \\
-\addlinespace
-Nessun modo di imporre un tempo minimo per documento & Solo monitoraggio, con le annotazioni sotto i cinque secondi evidenziate, questione rimandata alle limitazioni \\
-\bottomrule
-\end{tabular}
-\caption{Osservazioni emerse dal cognitive walkthrough e interventi conseguenti.}
-\label{tab:walkthrough}
-\end{table}
-
-Tra le osservazioni in tabella, una merita di essere ripresa. Il tempo minimo per documento sembra un'esigenza isolata, ma riporta a un problema già incontrato in questo capitolo da tutt'altra strada.
-
-% ---------------------------------------------------------------------
-\subsection{Due prove, la stessa debolezza}
-\label{subsec:walkthrough-convergenza}
-
-Nello studio simulato (\S\ref{sec:disc-qualita}) l'annotatore con il profilo da spammer risponde sempre con la stessa classe. Proprio per questo supera la soglia di accuratezza sulle gold unit e non viene escluso, mentre MACE, guardando l'insieme delle sue risposte, gli attribuisce la competenza più bassa del gruppo. La domanda di Veronika Batzdorfer descrive lo stesso comportamento visto dal lato umano. Chi partecipa a uno studio retribuito può attraversare i documenti in fretta, senza leggerli davvero, e arrivare comunque al codice di completamento. La sua preoccupazione non nasceva da un'ipotesi, ma dall'esperienza di chi ha raccolto in crowdsourcing le annotazioni di PsyCoMark.
-
-Le due prove sono indipendenti. La prima viene da annotatori artificiali costruiti apposta, la seconda da una ricercatrice che non conosceva i loro profili. Arrivano però allo stesso punto, cioè che il controllo basato sulle gold unit ferma chi sbaglia, ma non chi lavora senza impegnarsi e ha la fortuna, o l'accortezza, di rispondere in modo compatibile con le soluzioni attese. Il sistema raccoglie già i segnali che permettono di riconoscere questo comportamento, la competenza stimata da MACE e il tempo impiegato per ogni documento, ma li usa solo per il monitoraggio a posteriori. Nessuno dei due interviene mentre la raccolta è in corso.
-
-Questa convergenza dà alla debolezza un peso maggiore di quello che avrebbe se fosse emersa da una sola delle due prove, e indica anche una direzione concreta. Un controllo di qualità più robusto non ha bisogno di nuovi dati, ma di usare in tempo reale quelli che il sistema già raccoglie. Il capitolo di discussione riprende questo punto.
-
-% ---------------------------------------------------------------------
 \subsection{In sintesi}
 \label{subsec:walkthrough-sintesi}
 
-Nel complesso la sessione ha spostato l'attenzione da come il sistema funziona a come viene capito. I problemi emersi non riguardano la logica della piattaforma, che ha retto anche nelle parti più delicate, ma il modo in cui questa logica viene presentata a chi la incontra per la prima volta. Resta il limite di una valutazione condotta con una sola esperta e in forma guidata, che non sostituisce uno studio con più utenti, e su cui si torna nel capitolo sulle limitazioni. Il capitolo successivo riprende questi risultati insieme a quelli dello studio simulato, per capire cosa dicono, nel loro insieme, rispetto al problema da cui la tesi è partita.
+Nel complesso la sessione ha spostato l'attenzione da come il sistema funziona a come viene capito. I problemi emersi non riguardano la logica della piattaforma, che ha retto anche nelle parti più delicate, ma il modo in cui questa logica viene presentata a chi la incontra per la prima volta. Resta il limite di una valutazione condotta con una sola esperta e in forma guidata, che non sostituisce uno studio con più utenti, e su cui si torna nel capitolo sulle limitazioni. Il capitolo successivo riprende questi risultati per capire cosa dicono rispetto al problema da cui la tesi è partita.
 
 % =====================================================================
 \chapter{Discussione}
@@ -718,7 +671,7 @@ Dei tre aspetti da cui si era partiti, i risultati confermano il primo e il terz
 \chapter{Conclusioni}
 \label{chap:conclusioni}
 
-\printbibliography
+\printbibliography[heading=bibintoc]
 
 \backmatter
 \cleardoublepage
