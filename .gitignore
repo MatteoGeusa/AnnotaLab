@@ -4,3 +4,19 @@
 __pycache__/
 backend/datasets/
 Claude outputs/
+
+# File generati dalla compilazione LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*-SAVE-ERROR
