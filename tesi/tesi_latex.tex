@@ -49,11 +49,11 @@
 }
 
 \hypersetup{
-    pdftitle={Progettazione e Sviluppo di una Piattaforma FullStack per l'Annotazione di Narrative Complottiste tramite Crowdsourcing},
+    pdftitle={Progettazione e Sviluppo di una Piattaforma Full Stack per l'Annotazione di Narrative Complottiste tramite Crowdsourcing},
     pdfauthor={Matteo Pasquale Geusa}
 }
 
-\title{Progettazione e Sviluppo di una Piattaforma FullStack per l'Annotazione di Narrative Complottiste tramite Crowdsourcing}
+\title{Progettazione e Sviluppo di una Piattaforma Full Stack per l'Annotazione di Narrative Complottiste tramite Crowdsourcing}
 \author{Matteo Pasquale Geusa}
 \IDnumber{2058638}
 \course{Laurea Triennale in Informatica}
@@ -70,12 +70,12 @@
 \frontmatter
 \maketitle
 
-\dedication{Dedicato a }
+\dedication{Dedicato a me, di qualche anno fa.}
 
 \begin{abstract}
 Molti compiti di annotazione testuale non si limitano a classificare un documento, ma chiedono di individuare i confini delle porzioni di testo che esprimono un concetto, porzioni che spesso si sovrappongono. Raccogliere questo tipo di annotazione in crowdsourcing richiede oggi di comporre più strumenti indipendenti, e quelli esistenti trattano la sovrapposizione degli span come un'estensione del formato dei dati o come una funzione per annotatori esperti, non come un'esperienza progettata per chi annota per la prima volta.
 
-Questa tesi presenta la progettazione e lo sviluppo di una piattaforma full stack open source per l'annotazione in crowdsourcing di narrative complottiste, nata dal caso di studio PsyCoMark, la Task 10 di SemEval-2026. La piattaforma offre un'interfaccia in cui gli span sovrapposti si definiscono direttamente sul testo e integra in un'unica configurazione l'intero ciclo dello studio, dall'ingresso dei partecipanti tramite Prolific a un percorso di preparazione configurabile, alla distribuzione dei documenti, fino al controllo qualità con documenti a soluzione nota e alla stima della competenza degli annotatori con MACE.
+Questa tesi presenta la progettazione e lo sviluppo di una piattaforma full stack open source per l'annotazione in crowdsourcing di narrative complottiste, nata dal caso di studio PsyCoMark, il Task 10 di SemEval-2026. La piattaforma offre un'interfaccia in cui gli span sovrapposti si definiscono direttamente sul testo e integra in un'unica configurazione l'intero ciclo dello studio, dall'ingresso dei partecipanti tramite Prolific a un percorso di preparazione configurabile, alla distribuzione dei documenti, fino al controllo qualità con documenti a soluzione nota e alla stima della competenza degli annotatori con MACE.
 
 Il sistema è stato valutato con un cognitive walkthrough condotto insieme a una ricercatrice tra gli organizzatori di PsyCoMark. La sessione indica che l'integrazione del ciclo risponde a un bisogno reale dei ricercatori, ha portato a riorganizzare la configurazione del progetto e ha mostrato che la sovrapposizione degli span pone problemi di interazione specifici. Il vantaggio dell'interfaccia rispetto agli strumenti esistenti resta da verificare con uno studio su annotatori reali.
 
@@ -94,11 +94,11 @@ Il sistema è stato valutato con un cognitive walkthrough condotto insieme a una
 \section{Motivazione}
 \label{sec:motivazione}
 
-Classificare un documento come complottista o meno richiede una sola decisione. Capire perché lo sia ne richiede molte di più. Bisogna individuare chi viene accusato, cosa gli viene attribuito, chi ne sarebbe danneggiato e quali prove vengono citate, e ciascuno di questi elementi occupa una porzione diversa del testo. Il compito di stabilire i confini di queste porzioni prende il nome di unitizing \parencite{krippendorff2016unitizing}, e compare in una famiglia crescente di task, dall'estrazione di entità annidate \parencite{finkel2009nested} all'analisi del sentiment per aspetti \parencite{zhang2023absa}, fino all'argument mining \parencite{stab2017argument}. In molti di questi task le porzioni si sovrappongono, perché la stessa frase può nominare l'attore di un complotto ed essere al tempo stesso parte dell'azione che gli viene attribuita.
+Per spiegare perché un commento sia complottista non basta un'etichetta sull'intero testo. Bisogna individuare chi viene accusato, cosa gli viene attribuito, chi ne sarebbe danneggiato e quali prove vengono citate, e ciascuno di questi elementi occupa una porzione diversa del testo. Il compito di stabilire i confini di queste porzioni prende il nome di unitizing \parencite{krippendorff2016unitizing}, e compare in una famiglia crescente di task, dall'estrazione di entità annidate \parencite{finkel2009nested} all'analisi del sentiment per aspetti \parencite{zhang2023absa}, fino all'argument mining \parencite{stab2017argument}. In molti di questi task le porzioni si sovrappongono, perché la stessa frase può nominare l'attore di un complotto ed essere al tempo stesso parte dell'azione che gli viene attribuita.
 
-PsyCoMark, la Task 10 di SemEval-2026 \parencite{samory2026psycomark}, è un esempio concreto di questa difficoltà. Il compito chiede di individuare in commenti Reddit cinque marcatori psicolinguistici delle narrative complottiste, i cui span possono sovrapporsi, e le annotazioni sono state raccolte in crowdsourcing da lavoratori reclutati online. L'accordo tra annotatori misurato sugli span è stato molto basso, segno che individuare i confini delle unità è molto più difficile che assegnare un'etichetta all'intero testo.
+PsyCoMark, il Task 10 di SemEval-2026 \parencite{samory2026psycomark}, è un esempio concreto di questa difficoltà. Il compito chiede di individuare in commenti Reddit cinque marcatori psicolinguistici delle narrative complottiste, i cui span possono sovrapporsi, e le annotazioni sono state raccolte in crowdsourcing da lavoratori reclutati online. L'accordo tra annotatori misurato sugli span è di 0,15 valore ottenuto dal rapporto tra l'effettiva sovrapposizione delle porzioni di testo selezionate dagli annotatori e il totale degli span evidenziati. Se il valore fosse pari a 1, significherebbe che vi è una concordanza perfetta, con tutti gli annotatori che hanno individuato esattamente i medesimi confini iniziali e finali per ogni marcatore. Mentre un punteggio così basso indica una forte discrepanza nelle selezioni, con sovrapposizioni solo parziali o assenti. Questo rappresenta quindi la prova evidente che individuare i confini esatti delle unità di testo è un compito intrinsecamente più ambiguo e complesso rispetto all'assegnazione di una singola etichetta all'intero documento.
 
-Una parte di questo disaccordo non è necessariamente rumore. La prospettiva perspectivista sostiene che, per costrutti soggettivi come quelli coinvolti nelle narrative complottiste, il disaccordo tra annotatori può riflettere letture diverse e legittime dello stesso testo \parencite{cabitza2023perspectivist}. Per distinguere queste differenze dagli errori serve però che l'annotazione venga raccolta in condizioni controllate, con annotatori preparati, un'interfaccia che non introduca errori propri e strumenti per stimare l'affidabilità di ciascuno.
+Secondo la prospettiva perspectivista, per costrutti soggettivi come quelli coinvolti nelle narrative complottiste una parte del disaccordo tra annotatori può riflettere letture diverse e legittime dello stesso testo \parencite{cabitza2023perspectivist}. Per distinguere queste differenze dagli errori serve però che l'annotazione venga raccolta in condizioni controllate, con annotatori preparati, un'interfaccia che non introduca errori propri e strumenti per stimare l'affidabilità di ciascuno.
 
 Condurre uno studio di questo tipo in crowdsourcing richiede oggi di assemblare più strumenti indipendenti. Uno serve per il reclutamento, uno per il consenso informato e i questionari, uno per l'annotazione e un altro ancora per analizzare l'affidabilità dei dati raccolti. Il ricercatore deve tenerli sincronizzati, gestire a mano il passaggio dei dati dall'uno all'altro e, se lavora con altri colleghi, trovare un modo per condividere lo stesso studio.
 
@@ -106,7 +106,7 @@ Condurre uno studio di questo tipo in crowdsourcing richiede oggi di assemblare 
 \section{Il gap}
 \label{sec:intro-gap}
 
-Tra gli strumenti di annotazione disponibili, molti sanno rappresentare span sovrapposti. Lo fanno però trattando la sovrapposizione come un'estensione del formato dei dati, un'opzione da abilitare oppure una funzione pensata per annotatori esperti. Nessuno di essi documenta come rendere la sovrapposizione governabile da chi annota per la prima volta, cioè da un lavoratore reclutato su una piattaforma di crowdsourcing, senza addestramento specifico. Il task di unitizing con overlap viene quindi trattato come un problema di rappresentazione dei dati e non come un'esperienza da progettare per l'annotatore. Il capitolo~\ref{cap:background} esamina questi strumenti nel dettaglio.
+Tra gli strumenti di annotazione disponibili, molti sanno rappresentare span sovrapposti. Lo fanno però trattando la sovrapposizione come un'estensione del formato dei dati, un'opzione da abilitare oppure una funzione pensata per annotatori esperti. Nessuno di essi documenta come rendere la sovrapposizione gestibile da chi annota per la prima volta, cioè da un lavoratore reclutato su una piattaforma di crowdsourcing senza addestramento specifico. Il capitolo~\ref{cap:background} esamina questi strumenti nel dettaglio.
 
 % =====================================================================
 \section{Il problema affrontato}
@@ -115,22 +115,22 @@ Tra gli strumenti di annotazione disponibili, molti sanno rappresentare span sov
 La tesi affronta quindi una domanda precisa. Come si può progettare un sistema che permetta a un ricercatore di condurre uno studio di unitizing con span sovrapposti in crowdsourcing, dalla preparazione degli annotatori alla stima dell'affidabilità, e che offra a chi annota un'interazione pensata per questo compito?
 
 % =====================================================================
-\section{Novelty}
+\section{Novità}
 \label{sec:novelty}
 
-La proposta centrale è un'interfaccia di annotazione interattiva in cui gli span sovrapposti si definiscono direttamente sul testo, senza ricorrere a formati intermedi o a procedure manuali. L'interfaccia aggancia la selezione ai confini delle parole, così da eliminare gli errori di confine dovuti alla selezione con il mouse, e mantiene leggibili le etichette anche quando più span coprono la stessa porzione di testo. La sovrapposizione diventa così il comportamento normale dell'interfaccia e non un'eccezione da gestire.
+La proposta centrale è un'interfaccia di annotazione interattiva in cui gli span sovrapposti si definiscono direttamente sul testo, senza ricorrere a formati intermedi o a procedure manuali. L'interfaccia aggancia la selezione ai confini delle parole, così da eliminare le selezioni a metà parola, e mantiene leggibili le etichette anche quando più span coprono la stessa porzione di testo. Selezionare una porzione già annotata aggiunge un nuovo span senza toccare quelli esistenti.
 
 % =====================================================================
-\section{Contribution}
+\section{Contributo}
 \label{sec:contribution}
 
-Questa interfaccia è il cuore di un sistema open source che integra l'intero ciclo di uno studio di annotazione in crowdsourcing in un'unica applicazione. Il sistema gestisce l'ingresso dei partecipanti da Prolific, un percorso di preparazione configurabile fatto di consenso informato, questionario, codebook, istruzioni e task di prova, la distribuzione dei documenti tra gli annotatori secondo strategie diverse, il controllo della qualità tramite documenti con soluzione nota e la stima della competenza degli annotatori con MACE \parencite{hovy2013mace}. Tutte queste fasi condividono la stessa configurazione del progetto, e più ricercatori possono lavorare sullo stesso studio con permessi distinti. Il sistema è stato valutato con una sessione di cognitive walkthrough condotta insieme a una ricercatrice tra gli organizzatori di PsyCoMark.
+L'interfaccia fa parte di un sistema open source che integra l'intero ciclo di uno studio di annotazione in crowdsourcing in un'unica applicazione. Il sistema gestisce l'ingresso dei partecipanti da Prolific, un percorso di preparazione configurabile fatto di consenso informato, questionario, codebook, istruzioni e task di prova, la distribuzione dei documenti tra gli annotatori secondo strategie diverse, il controllo della qualità tramite documenti con soluzione nota e la stima della competenza degli annotatori con MACE \parencite{hovy2013mace}. Tutte queste fasi condividono la stessa configurazione del progetto, e più ricercatori possono lavorare sullo stesso studio con permessi distinti. Il sistema è stato valutato con una sessione di cognitive walkthrough condotta insieme a una ricercatrice tra gli organizzatori di PsyCoMark.
 
 % =====================================================================
 \section{Implicazioni}
 \label{sec:implicazioni}
 
-Un sistema che colmasse del tutto questo gap avrebbe due effetti. Per chi annota, ridurrebbe la parte di disaccordo che nasce dall'interfaccia e non dal testo, rendendo più facile separare gli errori dalle letture legittimamente diverse. Per chi conduce lo studio, eliminerebbe il lavoro di raccordo tra strumenti, che richiede competenze tecniche estranee alla domanda di ricerca, e renderebbe gli studi di unitizing accessibili anche a gruppi che oggi non hanno le risorse per costruirsi un'infrastruttura propria.
+Un sistema che colmasse questo gap ridurrebbe, per chi annota, la parte di disaccordo dovuta all'interfaccia, rendendo più facile separare gli errori dalle letture legittimamente diverse. Per chi conduce lo studio eliminerebbe il lavoro di raccordo tra strumenti, che richiede competenze tecniche estranee alla domanda di ricerca, e renderebbe gli studi di unitizing accessibili anche a gruppi che oggi non hanno le risorse per costruirsi un'infrastruttura propria.
 
 % =====================================================================
 \section{Struttura della tesi}
@@ -141,48 +141,48 @@ Il capitolo~\ref{cap:background} presenta il caso di studio, gli strumenti di an
 \chapter{Background e lavori correlati}
 \label{cap:background}
 
-Questo capitolo serve a chiarire il problema affrontato dalla tesi prima ancora di parlare della soluzione. Si parte dal caso di studio che l'ha originato, cioè l'annotazione di marcatori psicolinguistici in commenti complottisti, si passa alla famiglia di task che condividono la stessa difficoltà, cioè quelli in cui le unità annotate si sovrappongono, si vede come si misura l'accordo quando le unità non sono date in anticipo, e si chiude con gli strumenti di annotazione esistenti.
+Questo capitolo chiarisce il problema affrontato dalla tesi prima di parlare della soluzione. Parte dal caso di studio che l'ha originato, cioè l'annotazione di marcatori psicolinguistici in commenti complottisti, passa agli strumenti di annotazione esistenti e a come trattano gli span sovrapposti, e chiude con gli approcci al controllo della qualità nel crowdsourcing.
 
 % =====================================================================
 \section{Il caso di studio, PsyCoMark}
 \label{sec:psycomark}
 
-Il lavoro nasce da un compito concreto. PsyCoMark, la Task 10 di SemEval-2026 \parencite{samory2026psycomark}, chiede di estrarre da commenti Reddit cinque marcatori psicolinguistici radicati nella psicologia evoluzionistica e poi di classificare il contenuto come complottista o meno. I cinque marcatori sono Actor, cioè le entità cui viene attribuito il complotto, Action, le attività ingannevoli attribuite ai cospiratori, Effect, le conseguenze o il danno prodotti, Victim, chi ne è colpito, ed Evidence, le prove addotte a sostegno della credenza. Il corpus raccoglie 5.354 commenti da 226 subreddit, scelti in modo da mescolare comunità dichiaratamente complottiste e comunità ordinarie, così che i marcatori non coincidano con l'argomento della discussione.
+PsyCoMark, il Task 10 di SemEval-2026 \parencite{samory2026psycomark}, chiede di estrarre da commenti Reddit cinque marcatori psicolinguistici radicati nella psicologia evoluzionistica e poi di classificare il contenuto come complottista o meno. I cinque marcatori sono Actor, cioè le entità cui viene attribuito il complotto, Action, le attività ingannevoli attribuite ai cospiratori, Threat (nel paper \emph{Effect}), le conseguenze o il danno prodotti, Victim, chi ne è colpito, ed Evidence, le prove addotte a sostegno della credenza. Il corpus raccoglie 5.354 commenti da 226 subreddit, scelti in modo da mescolare comunità dichiaratamente complottiste e comunità ordinarie, così che i marcatori non coincidano con l'argomento della discussione.
 
-Due aspetti di questo compito contano per il resto della tesi. Il primo è che gli span dei marcatori possono sovrapporsi, ed è il paper stesso a dirlo, perché un documento può contenere più span per ciascun marcatore e questi possono sovrapporsi tra loro. Il secondo è che l'annotazione è stata condotta in crowdsourcing, con 138 lavoratori reclutati su Prolific e un percorso fatto di consenso informato, questionario preliminare, istruzioni con codebook, task di addestramento e infine dieci documenti da annotare.
+Gli span dei marcatori possono sovrapporsi, perché un documento può contenere più span per ciascun marcatore e questi possono intersecarsi tra loro \parencite{samory2026psycomark}. L'annotazione, inoltre, è stata condotta in crowdsourcing, con 138 lavoratori reclutati su Prolific e un percorso fatto di consenso informato, questionario preliminare, istruzioni con codebook, task di addestramento e infine dieci documenti da annotare. Sono queste due caratteristiche a guidare il resto della tesi.
 
 
 % =====================================================================
 \section{Gli strumenti di annotazione esistenti}
 \label{sec:strumenti}
 
-Gli strumenti generalisti per l'annotazione testuale non mancano, e una rassegna sistematica ne ha censiti molti mettendo proprio la possibilità di sovrapporre span tra i criteri di confronto \parencite{neves2021review}. Vale quindi la pena guardare come i più diffusi trattano la sovrapposizione e per quale tipo di utente sono progettati.
+Gli strumenti generalisti per l'annotazione testuale sono molti, e una rassegna sistematica li ha confrontati usando tra i criteri anche la possibilità di sovrapporre span \parencite{neves2021review}. Questa sezione guarda come i più diffusi trattano la sovrapposizione e per quale tipo di utente sono progettati.
 
-Potato è open source ed è esplicitamente pensato per il crowdsourcing, perché prevede l'ingresso degli annotatori tramite Prolific, e nelle versioni recenti gestisce gli span sovrapposti impilando le fasce e riducendo a pallini le etichette che si scontrano \parencite{pei2022potato}. Prodigy è commerciale e supporta in modo nativo span sovrapposti e annidati, ma si rivolge a sviluppatori e a chi costruisce dataset in prima persona, non a lavoratori reclutati su una piattaforma \parencite{prodigy}. doccano è open source e permette la sovrapposizione solo se il ricercatore attiva un'apposita opzione, disattivata per impostazione predefinita \parencite{doccano}. INCEpTION, rivolto ad annotatori esperti in contesti accademici, rende la sovrapposizione una proprietà configurabile per ciascun livello di annotazione, anch'essa disattivata di default \parencite{klie2018inception}. Label Studio dichiara il supporto agli span sovrapposti nei propri modelli di progetto, ma distribuisce anche un componente aggiuntivo il cui scopo è segnalare un errore e bloccare l'invio quando due span si sovrappongono \parencite{labelstudio}.
+Potato è open source ed è esplicitamente pensato per il crowdsourcing, perché prevede l'ingresso degli annotatori tramite Prolific, e nelle versioni recenti gestisce gli span sovrapposti impilando le fasce, ma accumula le etichette nel punto di intersezione, dove coprono il testo \parencite{pei2022potato}. Prodigy è commerciale e supporta in modo nativo span sovrapposti e annidati, ma si rivolge a sviluppatori e a chi costruisce dataset in prima persona, non a lavoratori reclutati su una piattaforma \parencite{prodigy}. doccano è open source e permette la sovrapposizione solo se il ricercatore attiva un'apposita opzione, disattivata per impostazione predefinita \parencite{doccano}. INCEpTION, rivolto ad annotatori esperti in contesti accademici, rende la sovrapposizione una proprietà configurabile per ciascun livello di annotazione, anch'essa disattivata di default \parencite{klie2018inception}. Label Studio dichiara il supporto agli span sovrapposti nei propri modelli di progetto, ma distribuisce anche un componente aggiuntivo il cui scopo è segnalare un errore e bloccare l'invio quando due span si sovrappongono \parencite{labelstudio}.
 
-Ne emerge un quadro coerente. La sovrapposizione è rappresentabile quasi ovunque, però resta trattata come un'eccezione da abilitare, oppure come una funzione rivolta a chi annota per mestiere. Quello che nessuno di questi strumenti documenta è il lato dell'annotatore occasionale, cioè quante etichette restino leggibili quando si accumulano sulla stessa porzione di testo, cosa accada al testo sottostante e come si selezioni o si rimuova uno span sepolto sotto altri. Ed è esattamente la condizione di chi annota in crowdsourcing, senza addestramento specifico, che è il contesto in cui PsyCoMark ha raccolto i suoi dati.
+La sovrapposizione è quindi rappresentabile quasi ovunque, ma resta un'eccezione da abilitare oppure una funzione rivolta a chi annota per mestiere. Nessuno di questi strumenti documenta il lato dell'annotatore occasionale, cioè quante etichette restino leggibili quando si accumulano sulla stessa porzione di testo, cosa accada al testo sottostante e come si selezioni o si rimuova uno span coperto da altri. Questa è la condizione di chi annota in crowdsourcing senza addestramento specifico, ed è il contesto in cui PsyCoMark ha raccolto i suoi dati.
 
 % =====================================================================
 \section{Controllo della qualità nel crowdsourcing}
 \label{sec:crowdquality}
 
-Resta un ultimo elemento di contesto, perché un'annotazione raccolta da persone non addestrate richiede che la sua affidabilità venga stimata. Due approcci ricorrono in letteratura. Il primo consiste nell'inserire nel flusso di lavoro documenti con soluzione nota, contro cui confrontare le risposte. Il secondo stima congiuntamente l'etichetta corretta e la competenza di ciascun annotatore a partire dalle sole annotazioni raccolte, senza soluzioni note, ed è l'approccio di MACE \parencite{hovy2013mace}. I due si completano, perché il primo misura pochi casi in modo diretto mentre il secondo sfrutta l'intero volume raccolto, ed entrambi sono ripresi nel capitolo Metodi (\S\ref{cap:metodi}).
+Un'annotazione raccolta da persone non addestrate richiede anche di stimarne l'affidabilità. In letteratura ricorrono due approcci. Il primo consiste nell'inserire nel flusso di lavoro documenti con soluzione nota, contro cui confrontare le risposte. Il secondo stima congiuntamente l'etichetta corretta e la competenza di ciascun annotatore a partire dalle sole annotazioni raccolte, senza soluzioni note, ed è l'approccio di MACE \parencite{hovy2013mace}. I due si completano, perché il primo misura pochi casi in modo diretto mentre il secondo sfrutta l'intero volume raccolto, ed entrambi sono ripresi nel capitolo~\ref{cap:metodi}.
 
 % =====================================================================
 \section{Che cosa manca}
 \label{sec:gap}
 
-Mettendo insieme i tre quadri, il posto lasciato vuoto si vede. Esistono task, e PsyCoMark è uno di questi, in cui le unità da annotare si sovrappongono e devono essere raccolte da annotatori non specializzati. Esistono misure di accordo adatte a questo caso. Esistono strumenti di annotazione che sanno rappresentare la sovrapposizione, ma la trattano come un'opzione da abilitare o la offrono a un pubblico di esperti, e nessuno documenta come renderla governabile da chi annota per la prima volta. Il sistema descritto nei capitoli seguenti si colloca in questo spazio.
+PsyCoMark è un esempio di task in cui le unità da annotare si sovrappongono e vengono raccolte da annotatori non specializzati. Gli strumenti di annotazione esistenti sanno rappresentare la sovrapposizione, ma la trattano come un'opzione da abilitare o la rivolgono a utenti esperti, e nessuno documenta come renderla gestibile da chi annota per la prima volta. Il sistema descritto nei capitoli seguenti si colloca in questo spazio.
 
-\chapter{Dati, Materiali e Definizioni}
+\chapter{Dati, materiali e definizioni}
 \label{cap:dati}
 
-Il capitolo procede dal progetto ovvero l'unità che racchiude ogni aspetto di uno studio di annotazione, verso le sue parti costitutive, cosa produce una singola istanza di annotazione, cosa ne vincola la forma, quali dati la alimentano, come si misura la qualità delle risposte raccolte, e chi le produce.
+Il capitolo parte dal progetto, cioè l'unità che raccoglie ogni aspetto di uno studio di annotazione, e procede verso le sue parti. Descrive cosa produce una singola istanza di annotazione, cosa ne vincola la forma, quali dati la alimentano, come si misura la qualità delle risposte raccolte e chi le produce.
 
 \section{Il progetto come unità di configurazione}
 \label{sec:progetto}
 
-Ogni studio di annotazione nasce da un progetto, l'oggetto che raccoglie in un unico posto le scelte che lo definiscono ovvero chi lo cura, cosa va annotato, come deve essere annotato, chi annota, come si verifica la qualità delle risposte.
+Ogni studio di annotazione nasce da un progetto, l'oggetto che raccoglie in un unico posto le scelte che lo definiscono, cioè chi lo cura, cosa va annotato e come, chi annota e come si verifica la qualità delle risposte.
 
 Un progetto riunisce in un'unica configurazione il dataset da annotare (\S\ref{sec:dataset}), lo schema di annotazione che vincola la forma di ogni istanza (\S\ref{sec:schema}), il flusso di onboarding dei partecipanti (\S\ref{sec:annotatore}), il controllo qualità tramite gold unit (\S\ref{sec:goldunit}), e le modalità di distribuzione dei documenti sul bacino di annotatori.
 
@@ -193,16 +193,16 @@ Un progetto riunisce in un'unica configurazione il dataset da annotare (\S\ref{s
     \label{fig:stati-progetto}
 \end{figure}
 
-Un progetto attraversa quattro stati nel corso della sua vita: bozza, attivo, in pausa, completato. Accetta nuove istanze di annotazione solo nello stato attivo. In bozza è modificabile liberamente in ogni suo aspetto. Una volta attivato (passaggio che richiede almeno un documento nel dataset), la pubblicazione blocca la configurazione, schema compreso, poiché anche lo schema ne è un campo, e la rende modificabile solo clonando il progetto. Il blocco previene situazioni in cui se lo schema o i criteri di distribuzione cambiassero a raccolta già avviata, le annotazioni raccolte prima e dopo il cambiamento non sarebbero più confrontabili tra loro.
+Un progetto attraversa quattro stati nel corso della sua vita, cioè bozza, attivo, in pausa e completato (Figura~\ref{fig:stati-progetto}), e accetta nuove istanze di annotazione solo quando è attivo. In bozza è modificabile liberamente in ogni suo aspetto. Per attivarlo serve almeno un documento nel dataset. Un progetto attivo ma non ancora pubblicato ufficialmente funziona da ambiente di prova, in cui il ricercatore può verificare la configurazione (\S\ref{sec:live}). Quando poi il progetto viene pubblicato ufficialmente, la configurazione si blocca, schema compreso, e da quel momento si può cambiare solo clonando il progetto. Il blocco serve a mantenere confrontabili le annotazioni, che non lo sarebbero più se lo schema o i criteri di distribuzione cambiassero a raccolta già avviata.
 
-Chi cura un progetto assume un ruolo distinto da chi vi partecipa. Il ricercatore è chi crea il progetto; può aggiungere altri collaboratori, per condividere la gestione dello studio. L'annotatore, il ruolo trattato dal resto del capitolo, non configura il progetto ma vi partecipa.
+Chi cura un progetto ha un ruolo distinto da chi vi partecipa. Il ricercatore crea il progetto e può aggiungere altri collaboratori per condividerne la gestione. L'annotatore, di cui si occupa il resto del capitolo, non configura il progetto ma vi partecipa.
 
 Le sezioni seguenti riprendono uno per uno gli elementi che il progetto raccoglie, prima l'unità di lavoro che l'annotatore produce, poi cosa ne vincola la forma, quali dati la alimentano, come si verifica la sua qualità, infine chi la produce.
 
 \section{Formalizzazione del task di annotazione}
 \label{sec:task}
 
-Classificare un testo assegna un'unica etichetta all'intero documento, senza indicare quale porzione la giustifica. Il task trattato in questo capitolo richiede di individuare quali porzioni di testo, dette span, sostengono ciascuna etichetta, e permettere che porzioni diverse si sovrappongano, quando più interpretazioni convivono sullo stesso testo. Questo compito, noto in letteratura come \textit{unitizing}, produce per ogni documento un'istanza di annotazione: l'unità di lavoro assegnata a un singolo annotatore su un singolo documento. L'istanza di annotazione prodotta da un annotatore su questo testo ha il formato seguente:
+Classificare un testo assegna un'unica etichetta all'intero documento, senza indicare quale porzione la giustifica. Il task trattato in questa tesi chiede invece di individuare le porzioni di testo, dette span, che sostengono ciascuna etichetta, e permette che porzioni diverse si sovrappongano quando più interpretazioni convivono sullo stesso testo. Questo compito, noto in letteratura come \textit{unitizing}, produce per ogni documento un'istanza di annotazione, cioè l'unità di lavoro assegnata a un singolo annotatore su un singolo documento. L'esempio seguente mostra un'istanza prodotta da un annotatore.
 
 \begin{lstlisting}
 {
@@ -239,18 +239,18 @@ Classificare un testo assegna un'unica etichetta all'intero documento, senza ind
 
 Un'istanza di annotazione contiene un insieme di span, ciascuno con un indice di inizio, un indice di fine e un'etichetta assegnata, come mostra il campo \verb|span_highlight|, e, quando lo schema lo prevede, una o più etichette di classificazione a livello di documento, come mostra il campo \verb|classification|.
 
-Due span sono in overlap quando condividono almeno un carattere: dati due span $(\text{start}_1, \text{end}_1)$ e $(\text{start}_2, \text{end}_2)$, vale $\text{start}_1 < \text{end}_2$ e $\text{start}_2 < \text{end}_1$. Il task ammette questa sovrapposizione perché la stessa porzione di testo può sostenere più interpretazioni distinte, indipendentemente dall'etichetta assegnata.
+Due span sono in overlap quando condividono almeno un carattere. In termini formali, dati due span $(\text{start}_1, \text{end}_1)$ e $(\text{start}_2, \text{end}_2)$, vale $\text{start}_1 < \text{end}_2$ e $\text{start}_2 < \text{end}_1$. Il task ammette la sovrapposizione perché la stessa porzione di testo può sostenere più interpretazioni distinte, indipendentemente dall'etichetta assegnata.
 
-Span, overlap e istanza di annotazione sono i tre termini su cui si costruisce il resto del capitolo: non cambiano significato altrove nella tesi.
+Span, overlap e istanza di annotazione mantengono questo significato in tutta la tesi.
 
 \section{Lo schema di annotazione}
 \label{sec:schema}
 
-Lo schema di annotazione, uno dei campi della configurazione del progetto, vincola cosa deve produrre ogni istanza di annotazione: quali componenti sono previsti, e per ciascuno quali etichette o opzioni sono disponibili. È una struttura dichiarativa definita direttamente dal ricercatore.
+Lo schema di annotazione è uno dei campi della configurazione del progetto e vincola cosa deve produrre ogni istanza di annotazione, cioè quali componenti sono previsti e, per ciascuno, quali etichette o opzioni sono disponibili. È una struttura dichiarativa definita direttamente dal ricercatore.
 
-Il sistema supporta due tipi di componenti. Il componente \verb|span_highlight| definisce un insieme di etichette per l'annotazione di span: di ciascuna sono obbligatori un nome e un colore, più un suggerimento testuale mostrato all'annotatore. Il componente \verb|classification| definisce una domanda a scelta singola o multipla applicata all'intero documento. Un progetto attiva uno dei due componenti, o entrambi insieme.
+Il sistema supporta due tipi di componenti. Il componente \verb|span_highlight| definisce un insieme di etichette per l'annotazione di span. Ogni etichetta ha un nome e un colore obbligatori e un suggerimento testuale facoltativo, mostrato all'annotatore. Il componente \verb|classification| definisce una domanda a scelta singola o multipla applicata all'intero documento. Un progetto può usare uno dei due componenti o entrambi.
 
-Lo schema seguente, definisce lo schema ibrido per l'annotazione di narrative complottiste, a differenza degli esempi mostrati finora, che compilano un'istanza su un documento specifico, lo schema seguente non descrive un caso concreto: definisce le regole che ogni istanza del progetto deve rispettare, qualunque sia il documento. Per questo il formato cambia, da JSON con span e indici a una lista dichiarativa di etichette.
+L'esempio seguente definisce lo schema ibrido usato per le narrative complottiste. L'esempio precedente compila un'istanza su un documento specifico, mentre lo schema descrive le regole che ogni istanza del progetto deve rispettare, qualunque sia il documento. Per questo il formato cambia, da JSON con span e indici a una lista dichiarativa di etichette in YAML.
 
 \begin{lstlisting}
 components:
@@ -267,7 +267,7 @@ components:
         hover_hint: "Who is negatively affected by the actor's agenda?"
       - name: Threat
         color: "#FF33F6"
-        hover_hint: "What is the actor doing or planning to do to cause negative outcomes?"
+        hover_hint: "What harm or negative consequences result from the actor's agenda?"
       - name: Evidence
         color: "#FFA500"
         hover_hint: "Which arguments or expressions does the writer of the text use to support his claims?"
@@ -284,16 +284,16 @@ components:
         value: "Can't tell"
 \end{lstlisting}
 
-Ogni componente ha una specifica formale di campi obbligatori e opzionali. Un campo mancante o non riconosciuto rende lo schema invalido: il sistema lo rifiuta al momento del caricamento.
+Ogni componente ha una specifica formale di campi obbligatori e facoltativi. Se manca un campo obbligatorio o ne compare uno non riconosciuto, lo schema non è valido e il sistema lo rifiuta al momento del caricamento.
 
-Lo schema stabilisce la forma di ogni istanza di annotazione; la sezione seguente stabilisce cosa viene distribuito agli annotatori perché la producano.
+Lo schema stabilisce la forma di ogni istanza di annotazione. La sezione seguente descrive cosa viene distribuito agli annotatori perché la producano.
 
 \section{Formato del dataset}
 \label{sec:dataset}
 
-Il dataset di un progetto non è diviso in split di addestramento, validazione e test ma è un unico file JSONL, dove ogni riga rappresenta un documento in formato JSON.
+Il dataset di un progetto è un unico file JSONL, senza divisione tra addestramento, validazione e test, in cui ogni riga rappresenta un documento in formato JSON.
 
-Le chiavi che identificano il testo e l'identificativo del documento sono configurabili per progetto, dato che non tutti i dataset usano gli stessi nomi di campo. Ogni chiave aggiuntiva presente nella riga viene preservata come metadato associato al documento, ad esempio il subreddit o l'id del thread di provenienza:
+Le chiavi che contengono il testo e l'identificativo del documento sono configurabili per progetto, perché non tutti i dataset usano gli stessi nomi di campo. Ogni altra chiave presente nella riga viene conservata come metadato del documento, per esempio il subreddit o l'id del thread di provenienza, come nell'esempio seguente.
 
 \begin{lstlisting}
 {"id": "t1_abc123",
@@ -301,16 +301,16 @@ Le chiavi che identificano il testo e l'identificativo del documento sono config
  "text": "The moon landing was faked by the government to control public opinion."}
 \end{lstlisting}
 
-Il materiale annotato proviene da PsyCoMark, il dataset ufficiale della Task 10 di SemEval-2026, dedicata all'estrazione di marcatori psicolinguistici e alla rilevazione di narrative complottiste (Samory, Soldner e Batzdorfer, 2026). Il corpus è composto da commenti Reddit raccolti su comunità eterogenee, dalla politica alle serie televisive. In questa tesi il dataset si impiega in forma redatta, per tutelare la privacy degli autori dei commenti originali.
+Il materiale annotato proviene da PsyCoMark, il dataset ufficiale del Task 10 di SemEval-2026 \parencite{samory2026psycomark}. Il corpus è composto da commenti Reddit raccolti in comunità eterogenee, dalla politica alle serie televisive. In questa tesi il dataset è usato in forma redatta, per tutelare la privacy degli autori dei commenti.
 
-Tra le righe del dataset, alcune hanno una soluzione nota: sono le gold unit, trattate nella sezione seguente.
+Alcune righe del dataset hanno una soluzione nota. Sono le gold unit, descritte nella sezione seguente.
 
 \section{Le gold unit}
 \label{sec:goldunit}
 
 Una gold unit è una riga del dataset con soluzione nota, usata per misurare quanto le risposte di un annotatore si avvicinano a quella soluzione.
 
-La soluzione, nel campo \verb|gold_solution|, condivide lo stesso schema di annotazione del progetto: può essere un insieme di span, una classificazione, o entrambi insieme. Può anche essere parziale, per limitare la verifica a una sola parte della risposta:
+La soluzione, nel campo \verb|gold_solution|, segue lo stesso schema di annotazione del progetto e può contenere un insieme di span, una classificazione o entrambi. Può anche essere parziale, per limitare la verifica a una parte della risposta. L'esempio seguente contiene sia la classificazione sia gli span.
 
 \begin{lstlisting}
 {"text": "The moon landing was faked by the government to control public opinion.",
@@ -337,35 +337,35 @@ La soluzione, nel campo \verb|gold_solution|, condivide lo stesso schema di anno
     }
 \end{lstlisting}
 
-Questo stesso documento, già usato in \S\ref{sec:task} e in \S\ref{sec:dataset}, è la gold unit di riferimento nel resto della tesi: ogni esempio del capitolo Metodi si appoggia su di essa.
+Questo documento è lo stesso usato in \S\ref{sec:task} e in \S\ref{sec:dataset}, così che istanza, riga del dataset e soluzione nota si possano confrontare sullo stesso testo.
 
 \section{Annotatore e partecipazione al progetto}
 \label{sec:annotatore}
 
-Un annotatore è identificato da un identificativo esterno al sistema, in questo caso quello assegnato da Prolific, il servizio di reclutamento usato; il sistema non ne conserva altro, a parte metadati.
+Un annotatore è identificato da un identificativo esterno al sistema, in questo caso quello assegnato da Prolific, il servizio di reclutamento usato. Oltre a questo identificativo il sistema conserva solo alcuni metadati.
 
-Lo stesso annotatore può partecipare a più progetti contemporaneamente, ciascuno con la propria selezione, il proprio studio, i propri criteri di qualità. Il sistema separa perciò lo stato di un annotatore dall'annotatore stesso: non è una sua proprietà, ma una proprietà della sua partecipazione a un progetto specifico, rappresentata dalla coppia annotatore-progetto.
+Lo stesso annotatore può partecipare a più progetti contemporaneamente, ciascuno con la propria selezione e i propri criteri di qualità. Per questo il sistema non tratta lo stato come una proprietà dell'annotatore, ma della sua partecipazione a un progetto specifico, rappresentata dalla coppia annotatore-progetto.
 
-In questa coppia si registrano tre cose: lo stato di avanzamento (in attesa, attivo, escluso, completato), il superamento delle fasi di onboarding, cioè la sequenza di passaggi preparatori che precede l'annotazione vera e propria (il consenso informato, lo screening, un questionario di eleggibilità e demografia, e il codebook, il materiale teorico-pratico che spiega come interpretare il task), e le metriche di affidabilità calcolate sulle gold unit.
+In questa coppia si registrano tre informazioni. La prima è lo stato di avanzamento (in attesa, attivo, escluso, completato). La seconda è il superamento delle fasi di onboarding, cioè i passaggi preparatori che precedono l'annotazione vera e propria, come il consenso informato, lo screening con le domande di eleggibilità e demografia, e il codebook, il materiale che spiega come interpretare il task. La terza sono le metriche di affidabilità calcolate sulle gold unit.
 
-Di conseguenza, lo stesso annotatore può risultare attivo su un progetto ed escluso su un altro infatti l'affidabilità misurata non è una proprietà dell'annotatore in generale, ma è specifica al singolo studio.
+Lo stesso annotatore può quindi risultare attivo in un progetto ed escluso in un altro, perché l'affidabilità misurata dipende dal singolo studio.
 
-Progetto, istanza di annotazione, schema, dataset, gold unit e annotatore sono i termini su cui si costruisce il capitolo Metodi: lì si descrive come il sistema realizza concretamente ciò che qui è stato definito, non cosa questi termini significano.
+Progetto, istanza di annotazione, schema, dataset, gold unit e annotatore sono i concetti che il capitolo Metodi riprende per descrivere come il sistema li realizza.
 
 \chapter{Metodi}
 \label{cap:metodi}
 
-Il capitolo precedente (\S\ref{cap:dati}) definisce gli elementi costitutivi dell'applicazione, quali progetto, istanza di annotazione, schema, dataset, gold unit, annotatore. Questo capitolo descrive come il sistema li realizza, seguendo separatamente il percorso dell'annotatore e quello del ricercatore che amministra il task. Per ciascuno si parte dal momento centrale e si risale poi a ciò che lo prepara. Per l'annotatore si parte dall'interazione di annotazione, con l'overlap come contributo centrale (\S\ref{sec:overlap}), e si risale all'ingresso nel progetto (\S\ref{sec:onboarding}). Per il ricercatore si parte dall'amministrazione del task mentre raccoglie dati (\S\ref{sec:live}) e si risale alla sua configurazione (\S\ref{sec:configurazione}). L'ultima sezione descrive cosa c'è sotto a rendere tutto questo eseguibile, l'architettura del sistema (\S\ref{sec:architettura}). Le schermate sono presentate nel punto in cui l'utente le incontra.
+Il capitolo~\ref{cap:dati} definisce gli elementi costitutivi dell'applicazione, cioè progetto, istanza di annotazione, schema, dataset, gold unit e annotatore. Questo capitolo descrive come il sistema li realizza, seguendo separatamente il percorso dell'annotatore e quello del ricercatore che amministra il task. Per ciascuno si parte dal momento centrale e si risale poi a ciò che lo prepara. Per l'annotatore si parte dall'interazione di annotazione, con l'overlap come contributo centrale (\S\ref{sec:overlap}), e si risale all'ingresso nel progetto (\S\ref{sec:onboarding}). Per il ricercatore si parte dall'amministrazione del task mentre raccoglie dati (\S\ref{sec:live}) e si risale alla sua configurazione (\S\ref{sec:configurazione}). L'ultima sezione descrive l'architettura del sistema (\S\ref{sec:architettura}). Le schermate sono presentate nel punto in cui l'utente le incontra.
 
 % =====================================================================
 \section{L'interazione di annotazione}
 \label{sec:overlap}
 
-Tutto il sistema esiste per rendere affidabile un momento preciso, quello in cui un annotatore legge un testo e lo annota. Il percorso dell'annotatore parte quindi da qui.
+Il percorso dell'annotatore parte dall'interfaccia di annotazione, perché è lì che nasce il dato che il resto del sistema prepara e controlla.
 
-Ricevuto un documento (\S\ref{sec:distribuzione}), l'annotatore lo affronta attraverso l'interfaccia di annotazione. I documenti arrivano uno alla volta. Quando l'annotatore invia la risposta, il sistema gli propone il successivo, finché la strategia di distribuzione (\S\ref{sec:distribuzione}) non ha più documenti da assegnargli. A quel punto lo rimanda alla piattaforma di reclutamento con il codice di completamento. Nello stesso flusso arrivano anche le gold unit (\S\ref{sec:goldunit}), che l'interfaccia segnala con un banner in cima al documento.
+Ricevuto un documento (\S\ref{sec:distribuzione}), l'annotatore lo affronta attraverso l'interfaccia di annotazione. I documenti arrivano uno alla volta. Quando l'annotatore invia la risposta, il sistema gli propone il successivo, finché la strategia di distribuzione (\S\ref{sec:distribuzione}) non ha più documenti da assegnargli. A quel punto lo rimanda alla piattaforma di reclutamento con il codice di completamento. Nello stesso flusso arrivano anche le gold unit (\S\ref{sec:goldunit}), che l'interfaccia presenta come qualsiasi altro documento, così che l'annotatore non sappia quando viene controllato.
 
-Il capitolo precedente ammette l'overlap tra span come proprietà del task (\S\ref{sec:task}). Il sistema lo traduce in un'interazione diretta sul testo, non in un vincolo di formato dati. Questa interfaccia, tramite cui l'annotatore definisce gli span, è il contributo centrale del sistema.
+Il capitolo precedente ammette l'overlap tra span come proprietà del task (\S\ref{sec:task}). Il sistema lo traduce in un'interazione diretta sul testo, e l'interfaccia con cui l'annotatore definisce gli span è il contributo centrale della tesi.
 
 \begin{figure}[H]
     \centering
@@ -374,11 +374,10 @@ Il capitolo precedente ammette l'overlap tra span come proprietà del task (\S\r
     \label{fig:interfaccia-base}
 \end{figure}
 
-La selezione avviene sul testo (Figura~\ref{fig:interfaccia-base}), con un aggancio automatico alla parola intera. Se la selezione dell'utente termina a metà parola o include spazi in eccesso, il sistema sposta i margini forzandoli ai confini della parola intera più vicina. Questo elimina un errore comune nell'annotazione di span, i confini imprecisi dovuti alla difficoltà di selezionare con il mouse esattamente i caratteri desiderati.
+La selezione avviene sul testo (Figura~\ref{fig:interfaccia-base}), con un aggancio automatico alla parola intera. Se la selezione dell'utente termina a metà parola o include spazi in eccesso, il sistema sposta i margini forzandoli ai confini della parola intera più vicina. Questo elimina le selezioni a metà parola, un errore comune nell'annotazione di span dovuto alla difficoltà di selezionare con il mouse esattamente i caratteri desiderati.
 
-Gli strumenti di annotazione attuali offrono un supporto nullo o limitato per l'unitizing con overlap. Anche uno strumento generalista come Potato \parencite{pei2022potato}, che permette di selezionare span sovrapposti trascinando direttamente sul testo, sovrappone però le etichette dei singoli span nel punto di intersezione, coprendo sia le etichette stesse sia il testo sottostante (Figura~\ref{fig:potato}).
+Gli strumenti esistenti sanno rappresentare l'overlap, ma lo rendono poco leggibile. Potato \parencite{pei2022potato}, per esempio, permette di selezionare span sovrapposti trascinando direttamente sul testo, ma accumula le etichette dei singoli span nel punto di intersezione, coprendo sia le etichette stesse sia il testo sottostante (Figura~\ref{fig:potato}).
 
-% TODO: catturare lo screenshot di Potato sullo stesso testo di esempio e sostituire il riquadro
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\linewidth]{./images/image_potato_span.png}
@@ -386,7 +385,7 @@ Gli strumenti di annotazione attuali offrono un supporto nullo o limitato per l'
     \label{fig:potato}
 \end{figure}
 
-L'interfaccia qui descritta rende l'overlap un'operazione diretta. Selezionare una seconda volta una porzione di testo già annotata, con un'etichetta diversa, aggiunge un nuovo span senza rimuovere il precedente. Gli span sovrapposti vengono resi visibili con una fascia colorata per span, impilata sotto il testo in base al livello di sovrapposizione (Figura~\ref{fig:interfaccia-overlap}). L'annotatore vede a colpo d'occhio quante etichette coprono ciascuna porzione di testo, invece di doverlo ricostruire da una lista di coordinate.
+Nell'interfaccia proposta, selezionare una seconda volta una porzione di testo già annotata, con un'etichetta diversa, aggiunge un nuovo span senza rimuovere il precedente. Ogni span è reso con una fascia colorata, impilata sotto il testo in base al livello di sovrapposizione (Figura~\ref{fig:interfaccia-overlap}). L'annotatore vede subito quante etichette coprono ciascuna porzione di testo, senza doverlo ricostruire da una lista di coordinate.
 
 \begin{figure}[H]
     \centering
@@ -397,17 +396,17 @@ L'interfaccia qui descritta rende l'overlap un'operazione diretta. Selezionare u
 
 Le etichette non sono sempre visibili. Compaiono solo al passaggio del mouse, e mostrano tutti gli span che coprono il punto sotto il cursore. Il testo resta così leggibile anche con molte sovrapposizioni, al contrario di quanto avviene in Potato, dove le etichette si accumulano sopra il testo nel punto di intersezione. Nella Figura~\ref{fig:interfaccia-overlap} il cursore si trova sullo span che inizia con ``NASA'', ed è per questo che solo la sua etichetta è visibile.
 
-Accanto all'etichetta che compare al passaggio del mouse c'è un pulsante che rimuove quello span. I confini di uno span già creato non si modificano, per correggerlo lo si rimuove e lo si ridefinisce con una nuova selezione. L'etichetta da applicare si sceglie dai pulsanti colorati sopra il testo oppure dalla tastiera, perché ogni pulsante riporta il numero che lo richiama, così che un annotatore che lavora su molti documenti non debba spostare la mano sul mouse per cambiare etichetta.
+Accanto all'etichetta che compare al passaggio del mouse c'è un pulsante che rimuove quello span. I confini di uno span già creato non si modificano. Per correggerlo lo si rimuove e lo si ridefinisce con una nuova selezione. L'etichetta da applicare si sceglie dai pulsanti colorati sopra il testo oppure dalla tastiera, perché ogni pulsante riporta il numero che lo richiama, così che un annotatore che lavora su molti documenti non debba spostare la mano sul mouse per cambiare etichetta.
 
-L'interfaccia non è cablata su un task predefinito, ogni componente dello schema (\S\ref{sec:schema}) corrisponde a un blocco visivo generato dinamicamente, uno per \verb|span_highlight|, uno per \verb|classification|, assemblato in base ai componenti presenti nello schema del progetto. Aggiungere un nuovo tipo di componente al sistema significa aggiungere un nuovo blocco, senza modificare quelli esistenti.
+L'interfaccia non è cablata su un task predefinito. Ogni componente dello schema (\S\ref{sec:schema}) corrisponde a un blocco visivo generato dinamicamente, uno per \verb|span_highlight|, uno per \verb|classification|, assemblato in base ai componenti presenti nello schema del progetto. Aggiungere un nuovo tipo di componente al sistema significa aggiungere un nuovo blocco, senza modificare quelli esistenti.
 
-L'interazione qui descritta è ciò che rende l'overlap accessibile all'annotatore, ed è il punto in cui il lavoro di onboarding e distribuzione descritto nelle sezioni seguenti si traduce in una risposta effettiva. La sezione seguente risale ai passaggi che l'annotatore attraversa prima di arrivarci. Come quella risposta viene misurata è descritto in \S\ref{sec:live}.
+Con questa interfaccia l'annotatore definisce span sovrapposti direttamente sul testo. La sezione seguente descrive i passaggi che lo portano fin qui, mentre \S\ref{sec:live} spiega come la sua risposta viene misurata.
 
 % =====================================================================
 \section{L'ingresso nel progetto}
 \label{sec:onboarding}
 
-La sezione precedente ha mostrato l'annotatore al lavoro. Questa descrive come ci arriva. Un annotatore che si iscrive a un progetto non riceve subito documenti da annotare. Il sistema lo fa prima attraversare una pipeline di onboarding (\S\ref{sec:annotatore}), la stessa sequenza di fasi già introdotta nel capitolo precedente, implementata come una macchina a stati.
+Un annotatore che si iscrive a un progetto non riceve subito documenti da annotare. Prima attraversa una pipeline di onboarding (\S\ref{sec:annotatore}), cioè la sequenza di fasi introdotta nel capitolo precedente, che il sistema implementa come una macchina a stati.
 
 \begin{figure}[H]
     \centering
@@ -416,7 +415,7 @@ La sezione precedente ha mostrato l'annotatore al lavoro. Questa descrive come c
     \label{fig:onboarding-fasi}
 \end{figure}
 
-Le fasi, riportate in Figura~\ref{fig:onboarding-fasi}, sono controllate da un interruttore indipendente nella configurazione del progetto, quindi un progetto minimale può disattivarle tutte e portare l'annotatore direttamente all'annotazione, mentre uno studio più esigente le attiva tutte, incluso l'obbligo di superare un task di pratica prima di procedere. Il motore che gestisce la sequenza è lo stesso in entrambi i casi. Cambia solo la configurazione.
+Ogni fase, riportata in Figura~\ref{fig:onboarding-fasi}, ha un interruttore indipendente nella configurazione del progetto. Un progetto minimale può disattivarle tutte e portare l'annotatore direttamente all'annotazione, mentre uno studio più esigente le attiva tutte, compreso l'obbligo di superare un task di pratica prima di procedere. In entrambi i casi la sequenza è gestita dallo stesso motore, e cambia solo la configurazione.
 
 Il contenuto di ogni fase è definito dal ricercatore, non cablato nel sistema. Lo screening è una lista di domande configurabile, caricata come file YAML o JSON, con tipi di risposta diversi (testo, numero, scelta singola o multipla) e domande obbligatorie o facoltative, utili non solo per eleggibilità e demografia di base ma anche per domande personalizzate specifiche dello studio. Codebook e istruzioni sono invece documenti liberi in Markdown, caricati allo stesso modo. La validazione dei file caricati è descritta in \S\ref{sec:configurazione}.
 
@@ -467,17 +466,18 @@ Superato l'onboarding, l'annotatore riceve i documenti da annotare. Come il sist
 
 Il sistema è pensato perché il ricercatore possa configurare e sorvegliare uno studio senza competenze tecniche, un obiettivo che vale sia in fase di configurazione iniziale sia oltre, quando lo studio è già in corso. Questa sezione parte dal secondo caso. Mentre gli annotatori lavorano, il ricercatore ha bisogno di sapere a che punto è la raccolta, se i dati sono di qualità sufficiente e come intervenire se qualcosa non va. Il punto di partenza è la dashboard del progetto (Figura~\ref{fig:dashboard}).
 
-% TODO: aggiungere sullo screenshot i numeri (1) stato, (2) transizioni, (3) avanzamento, (4) conteggi
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{images/Dashboard white cut.png}
+    \includegraphics[width=1\linewidth]{images/Dashboard_white_cut_ann.png}
     \caption{La dashboard del progetto. I riquadri numerati indicano lo stato corrente (1), le transizioni disponibili (2), l'avanzamento della raccolta (3) e i conteggi di documenti, gold unit, annotatori e annotazioni (4).}
     \label{fig:dashboard}
 \end{figure}
 
-Il primo strumento è lo stato del progetto, definito nel capitolo precedente (\S\ref{sec:progetto}). La dashboard mostra lo stato corrente (1) e le transizioni disponibili (2). Lo stato decide cosa vedono gli annotatori. Solo un progetto attivo accetta sessioni e assegna documenti. Negli altri stati il sistema rifiuta le nuove sessioni, e chi sta annotando riceve un messaggio che avvisa che il progetto non accetta più annotazioni. Quando il progetto è attivo, il ricercatore può aprirlo dall'amministrazione come partecipante di prova e percorrere tutta la pipeline. Finché il progetto resta in modalità playground, cioè attivo ma non ancora pubblicato ufficialmente, tutte le sessioni vengono registrate come prova. Le annotazioni di prova sono conteggiate separatamente da quelle reali e non entrano nella valutazione sulle gold unit. Al momento della pubblicazione ufficiale il sistema cancella tutte le annotazioni e le iscrizioni raccolte fino a quel momento, e la raccolta reale parte da zero.
+Il primo strumento è lo stato del progetto, definito nel capitolo precedente (\S\ref{sec:progetto}). La dashboard mostra lo stato corrente (1) e le transizioni disponibili (2). Lo stato decide cosa vedono gli annotatori. Solo un progetto attivo accetta sessioni e assegna documenti. Negli altri stati il sistema rifiuta le nuove sessioni, e chi sta annotando riceve un messaggio che avvisa che il progetto non accetta più annotazioni. Quando il progetto è attivo, il ricercatore può aprirlo dall'amministrazione come partecipante di prova e percorrere tutta la pipeline. Finché il progetto resta nell'ambiente di prova, cioè attivo ma non ancora pubblicato ufficialmente, tutte le sessioni vengono registrate come prova. Le annotazioni di prova sono conteggiate separatamente da quelle reali e non entrano nella valutazione sulle gold unit. Al momento della pubblicazione ufficiale il sistema cancella tutte le annotazioni e le iscrizioni raccolte fino a quel momento, e la raccolta reale parte da zero.
 
 La dashboard riporta anche l'avanzamento della raccolta (3), calcolato sul numero di annotazioni ricevute rispetto a quelle richieste dai documenti, insieme al numero di documenti, gold unit, annotatori iscritti e annotazioni raccolte (4).
+
+Sullo stesso progetto possono lavorare più ricercatori (\S\ref{sec:progetto}). Per questo il sistema tiene un registro delle attività, consultabile dalla scheda \emph{Project Log Entries}, che riporta chi ha modificato il progetto, cosa ha cambiato e quando. Così ogni collaboratore può ricostruire le modifiche fatte dagli altri senza doverle chiedere.
 
 Le risposte raccolte attraverso l'interfaccia descritta in \S\ref{sec:overlap} sono ciò che il sistema misura per stimare la qualità del lavoro di un annotatore. Tra i documenti distribuiti (\S\ref{sec:distribuzione}) figurano anche le gold unit (\S\ref{sec:goldunit}). Il sistema le usa per misurare la qualità delle risposte raccolte, con due meccanismi complementari.
 
@@ -492,23 +492,34 @@ L'esito di ogni gold unit aggiorna l'accuratezza cumulata dell'annotatore su que
     \label{fig:iscrizioni}
 \end{figure}
 
-Il secondo meccanismo è l'integrazione di MACE (Multi-Annotator Competence Estimation) \parencite{hovy2013mace}, un algoritmo Expectation-Maximization che stima congiuntamente l'etichetta più probabile per ciascun documento e la competenza di ciascun annotatore, a partire dalle sole annotazioni raccolte, senza il coinvolgimento delle gold unit.
+Il secondo meccanismo nasce da un limite del primo. Le gold unit coprono solo una piccola parte del dataset, quindi dicono come si comporta un annotatore su pochi documenti scelti, non su tutto il lavoro che svolge nello studio. Per avere un quadro completo la piattaforma integra MACE (Multi-Annotator Competence Estimation) \parencite{hovy2013mace}, un modello probabilistico che stima quanto ci si può fidare di ogni annotatore guardando solo le annotazioni raccolte, senza conoscere le risposte giuste.
 
-Il ricercatore lancia il calcolo MACE dalla console di amministrazione su un progetto. Il sistema produce due output distinti. Il primo è l'etichetta stimata e la confidenza associata per ogni documento, il secondo è un punteggio di competenza sull'iscrizione al progetto per ogni annotatore (\S\ref{sec:annotatore}). Il primo output è una stima di affidabilità complementare alle gold unit, utile dove la loro copertura è limitata; il secondo estende la valutazione dell'annotatore oltre le sole gold unit esplicite, usando l'intero volume di annotazioni raccolte.
+Prendiamo l'esempio di un insegnante che deve correggere un quiz di cui ha perso le soluzioni. Può comunque confrontare le risposte degli studenti tra loro, ma un semplice voto di maggioranza non basta, perché tratterebbe allo stesso modo chi ha studiato e chi tira a indovinare. MACE risolve il problema facendo un'ipotesi esplicita su come nasce ogni annotazione. Davanti a un documento, un annotatore può lavorare con attenzione, e in quel caso riporta l'etichetta corretta, oppure rispondere senza considerare il contenuto, e in quel caso sceglie un'etichetta secondo una sua abitudine personale, per esempio selezionando quasi sempre la stessa opzione. Ogni annotatore è quindi descritto da due quantità. La prima è la sua competenza, cioè la probabilità che una sua risposta sia data con attenzione. La seconda è la sua abitudine, cioè quali etichette tende a scegliere quando risponde a caso. Questa distinzione è importante, perché una risposta casuale può coincidere con quella corretta anche solo per fortuna, e il modello ne tiene conto.
 
-Gold unit e MACE misurano la qualità dopo la raccolta. Quando invece qualcosa va cambiato c'è un vincolo. Una volta pubblicato ufficialmente un progetto, la sua configurazione e il suo dataset non sono più modificabili, così che tutti gli annotatori lavorino nelle stesse condizioni.
+Né le etichette corrette né le competenze sono note in partenza, e MACE le stima insieme alternando due passi. Si parte da valori iniziali scelti a caso per competenze e abitudini. Nel primo passo, usando questi valori, il modello stima per ogni documento quale etichetta è più probabile, dando più peso alle risposte degli annotatori ritenuti più competenti. Nel secondo passo usa le etichette appena stimate per correggere i valori degli annotatori. Chi ha dato spesso l'etichetta ritenuta corretta, e non per un'abitudine che lo porterebbe comunque a sceglierla, vede crescere la sua competenza, mentre chi se ne discosta la vede diminuire. I due passi si ripetono finché le stime smettono di cambiare in modo significativo. Poiché il punto di arrivo può dipendere dai valori iniziali, l'intera procedura viene ripetuta più volte da punti di partenza diversi, e si tiene il risultato che spiega meglio le annotazioni osservate.
 
-Per permettere al ricercatore di modificare un campo mentre il progetto è già pubblicato, può duplicare il progetto in tre modalità, solo configurazione, configurazione e dataset completo, oppure configurazione con le gold unit, i documenti che non hanno ancora raggiunto il numero minimo di annotazioni e gli annotatori non esclusi e non ancora completati, di cui vengono azzerate le metriche sulle gold unit, per iterare rapidamente su varianti dello studio senza ricostruire la configurazione da zero. La copia parte sempre in bozza e non pubblicata.
+La piattaforma usa la variante bayesiana di questa procedura, pensata per un problema tipico del crowdsourcing. Un annotatore che ha lavorato su pochi documenti e li ha azzeccati tutti sembrerebbe perfetto, ma potrebbe essere stato solo fortunato. La variante bayesiana parte dal presupposto che ogni annotatore abbia una competenza intermedia e si sposta da questa ipotesi solo man mano che le annotazioni si accumulano, come se a quelle reali si aggiungessero alcune risposte fittizie nella media. Con pochi dati il punteggio resta quindi prudente, con molti dati riflette davvero il comportamento dell'annotatore.
+
+Il ricercatore avvia il calcolo dalla console di amministrazione su un progetto e ottiene due risultati, entrambi prodotti dall'ultimo giro della procedura. Il primo è, per ogni documento, l'etichetta più probabile con la relativa confidenza. Il modello assegna a ciascuna etichetta possibile una probabilità, combinando le risposte ricevute in modo che quella di un annotatore competente sposti molto il risultato e quella di un annotatore che risponde spesso a caso lo sposti poco. L'etichetta stimata è quella con la probabilità più alta, e la confidenza è proprio questa probabilità. È alta quando gli annotatori affidabili concordano, bassa quando si dividono o quando a rispondere sono stati soprattutto annotatori poco affidabili.
+
+Il secondo risultato, quello su cui si basa la valutazione degli annotatori, è il punteggio di competenza. Per ciascuna risposta di un annotatore il modello stima la probabilità che sia stata data con attenzione, cioè che coincida con l'etichetta ritenuta corretta e che la coincidenza non sia spiegabile con la sua abitudine. Il punteggio è la media di queste probabilità su tutti i documenti che l'annotatore ha visto, corretta dalla prudenza della variante bayesiana, e va da 0 a 1. Viene salvato sull'iscrizione dell'annotatore al progetto (\S\ref{sec:annotatore}) e compare accanto all'accuratezza sulle gold unit (Figura~\ref{fig:iscrizioni}). A differenza di quest'ultima, tiene conto di tutto il lavoro svolto nello studio e permette di valutare anche chi ha incontrato poche gold unit o nessuna.
+
+MACE ha però un perimetro preciso. Tutto il ragionamento presuppone che ogni annotatore scelga un'etichetta da una lista per un intero documento. Con gli span questo non vale, perché due annotatori possono evidenziare porzioni di testo che si sovrappongono solo in parte e non esiste un'unica risposta da confrontare. Il calcolo è quindi disponibile solo per i progetti di classificazione, mentre in quelli con span la qualità resta affidata alle gold unit. Dove si applica, i due meccanismi si completano, perché le gold unit offrono un controllo esatto su pochi casi e MACE una valutazione estesa a tutto lo studio.
+
+Gold unit e MACE misurano la qualità di ciò che gli annotatori producono. Se invece è la configurazione dello studio a dover cambiare durante la raccolta, il ricercatore deve tenere conto di un vincolo. Una volta pubblicato ufficialmente un progetto, la sua configurazione e il suo dataset non sono più modificabili, così che tutti gli annotatori lavorino nelle stesse condizioni.
+
+Per modificare un campo di un progetto già pubblicato, il ricercatore può duplicarlo in tre modalità, così da iterare rapidamente su varianti dello studio senza ricostruire la configurazione da zero. La prima copia solo la configurazione, la seconda anche il dataset completo. La terza copia la configurazione insieme alle gold unit, ai documenti che non hanno ancora raggiunto il numero minimo di annotazioni e agli annotatori non esclusi e non ancora completati, di cui vengono azzerate le metriche sulle gold unit. La copia parte sempre in bozza e non pubblicata.
 
 Stati, soglie di esclusione e parametri di distribuzione che il ricercatore osserva durante la raccolta vengono però decisi prima del lancio. La sezione seguente descrive come.
 
 % =====================================================================
+
 \section{Configurazione del task}
 \label{sec:configurazione}
 \label{sec:distribuzione}
 \label{sec:amministrazione}
 
-Prima che un progetto raccolga dati, il ricercatore ne definisce ogni aspetto. L'intera configurazione descritta in questo capitolo, schema, dataset, pipeline di onboarding, strategia di distribuzione, controllo qualità, è esposta attraverso un'amministrazione Django estesa, organizzata in schede tematiche: Project Details, Dataset Upload, Annotation Schema, Screening Setup, Codebook Setup, Instruction, Practice Task, Quality \& Monitoring, Distribution (Figura~\ref{fig:schede}).
+Prima che un progetto raccolga dati, il ricercatore ne definisce ogni aspetto. L'intera configurazione descritta in questo capitolo, schema, dataset, pipeline di onboarding, strategia di distribuzione, controllo qualità, è esposta attraverso un'amministrazione Django estesa, organizzata in dieci schede tematiche, cioè Project Details, Dataset Upload, Annotation Schema, Informed Consent, Screening Setup, Codebook Setup, Instruction, Practice Task, Quality \& Monitoring e Distribution (Figura~\ref{fig:schede}).
 
 \begin{figure}[H]
     \centering
@@ -517,21 +528,21 @@ Prima che un progetto raccolga dati, il ricercatore ne definisce ogni aspetto. L
     \label{fig:schede}
 \end{figure}
 
-Schema, screening, codebook e istruzioni si caricano come file YAML o Markdown. Lo schema viene validato nella sua struttura e rifiutato se non conforme, il task di pratica viene bloccato se la sua soluzione non è compatibile con lo schema, mentre lo screening viene solo letto come YAML o JSON e i testi in Markdown vengono salvati così come sono. Un errore nello schema o nel task di pratica viene quindi segnalato prima che il progetto possa essere pubblicato, non scoperto a raccolta dati in corso.
+Schema, screening, codebook e istruzioni si caricano come file YAML, JSON o Markdown. Lo schema viene validato nella sua struttura e rifiutato se non conforme, il task di pratica viene bloccato se la sua soluzione non è compatibile con lo schema, mentre lo screening viene solo letto come YAML o JSON e i testi in Markdown vengono salvati così come sono. Un errore nello schema o nel task di pratica viene quindi segnalato prima che il progetto possa essere pubblicato, non scoperto a raccolta dati in corso.
 
 Una volta che un annotatore ha superato l'onboarding (\S\ref{sec:onboarding}), il sistema deve decidere quali documenti assegnargli. Lo fa secondo una di tre strategie, selezionabile per progetto. La strategia standard assegna documenti in modo casuale, entro una soglia minima e massima di annotazioni per documento. La strategia a piena sovrapposizione espone a ogni annotatore l'intero dataset, per studi che richiedono la massima ridondanza. La strategia a blocchi con annotatori fissi divide il dataset in blocchi di dimensione configurabile e assegna ciascun blocco a un numero fisso di annotatori, con una ridondanza controllata. È utile quando si vuole misurare il livello di accordo tra un gruppo chiuso di annotatori sugli stessi documenti.
 
-L'assegnazione può coinvolgere più annotatori che richiedono un documento nello stesso istante. Per questo avviene sotto lock a livello di record nel database, il documento somministrato resta bloccato per tutta la durata della transazione, così che due richieste concorrenti non ricevano mai lo stesso documento.
+L'assegnazione può coinvolgere più annotatori che richiedono un documento nello stesso istante. Per questo avviene sotto lock a livello di record nel database. Il documento somministrato resta bloccato per tutta la durata della transazione, così che due richieste concorrenti non ricevano mai lo stesso documento.
 
 Una volta distribuiti, i documenti includono anche le gold unit (\S\ref{sec:goldunit}). Il ricercatore le carica nella stessa amministrazione e fissa i parametri del controllo qualità descritto in \S\ref{sec:live}, cioè ogni quanti documenti iniettarne una, l'accuratezza minima richiesta e il numero di gold unit dopo cui la valutazione comincia.
 
-Configurazione e amministrazione sono la superficie che il ricercatore vede. L'ultima sezione del capitolo scende sotto quella superficie, nell'architettura che la rende possibile.
+Configurazione e amministrazione sono le parti del sistema con cui lavora il ricercatore. L'ultima sezione del capitolo descrive l'architettura su cui si appoggiano.
 
 % =====================================================================
 \section{Architettura del sistema}
 \label{sec:architettura}
 
-Interfaccia di annotazione (\S\ref{sec:overlap}) e amministrazione (\S\ref{sec:live}, \S\ref{sec:configurazione}) sono le due facce del sistema che rispettivamente l'annotatore e il ricercatore vedono. Quello che le rende entrambe possibili è descritto qui. Il sistema è composto da un backend Django, che espone un'API REST e la console di amministrazione, e da un frontend Vue 3 single page, che implementa l'interfaccia di annotazione. I due componenti vengono eseguiti in container Docker separati, con PostgreSQL come base dati. Il deploy dell'intero sistema avviene con un unico comando Docker Compose, per non richiedere al ricercatore competenze di configurazione infrastrutturale.
+Interfaccia di annotazione (\S\ref{sec:overlap}) e amministrazione (\S\ref{sec:live}, \S\ref{sec:configurazione}) sono le due parti del sistema usate rispettivamente dall'annotatore e dal ricercatore. Il sistema è composto da un backend Django, che espone un'API REST e la console di amministrazione, e da un frontend Vue 3 single page, che implementa l'interfaccia di annotazione. I due componenti vengono eseguiti in container Docker separati, con PostgreSQL come base dati. Il deploy dell'intero sistema avviene con un unico comando Docker Compose, per non richiedere al ricercatore competenze di configurazione infrastrutturale.
 
 \begin{figure}[H]
     \centering
@@ -540,9 +551,9 @@ Interfaccia di annotazione (\S\ref{sec:overlap}) e amministrazione (\S\ref{sec:l
     \label{fig:architettura}
 \end{figure}
 
-L'architettura, schematizzata in Figura~\ref{fig:architettura}, separa nettamente due piani, il primo quello di configurazione, esposto tramite la dashboard di amministrazione Django, rivolto al ricercatore e ai suoi collaboratori, e il secondo di esecuzione, esposto tramite API REST e rivolto all'annotatore. Configurare l'annotazione e comporla non richiedono le stesse competenze, né la stessa superficie di rischio, e vanno perciò esposte separatamente. I due piani condividono un solo punto di verità, lo schema di annotazione del progetto (\S\ref{sec:schema}), che alimenta sia la validazione lato configurazione sia la generazione dell'interfaccia lato esecuzione. Un cambiamento allo schema si riflette in entrambi senza sincronizzazione manuale.
+L'architettura, schematizzata in Figura~\ref{fig:architettura}, separa due piani. Il piano di configurazione è esposto tramite la dashboard di amministrazione Django ed è rivolto al ricercatore e ai suoi collaboratori. Il piano di esecuzione è esposto tramite API REST ed è rivolto all'annotatore. Configurare un'annotazione e svolgerla richiedono competenze e permessi diversi, per questo i due piani restano separati. Entrambi però dipendono dallo schema di annotazione del progetto (\S\ref{sec:schema}), che alimenta sia la validazione lato configurazione sia la generazione dell'interfaccia lato esecuzione. Così un cambiamento allo schema si riflette su entrambi senza sincronizzazione manuale.
 
-Backend, frontend e i due piani che espone sono l'infrastruttura su cui si appoggia tutto quello che il capitolo ha descritto finora. Con questo il capitolo chiude la descrizione dei meccanismi che realizzano i concetti del capitolo precedente (\S\ref{cap:dati}). Il capitolo Risultati ne valuta il funzionamento messo alla prova.
+Con l'architettura si chiude la descrizione di come il sistema realizza i concetti del capitolo~\ref{cap:dati}. Il capitolo Risultati riporta come il sistema si è comportato quando è stato usato da una ricercatrice.
 
 \chapter{Risultati}
 \label{chap:risultati}
@@ -551,15 +562,15 @@ Backend, frontend e i due piani che espone sono l'infrastruttura su cui si appog
 \section{La valutazione con un'esperta di dominio}
 \label{sec:walkthrough}
 
-Un sistema di annotazione può funzionare correttamente e restare comunque difficile da usare. Un ricercatore che prepara uno studio di annotazione non legge il codice, attraversa l'interfaccia una schermata alla volta e decide cosa fare in base a quello che vede. Se un'etichetta è ambigua o un'opzione sta nel posto sbagliato, il rischio non è un errore del software ma un progetto configurato male, oppure un'azione irreversibile compiuta senza volerlo. Per osservare questo lato del sistema serve una persona che lo usi davvero. Questa sezione racconta la sessione condotta con una ricercatrice che conosce il problema dall'interno, cosa ne è emerso e come il sistema è cambiato di conseguenza.
+Un ricercatore che prepara uno studio di annotazione non legge il codice, ma attraversa l'interfaccia una schermata alla volta e decide cosa fare in base a quello che vede. Un'etichetta ambigua o un'opzione nel posto sbagliato possono portare a un progetto configurato male, oppure a un'azione irreversibile compiuta senza volerlo. In uno studio in crowdsourcing un errore di configurazione di solito emerge solo quando la raccolta è finita, cioè quando gli annotatori sono già stati pagati. Nel caso peggiore i dati vanno scartati, nel migliore sono di qualità più bassa del previsto. Per osservare questi problemi serve una persona che usi il sistema. Questa sezione racconta la sessione condotta con una ricercatrice che conosce il problema dall'interno, cosa ne è emerso e come il sistema è cambiato di conseguenza.
 
 % ---------------------------------------------------------------------
 \subsection{Perché un cognitive walkthrough, e con chi}
 \label{subsec:walkthrough-setting}
 
-Il metodo scelto è il cognitive walkthrough \parencite{wharton1994cognitive}, una tecnica di ispezione dell'usabilità pensata per chi usa un sistema per la prima volta. Il valutatore percorre una sequenza di task realistici e, per ogni passo, si chiede se l'utente capirebbe cosa deve fare, se troverebbe il comando giusto, se ne interpreterebbe correttamente l'etichetta e se, dopo averlo usato, si accorgerebbe di aver ottenuto l'effetto voluto. Il metodo si adatta bene a una piattaforma come questa, dove la maggior parte delle difficoltà nasce proprio dal primo contatto, quando chi configura un progetto deve orientarsi tra molte opzioni senza ancora conoscere le regole del sistema.
+Il metodo scelto è il cognitive walkthrough \parencite{wharton1994cognitive}, una tecnica di ispezione dell'usabilità pensata per chi usa un sistema per la prima volta. Il valutatore percorre una sequenza di task realistici e, per ogni passo, si chiede se l'utente capirebbe cosa deve fare, se troverebbe il comando giusto, se ne interpreterebbe correttamente l'etichetta e se, dopo averlo usato, si accorgerebbe di aver ottenuto l'effetto voluto. Il metodo si adatta bene a una piattaforma come questa, dove la maggior parte delle difficoltà nasce dal primo contatto, quando chi configura un progetto deve orientarsi tra molte opzioni senza ancora conoscere le regole del sistema. Si adatta anche perché il task è già ben definito e le modalità di interazione sono ormai consolidate in strumenti simili. Il ricercatore che configura uno studio è un professionista che conosce già il compito e non ha bisogno di impararlo, quindi ciò che resta da valutare è se l'interfaccia gli permette di capire come svolgerlo.
 
-La sessione si è svolta il 16 aprile 2026, da remoto, ed è durata circa un'ora e mezza. La partecipante è Veronika Batzdorfer, tra gli organizzatori di PsyCoMark \parencite{samory2026psycomark}, quindi una persona che ha già condotto in prima persona uno studio di annotazione in crowdsourcing simile a quello che la piattaforma vuole supportare. Non aveva mai usato l'interfaccia, ma conosceva già alcune delle funzionalità per averne discusso in precedenza con il relatore. È un profilo utile proprio per questo, perché unisce la freschezza di chi vede le schermate per la prima volta alla competenza di chi sa cosa serve davvero a un ricercatore.
+La sessione si è svolta il 16 aprile 2026, da remoto, ed è durata circa un'ora e mezza. La partecipante è Veronika Batzdorfer, tra gli organizzatori di PsyCoMark \parencite{samory2026psycomark}, quindi una persona che ha già condotto in prima persona uno studio di annotazione in crowdsourcing simile a quello che la piattaforma vuole supportare. Non aveva mai usato l'interfaccia, ma conosceva a fondo i concetti su cui si basa, perché è tra gli autori del paper che ha introdotto PsyCoMark \parencite{samory2026psycomark}.Questo la rendeva una valutatrice particolarmente adatta, in grado di giudicare se l'interfaccia rispecchiasse davvero la logica del compito di annotazione.
 
 La traccia della sessione comprendeva sette task, che coprono l'intero ciclo di vita di un progetto.
 \begin{enumerate}
@@ -572,18 +583,18 @@ La traccia della sessione comprendeva sette task, che coprono l'intero ciclo di 
     \item Correggere un errore nella configurazione di un progetto già lanciato.
 \end{enumerate}
 
-Rispetto alla forma classica del metodo, la sessione ha preso una piega più guidata. Era il candidato a condividere lo schermo e a muoversi nell'interfaccia seguendo la traccia, mentre la partecipante osservava, commentava ad alta voce e interrompeva con domande ogni volta che qualcosa non le era chiaro. Questa scelta riduce la possibilità di osservare dove l'utente si perde da solo, ma in cambio ha lasciato spazio a domande che la traccia non prevedeva, e alcune di queste si sono rivelate le più utili. Della sessione esiste una registrazione video e degli appunti, che sono stati rivisti e integrati con le osservazioni del relatore per produrre il resoconto che segue.
+Rispetto alla forma classica del metodo, la sessione ha preso una piega più guidata. Ero io l'intervistatore a condividere lo schermo e a muoversi nell'interfaccia seguendo la traccia, mentre la partecipante osservava, commentava ad alta voce e interrompeva con domande ogni volta che qualcosa non le era chiaro. Questa scelta riduce la possibilità di osservare dove l'utente si perde da solo, ma in cambio ha lasciato spazio a domande che la traccia non prevedeva, e alcune di queste si sono rivelate le più utili. Della sessione esiste una registrazione video e degli appunti, che sono stati rivisti e integrati con le osservazioni del relatore per produrre il resoconto che segue.
 
 % ---------------------------------------------------------------------
 \subsection{Cosa è emerso}
 \label{subsec:walkthrough-risultati}
 
-Le osservazioni si raccolgono in quattro gruppi. Due riguardano problemi veri e propri, cioè la struttura della configurazione e la chiarezza di alcune etichette. Il terzo riguarda il modo in cui il sistema gestisce le azioni irreversibili, dove il design ha retto ma ha comunque generato domande. L'ultimo raccoglie un'esigenza che il sistema non copriva affatto.
+Le osservazioni si raccolgono in quattro gruppi. I primi due riguardano problemi veri e propri, cioè la struttura della configurazione e la chiarezza di un'etichetta. Il terzo riguarda le azioni irreversibili, su cui la partecipante ha fatto diverse domande e ha trovato un vincolo che il sistema comunica solo dopo l'errore. L'ultimo raccoglie un'esigenza che il sistema non copriva.
 
-\paragraph{Il dataset si nascondeva in fondo alla pagina.}\mbox{}\\
-Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non trovava il punto in cui caricare i dati se non scorrendo. La partecipante ha faticato proprio qui, e ha trovato il campo solo scorrendo fino in fondo.
+\paragraph{Il caricamento del dataset.}\mbox{}\\
+Il primo ostacolo è comparso già nei task iniziali. All'epoca la configurazione era divisa in sei schede, ma alcune raccoglievano più aspetti diversi. La scheda \emph{Annotation schema \& Dataset upload} metteva insieme lo schema di annotazione e il caricamento dei documenti, e il campo per il file del dataset compariva solo in fondo, dopo l'intero schema in YAML (Figura~\ref{fig:cw-config}, a sinistra). Chi arrivava sulla scheda vedeva lo schema e non il punto in cui caricare i dati. La partecipante si è fermata su questo passaggio e ha capito dove fosse il campo solo quando la pagina è stata scorsa fino in fondo.
 
-La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Ogni campo è ora visibile senza scorrere, e le schede seguono l'ordine in cui il progetto viene configurato.
+La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun aspetto del progetto. Le funzionalità sono rimaste le stesse, ma sono state ridistribuite seguendo il modo in cui un ricercatore pensa al proprio esperimento, una fase dopo l'altra. Il caricamento del dataset ha ora una scheda propria, separata dallo schema (Figura~\ref{fig:cw-config}, a destra), e lo stesso è avvenuto per le schede che univano più passaggi dell'onboarding, divise in consenso informato, screening, codebook, istruzioni e task di prova. Ogni campo è ora visibile senza scorrere, e le schede seguono l'ordine in cui il progetto viene configurato.
 
 \begin{figure}[ht]
     \centering
@@ -602,8 +613,8 @@ La configurazione è stata quindi riorganizzata in dieci schede, una per ciascun
     \label{fig:cw-config}
 \end{figure}
 
-\paragraph{Alcune etichette dicevano meno di quanto sembrava.}\mbox{}\\
-Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma proprio quest'ultimo l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante.
+\paragraph{L'etichetta del pulsante Clear.}\mbox{}\\
+Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha chiesto se esistesse un modo per tornare indietro. Il sistema offre due strade, la X sul singolo span e un pulsante \emph{Clear}, ma il pulsante l'ha lasciata in dubbio, perché non era chiaro se cancellasse l'ultimo span o tutti. Ha suggerito lei stessa di chiamarlo \emph{Clear all}, e l'etichetta è stata cambiata in questo senso (Figura~\ref{fig:cw-clear}). Sull'assenza di una scorciatoia per annullare l'ultima azione ha invece osservato che non è un problema rilevante.
 
 \begin{figure}[ht]
     \centering
@@ -612,7 +623,7 @@ Durante l'annotazione di prova, mentre selezionava gli span, la partecipante ha 
     \label{fig:cw-clear}
 \end{figure}
 
-\paragraph{Le azioni irreversibili hanno retto, ma hanno fatto nascere domande.}\mbox{}\\
+\paragraph{Le azioni irreversibili.}\mbox{}\\
 Il ciclo di vita del progetto è la parte in cui un errore costa di più, ed è quella in cui la partecipante si è fermata più spesso a chiedere. Vedendo il pulsante di lancio ufficiale, la prima domanda è stata cosa succede se si lancia per errore e si vuole togliere il progetto dalla rete. Un progetto lanciato può essere messo in pausa, e la risposta l'ha soddisfatta. Un secondo punto ha riguardato la cancellazione dei dati di prova, che richiede di riportare prima il progetto in bozza o in pausa. Il sistema lo comunica con un messaggio solo dopo che l'utente ha provato a cancellare, quindi la partecipante ha scoperto il vincolo per tentativi. Infine il blocco della configurazione dopo il lancio, affrontato nel task~7, è stato capito senza difficoltà. Il banner che spiega perché i campi non sono più modificabili e propone di clonare il progetto (Figura~\ref{fig:cw-banner}) è risultato chiaro, e lo stesso vale per la differenza tra clonare solo la configurazione o anche documenti e annotatori.
 
 \begin{figure}[ht]
@@ -622,8 +633,8 @@ Il ciclo di vita del progetto è la parte in cui un errore costa di più, ed è 
     \label{fig:cw-banner}
 \end{figure}
 
-\paragraph{Un'esigenza che il sistema non copriva.}\mbox{}\\
-L'osservazione più importante non riguardava nessuno dei sette task. Guardando quanto velocemente si poteva completare un'annotazione di prova, la partecipante ha chiesto se fosse possibile imporre un tempo minimo per ogni documento, così da impedire che un partecipante clicchi a caso, completi il compito in pochi secondi e venga comunque pagato. È un problema concreto di chi lavora in crowdsourcing, ed è lo stesso che i meccanismi di controllo qualità descritti nel capitolo~\ref{cap:metodi} affrontano solo a posteriori. Oggi il sistema registra il tempo impiegato per ogni annotazione e, nella vista amministrativa, evidenzia in rosso quelle completate in meno di cinque secondi, ma non impedisce l'invio.
+\paragraph{Il tempo minimo per documento.}\mbox{}\\
+Fuori dalla traccia, guardando quanto velocemente si poteva completare un'annotazione di prova, la partecipante ha chiesto se fosse possibile imporre un tempo minimo per ogni documento, così da impedire che un partecipante clicchi a caso, completi il compito in pochi secondi e venga comunque pagato. È un problema concreto del crowdsourcing, che i meccanismi di controllo qualità descritti nel capitolo~\ref{cap:metodi} affrontano solo a posteriori. Oggi il sistema registra il tempo impiegato per ogni annotazione e, nella vista amministrativa, evidenzia in rosso quelle completate in meno di cinque secondi, ma non impedisce l'invio.
 
 % ---------------------------------------------------------------------
 \subsection{Cosa ha convinto}
@@ -631,7 +642,7 @@ L'osservazione più importante non riguardava nessuno dei sette task. Guardando 
 
 Gli apprezzamenti si sono concentrati sulle parti che aiutano il ricercatore a controllare il proprio studio prima e durante la raccolta. La partecipante ha indicato come particolarmente utile l'ambiente di prova, che permette di attraversare il percorso da partecipante e verificare che la configurazione sia corretta prima di aprire il progetto al pubblico. Ha apprezzato la vista della singola annotazione, sia nella resa grafica sia nel formato grezzo, il calcolo dell'affidabilità degli annotatori, che ha definito \emph{really handy}, e il registro delle attività, utile soprattutto quando sullo stesso progetto lavorano più ricercatori. Il giudizio complessivo è stato positivo, con un riferimento esplicito alla quantità di aspetti personalizzabili e alla loro sensatezza.
 
-L'unica critica di fondo riguarda proprio questa ricchezza. Secondo la partecipante, per chi non ha mai visto la dashboard e la pipeline completa le informazioni sono tante.
+La partecipante ha però osservato che, per chi non ha mai visto la dashboard e la pipeline completa, le informazioni sono tante.
 
 \subsection{In sintesi}
 \label{subsec:walkthrough-sintesi}
@@ -647,11 +658,11 @@ Il capitolo~\ref{chap:risultati} ha riportato cosa è emerso dalla sessione con 
 \section{Il lato del ricercatore}
 \label{sec:disc-ricercatore}
 
-Integrare l'intero ciclo dello studio in un'unica configurazione risponde a un bisogno che chi ha condotto uno studio di questo tipo riconosce subito. Le funzioni che la partecipante ha indicato come più utili sono l'ambiente di prova, il calcolo dell'affidabilità e il registro delle attività (\S\ref{subsec:walkthrough-positivi}), e hanno in comune il fatto di stare tra una fase e l'altra dello studio. L'ambiente di prova attraversa consenso, screening, codebook, task di pratica e annotazione in un solo percorso. Il calcolo dell'affidabilità lavora sulle annotazioni raccolte senza bisogno di esportarle. Il registro tiene traccia delle modifiche quando più ricercatori lavorano sullo stesso progetto. Sono proprio i punti in cui, componendo strumenti separati, il ricercatore deve costruirsi da solo il raccordo tra un passaggio e l'altro (\S\ref{sec:motivazione}).
+Integrare l'intero ciclo dello studio in un'unica configurazione risponde a un bisogno che chi ha condotto uno studio di questo tipo riconosce subito. Le funzioni che la partecipante ha indicato come più utili sono l'ambiente di prova, il calcolo dell'affidabilità e il registro delle attività (\S\ref{subsec:walkthrough-positivi}), e hanno in comune il fatto di stare tra una fase e l'altra dello studio. L'ambiente di prova attraversa consenso, screening, codebook, task di pratica e annotazione in un solo percorso. Il calcolo dell'affidabilità lavora sulle annotazioni raccolte senza bisogno di esportarle. Il registro tiene traccia delle modifiche quando più ricercatori lavorano sullo stesso progetto. Sono i punti in cui, componendo strumenti separati, il ricercatore deve costruirsi da solo il raccordo tra un passaggio e l'altro (\S\ref{sec:motivazione}).
 
-L'integrazione però non elimina la complessità di uno studio, la concentra in un unico punto. Chi usa strumenti separati deve farli comunicare tra loro, mentre chi usa questo sistema deve capire una configurazione che descrive tutte le fasi insieme. Il dataset nascosto in fondo alla scheda dello schema e il commento sulla quantità di informazioni (\S\ref{subsec:walkthrough-risultati}) mostrano che questo costo si paga al primo contatto, quando il ricercatore si trova davanti all'intero studio in una volta sola.
+Con l'integrazione, però, la complessità dello studio resta e si raccoglie in un'unica configurazione. Chi usa strumenti separati deve farli comunicare tra loro, mentre chi usa questo sistema deve capire una configurazione che descrive tutte le fasi insieme. Il dataset nascosto in fondo alla scheda dello schema e il commento sulla quantità di informazioni (\S\ref{subsec:walkthrough-risultati}) mostrano che questo costo si paga al primo contatto, quando il ricercatore si trova davanti all'intero studio in una volta sola.
 
-I risultati indicano anche come contenere questo costo. Il blocco della configurazione dopo il lancio è un vincolo rigido, eppure è stato capito senza aiuto, perché il banner spiega perché esiste e propone la clonazione come strada alternativa. Il vincolo sulla cancellazione dei dati di prova è altrettanto ragionevole, ma il sistema lo comunica solo dopo un tentativo fallito, e la partecipante lo ha scoperto sbagliando. La differenza tra i due casi sta nel momento in cui il sistema rende visibile la regola. La riorganizzazione in schede ordinate secondo il percorso di configurazione va nella stessa direzione, perché mostra la struttura dello studio prima che l'utente debba ricostruirla da solo.
+Il blocco della configurazione dopo il lancio è un vincolo rigido, eppure è stato capito senza aiuto, perché il banner spiega perché esiste e propone la clonazione come alternativa. Il vincolo sulla cancellazione dei dati di prova è altrettanto ragionevole, ma il sistema lo comunica solo dopo un tentativo fallito, e la partecipante lo ha scoperto sbagliando. Nel primo caso il sistema spiega la regola prima dell'errore, nel secondo dopo. Anche la riorganizzazione in schede ordinate secondo il percorso di configurazione aiuta, perché mostra la struttura dello studio prima che l'utente debba ricostruirla da solo.
 
 Sul lato del ricercatore la risposta è quindi positiva, con un'indicazione precisa su come la configurazione va presentata. La seconda metà della domanda riguarda chi annota.
 
@@ -659,21 +670,21 @@ Sul lato del ricercatore la risposta è quindi positiva, con un'indicazione prec
 \section{Il lato dell'annotatore}
 \label{sec:disc-annotatore}
 
-La sovrapposizione degli span crea problemi di interazione che il formato dei dati da solo non risolve, come sostiene il gap. L'episodio del pulsante in precedenza "Clear" \emph{Clear} (\S\ref{subsec:walkthrough-risultati}) lo mostra in piccolo. Con un solo span sullo schermo, un pulsante che cancella ha un solo significato possibile. Con più span sovrapposti sulla stessa porzione di testo, la stessa parola ammette due letture, cancellare l'ultimo span oppure tutti. L'ambiguità nasce dalla sovrapposizione e si risolve con una scelta di interfaccia, un'etichetta che dichiara cosa succede.
+La sovrapposizione degli span crea problemi di interazione che il formato dei dati da solo non risolve, come sostiene il gap. L'episodio del pulsante \emph{Clear} (\S\ref{subsec:walkthrough-risultati}) ne è un esempio. Un pulsante che può voler dire cancellare l'ultimo span oppure tutti è ambiguo in ogni caso, ma con span separati l'utente vedrebbe subito quale è sparito. Con più span sovrapposti sulla stessa porzione di testo l'ultimo creato non si distingue dagli altri, e l'effetto del clic diventa imprevedibile. La sovrapposizione rende quindi rischiosa un'ambiguità che altrimenti resterebbe innocua, e la soluzione è un'etichetta che dichiara cosa succede.
 
-Ne segue che saper rappresentare span sovrapposti, cosa che quasi tutti gli strumenti del capitolo~\ref{cap:background} fanno, è la condizione di partenza e non la soluzione. Le scelte descritte in \S\ref{sec:overlap}, dall'aggancio ai confini di parola alle fasce impilate fino alle etichette che compaiono al passaggio del mouse, rispondono allo stesso tipo di problema, cioè rendere leggibile e controllabile un testo su cui convivono più interpretazioni.
+Saper rappresentare span sovrapposti, come fanno quasi tutti gli strumenti del capitolo~\ref{cap:background}, quindi non basta a renderli gestibili per chi annota. Le scelte descritte in \S\ref{sec:overlap}, dall'aggancio ai confini di parola alle fasce impilate fino alle etichette che compaiono al passaggio del mouse, rispondono a questo problema, cioè rendere leggibile e controllabile un testo su cui convivono più interpretazioni.
 
 Quanto queste scelte riducano errori e disaccordo rispetto a uno strumento come Potato è una misura che la sessione non fornisce, e il capitolo~\ref{chap:limitazioni} descrive lo studio che servirebbe a ottenerla.
 
-Le due sezioni hanno risposto alla domanda una metà alla volta. Lette insieme, dicono qualcosa anche sul gap.
+Le due sezioni hanno risposto alla domanda una metà alla volta. La sezione seguente le legge insieme rispetto al gap.
 
 % =====================================================================
 \section{Cosa significa per il gap}
 \label{sec:disc-gap}
 
-Il gap individuato nel capitolo~\ref{cap:background} riguarda il modo in cui gli strumenti esistenti trattano la sovrapposizione. Prodigy, doccano, INCEpTION e Label Studio la rappresentano come estensione del formato, la rendono un'opzione da abilitare o la affidano a utenti esperti, mentre Potato, l'unico pensato per il crowdsourcing, la gestisce impilando le fasce ma accumula le etichette sopra il testo nel punto di intersezione (\S\ref{sec:strumenti}). In tutti i casi la domanda implicita è se lo strumento sappia rappresentare la sovrapposizione. Questa tesi propone di affiancarle una seconda domanda, cioè se chi la incontra per la prima volta riesca a gestirla.
+Il gap individuato nel capitolo~\ref{cap:background} riguarda il modo in cui gli strumenti esistenti trattano la sovrapposizione. Prodigy, doccano, INCEpTION e Label Studio la rappresentano come estensione del formato, la rendono un'opzione da abilitare o la affidano a utenti esperti, mentre Potato, l'unico tra questi pensato per il crowdsourcing, la gestisce impilando le fasce ma accumula le etichette sopra il testo nel punto di intersezione (\S\ref{sec:strumenti}). In tutti i casi la domanda implicita è se lo strumento sappia rappresentare la sovrapposizione. Questa tesi propone di affiancarle una seconda domanda, cioè se chi la incontra per la prima volta riesca a gestirla.
 
-I risultati indicano che questa seconda domanda vale per entrambi i ruoli. L'annotatore occasionale è il soggetto del gap, ma anche il ricercatore che apre il sistema per la prima volta si trova nella stessa condizione. Tutti gli episodi della sessione parlano di questo momento. Il dataset nascosto, il vincolo scoperto sbagliando e il pulsante ambiguo sono ostacoli al primo contatto, mentre il banner di clonazione e le schede riordinate funzionano perché spiegano le regole del sistema prima dell'errore. Per uno strumento rivolto a persone senza addestramento specifico, sia nel ruolo di chi annota sia in quello di chi configura, il modo in cui le funzioni vengono presentate conta quanto le funzioni stesse.
+I risultati indicano che questa seconda domanda vale per entrambi i ruoli. L'annotatore occasionale è il soggetto del gap, ma anche il ricercatore che apre il sistema per la prima volta si trova nella stessa condizione. Il dataset nascosto, il vincolo scoperto sbagliando e il pulsante ambiguo sono tutti ostacoli incontrati al primo contatto, mentre il banner di clonazione e le schede riordinate funzionano perché spiegano le regole del sistema prima dell'errore. Per uno strumento rivolto a persone senza addestramento specifico, quindi, il modo in cui le funzioni vengono presentate va progettato con la stessa cura delle funzioni.
 
 È anche la condizione perché le implicazioni descritte nell'introduzione (\S\ref{sec:implicazioni}) si realizzino. Un sistema integrato rende gli studi di unitizing accessibili a gruppi senza un'infrastruttura propria solo se chi lo usa per la prima volta riesce a orientarsi. Allo stesso modo, riduce il disaccordo prodotto dall'interfaccia solo se l'annotatore occasionale capisce cosa sta facendo quando gli span si sovrappongono.
 
@@ -681,12 +692,12 @@ I risultati indicano che questa seconda domanda vale per entrambi i ruoli. L'ann
 \section{In sintesi}
 \label{sec:disc-sintesi}
 
-Sul lato del ricercatore i risultati sostengono la proposta di integrare il ciclo dello studio, a patto di presentare la configurazione in modo che le sue regole siano visibili prima dell'errore. Sul lato dell'annotatore confermano che la sovrapposizione degli span è un problema di interazione oltre che di rappresentazione. Il filo che tiene insieme le due metà è il primo contatto, che riguarda allo stesso modo chi annota e chi configura. Il capitolo seguente esamina le scelte di valutazione che delimitano queste conclusioni.
+Sul lato del ricercatore i risultati sostengono la proposta di integrare il ciclo dello studio, a patto di presentare la configurazione in modo che le sue regole siano visibili prima dell'errore. Sul lato dell'annotatore confermano che la sovrapposizione degli span è un problema di interazione oltre che di rappresentazione. Le due metà hanno in comune il problema del primo contatto, che riguarda allo stesso modo chi annota e chi configura. Il capitolo seguente esamina le scelte di valutazione che delimitano queste conclusioni.
 
-\chapter{Limitazioni e Sviluppi Futuri}
+\chapter{Limitazioni e sviluppi futuri}
 \label{chap:limitazioni}
 
-Le conclusioni del capitolo precedente dipendono da come il sistema è stato valutato. Tre scelte in particolare hanno reso possibili quelle conclusioni e ne hanno anche fissato i confini. La prima è aver valutato il sistema con una sola esperta in una sessione guidata (\S\ref{sec:lim-sessione}). La seconda è aver affidato la valutazione a una ricercatrice invece che a chi annota (\S\ref{sec:lim-valutatore}). La terza è aver costruito il sistema attorno a un unico caso di studio (\S\ref{sec:lim-caso}). Per ciascuna il capitolo spiega perché era una scelta ragionevole e cosa lascia fuori. L'ultima sezione (\S\ref{sec:sviluppi}) indica da dove ripartire.
+Le conclusioni del capitolo precedente dipendono da tre scelte fatte nel valutare il sistema. La prima è aver valutato il sistema con una sola esperta in una sessione guidata (\S\ref{sec:lim-sessione}). La seconda è aver affidato la valutazione a una ricercatrice invece che a chi annota (\S\ref{sec:lim-valutatore}). La terza è aver costruito il sistema attorno a un unico caso di studio (\S\ref{sec:lim-caso}). Per ciascuna il capitolo spiega perché era una scelta ragionevole e cosa lascia fuori. L'ultima sezione (\S\ref{sec:sviluppi}) indica da dove ripartire.
 
 % =====================================================================
 \section{Una sola valutatrice, in una sessione guidata}
@@ -694,11 +705,9 @@ Le conclusioni del capitolo precedente dipendono da come il sistema è stato val
 
 Il sistema è stato valutato da una sola persona, Veronika Batzdorfer, in una sessione in cui il candidato condivideva lo schermo e si muoveva nell'interfaccia. Per un primo test era la scelta più sensata. Il sistema non era mai stato usato da un utente reale, e Veronika aveva già condotto PsyCoMark, quindi sapeva bene cosa serve a un ricercatore che prepara uno studio di questo tipo. I vantaggi e i limiti della forma guidata sono già descritti in \S\ref{subsec:walkthrough-setting}.
 
-Questa scelta ha però orientato i risultati. Sei dei sette task riguardavano la configurazione e il ciclo di vita del progetto, quindi quasi tutte le osservazioni raccolte riguardano quella parte del sistema. Inoltre, con il candidato alla guida, è più difficile vedere i punti in cui un utente si blocca da solo. Il vincolo sulla cancellazione dei dati di prova è emerso comunque, ma altri ostacoli potrebbero essere rimasti nascosti.
+Sei dei sette task riguardavano però la configurazione e il ciclo di vita del progetto, quindi quasi tutte le osservazioni raccolte riguardano quella parte del sistema. Inoltre, con il candidato alla guida, è più difficile vedere i punti in cui un utente si blocca da solo. Il vincolo sulla cancellazione dei dati di prova è emerso comunque, ma altri ostacoli potrebbero essere rimasti nascosti.
 
 Per la tesi questo significa che le osservazioni sul lato del ricercatore, compreso il problema del primo contatto discusso nel capitolo~\ref{cap:discussione}, vengono da una sola persona esperta. Non sappiamo ancora se un ricercatore con meno esperienza incontrerebbe gli stessi ostacoli o altri diversi.
-
-Questo primo limite riguarda quante persone hanno valutato il sistema e in che modo. Il secondo riguarda chi erano.
 
 % =====================================================================
 \section{Chi ha valutato non è chi annota}
@@ -708,9 +717,7 @@ Il gap da cui parte la tesi riguarda chi annota per la prima volta, cioè un lav
 
 Per questo la tesi non dispone di misure su errori di confine, tempi di annotazione o accordo tra annotatori. Le scelte dell'interfaccia descritte in \S\ref{sec:overlap}, come l'aggancio ai confini di parola e le fasce impilate, sono sostenute dal ragionamento di progettazione e dal confronto con Potato, ma non da dati raccolti su annotatori reali.
 
-L'ordine seguito ha comunque una ragione. Uno studio con annotatori pagati funziona solo se ingresso da Prolific, onboarding, distribuzione dei documenti e controllo qualità sono già affidabili. Ogni errore di configurazione scoperto durante la raccolta si traduce in dati da scartare e compensi spesi inutilmente. Verificare prima il lato del ricercatore riduce questo rischio, e il sistema descritto in questa tesi è proprio l'infrastruttura che uno studio sugli annotatori richiede.
-
-I primi due limiti riguardano la valutazione. Il terzo riguarda il punto da cui il sistema è partito.
+Verificare prima il lato del ricercatore ha però una ragione. Uno studio con annotatori pagati funziona solo se ingresso da Prolific, onboarding, distribuzione dei documenti e controllo qualità sono già affidabili. Come visto in \S\ref{sec:walkthrough}, un errore di configurazione si scopre spesso solo a raccolta conclusa e si traduce in dati da scartare e compensi spesi inutilmente. Il sistema descritto in questa tesi è l'infrastruttura che uno studio sugli annotatori richiede, e averla verificata riduce questo rischio.
 
 % =====================================================================
 \section{Un solo caso di studio}
@@ -730,7 +737,7 @@ Ciascuno di questi tre limiti indica anche da dove ripartire.
 
 Il passo più importante è uno studio con annotatori reclutati su Prolific, che usino questo sistema e uno strumento esistente come Potato sugli stessi documenti. Lo studio misurerebbe gli errori di confine rispetto alle gold unit, il tempo per documento e l'accordo tra annotatori, calcolato con misure adatte all'unitizing \parencite{krippendorff2016unitizing}. Il sistema ha già quasi tutto ciò che serve. L'ingresso da Prolific e l'onboarding preparano gli annotatori, la strategia a piena sovrapposizione assegna a tutti gli stessi documenti e il tempo di ogni annotazione viene già registrato. Uno studio di questo tipo direbbe se l'interfaccia riduce il disaccordo dovuto allo strumento, che è la domanda da cui la tesi è partita.
 
-Per il primo limite serve un secondo cognitive walkthrough, questa volta senza guida e con più ricercatori, inclusi alcuni che non hanno mai condotto uno studio in crowdsourcing. Servirebbe a capire quali difficoltà sono comuni a tutti e a verificare se le modifiche introdotte dopo la prima sessione, come la divisione in schede e il pulsante \emph{Clear all}, funzionano davvero.
+Per il primo limite serve un secondo cognitive walkthrough, questa volta senza guida e con più ricercatori, inclusi alcuni che non hanno mai condotto uno studio in crowdsourcing. Servirebbe a capire quali difficoltà sono comuni a tutti e a verificare se le modifiche introdotte dopo la prima sessione, come la divisione in schede e il pulsante \emph{Clear all}, funzionano.
 
 Per il terzo limite basta usare il sistema su un task diverso da PsyCoMark. Ogni nuovo task mostrerebbe quali componenti mancano allo schema, e l'interfaccia è costruita in modo da poterli aggiungere senza modificare quelli esistenti. Le relazioni tra span sono il primo candidato.
 
@@ -743,19 +750,40 @@ Il sistema è rilasciato come open source anche per questo motivo. Chi vuole con
 \chapter{Conclusioni}
 \label{chap:conclusioni}
 
-Questa tesi è partita da un compito concreto, quello di PsyCoMark, in cui annotatori reclutati online dovevano individuare nei commenti Reddit le porzioni di testo che esprimono gli elementi di una narrativa complottista. L'accordo basso misurato sugli span faceva sorgere una domanda che andava oltre il singolo task. Quanto di quel disaccordo dipendeva dal testo e dalle letture diverse che ammette, e quanto invece dagli strumenti con cui l'annotazione era stata raccolta?
+Questa tesi è partita da un compito concreto, quello di PsyCoMark, in cui annotatori reclutati online dovevano individuare nei commenti Reddit le porzioni di testo che esprimono gli elementi di una narrativa complottista. L'accordo basso misurato sugli span lasciava aperto quanto del disaccordo dipendesse dal testo e dalle letture diverse che ammette, e quanto invece dagli strumenti con cui l'annotazione era stata raccolta.
 
-Rispondere a questa domanda richiede prima di tutto condizioni di raccolta controllate, ed è qui che si è concentrato il lavoro. Il sistema sviluppato prova a dare al ricercatore un solo posto in cui preparare, condurre e sorvegliare uno studio di unitizing in crowdsourcing, e a dare a chi annota un'interfaccia in cui la sovrapposizione degli span è il comportamento normale e non un'eccezione da gestire. Le due parti sono legate dalla stessa configurazione, che stabilisce cosa viene annotato, da chi e con quali controlli.
+Per separare queste due cause servono prima di tutto condizioni di raccolta controllate, e il lavoro si è concentrato su queste. Il sistema sviluppato dà al ricercatore un solo posto in cui preparare, condurre e sorvegliare uno studio di unitizing in crowdsourcing, e dà a chi annota un'interfaccia in cui definire span sovrapposti direttamente sul testo. Le due parti condividono la stessa configurazione, che stabilisce cosa viene annotato, da chi e con quali controlli.
 
-La valutazione con una ricercatrice tra gli organizzatori di PsyCoMark ha dato indicazioni chiare sulla prima parte. L'integrazione del ciclo risponde a un bisogno che chi ha già condotto uno studio simile riconosce, e i problemi emersi riguardano soprattutto il modo in cui la configurazione viene presentata, non la logica che la regge. Sulla seconda parte le indicazioni sono più deboli. La sessione ha confermato che la sovrapposizione degli span crea problemi di interazione propri, ma non ha misurato se l'interfaccia proposta li risolva meglio delle alternative.
+La valutazione con una ricercatrice tra gli organizzatori di PsyCoMark ha dato indicazioni chiare sulla prima parte. L'integrazione del ciclo risponde a un bisogno che chi ha già condotto uno studio simile riconosce, e i problemi emersi riguardano soprattutto il modo in cui la configurazione viene presentata. Sulla seconda parte le indicazioni sono più deboli. La sessione ha confermato che la sovrapposizione degli span crea problemi di interazione propri, ma non ha misurato se l'interfaccia proposta li risolva meglio delle alternative.
 
-La domanda iniziale resta quindi aperta, ma ora è possibile affrontarla. Uno studio con annotatori reali, che confronti errori di confine, tempi e accordo tra strumenti diversi, è il passo che permetterebbe di separare il disaccordo prodotto dall'interfaccia da quello che riflette letture legittimamente diverse dello stesso testo. Il sistema descritto in questa tesi è stato costruito anche per rendere possibile quello studio, ed è rilasciato come open source perché possa servire ad altri gruppi che lavorano su task simili, senza che ciascuno debba ricostruirsi da zero la propria infrastruttura.
+Per rispondere alla domanda iniziale serve quindi uno studio con annotatori reali, che confronti errori di confine, tempi e accordo tra strumenti diversi e separi il disaccordo prodotto dall'interfaccia da quello che riflette letture legittimamente diverse dello stesso testo. Il sistema descritto in questa tesi è stato costruito anche per rendere possibile quello studio.
+
+Il sistema supporta in modo specifico l'estrazione di span sovrapposti, ma tutta la parte che gestisce lo studio, dall'ingresso dei partecipanti all'onboarding, alla distribuzione dei documenti e al controllo qualità, non dipende da questo task. Può quindi essere riutilizzata ed estesa per altri studi di annotazione in crowdsourcing. Per questo il sistema è rilasciato come open source, così che possa servire ad altri gruppi di ricerca senza che ciascuno debba ricostruirsi da zero la propria infrastruttura.
 
 \printbibliography[heading=bibintoc]
 
 \backmatter
-\cleardoublepage
-\phantomsection
-\addcontentsline{toc}{chapter}{\bibname}
+\chapter*{Ringraziamenti}
+\addcontentsline{toc}{chapter}{Ringraziamenti}
+
+{\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.2em}
+
+A mamma e papà, che mi hanno dato la possibilità di intraprendere questo percorso e di arrivare fino a qui. Vi ringrazio soprattutto perché gli ultimi anni non sono stati facili, e voi mi avete lasciato sbagliare, capire e migliorare, sostenendomi sempre. Forse non ve lo dico abbastanza, quindi ve lo scrivo qui. Grazie per esserci sempre.
+
+
+A Silvia e Valeria, le gemelline, % TODO: per cosa vuoi ringraziarle?
+
+A Elisa, % TODO
+
+A Francesca, la mia compagna di vita da ormai più di cinque anni. Questo traguardo è quasi più tuo che mio, perché mi hai visto in tutte le versioni possibili. Il Matteo scansafatiche, il Matteo studioso, il Matteo impegnato e il Matteo lavoratore. Grazie per aver voluto bene a ognuno di loro.
+
+A David e Antonio, % TODO
+
+A Tommaso e Laura, % TODO
+
+Ai miei amici di sempre, % TODO
+
+}
 
 \end{document}
