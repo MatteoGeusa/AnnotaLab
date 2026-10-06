@@ -16,9 +16,8 @@ Claude outputs/
 *.synctex.gz
 *.toc
 *.lof
-*.lot
+*.lotW
 *.fls
 *.fdb_latexmk
 *-SAVE-ERROR
-tesi/tesi_latex.pdf
 tesi/tesi_latex.pdf
