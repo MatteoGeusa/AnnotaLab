@@ -944,7 +944,7 @@ manually. See the documentation or just the frontispiece.}
   \providecommand{\SAP@ThesisDirectorsLabel}{Direttori}
   \newcommand{\SAP@cycleLabel}{ciclo}
   \newcommand{\SAP@AcademicYearLabel}{Anno Accademico}
-  \newcommand{\SAP@ThesisNotDefensedLabel}{Tesi non ancora discussa}
+  \newcommand{\SAP@ThesisNotDefensedLabel}{}
   \newcommand{\SAP@ThesisDefensedLabelA}{Tesi discussa il}
   \newcommand{\SAP@ThesisDefensedLabelB}{di fronte a una commissione esaminatrice composta da}
   \newcommand{\SAP@chairman}{presidente}
